@@ -9,7 +9,9 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func InitDB(gorm *gorm.DB) error {
+var DB *gorm.DB
+
+func InitDB() error {
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")
@@ -25,7 +27,7 @@ func InitDB(gorm *gorm.DB) error {
 		return err
 	}
 	
-	
-	return db, err
+	DB = db
+	return nil
 	
 }
