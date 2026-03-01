@@ -5,6 +5,7 @@ import (
 
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -61,15 +62,33 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	
+
+	token, err := utils.GenerateToken(user.ID, user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login berhasil",
+		"token": token,
 		"user": gin.H{
 			"id":       user.ID,
 			"fullname": user.FullName,
 			"email":    user.Email,
-			"phone":    user.Phone,
 			"role":     user.Role,
 		},
 	})
+
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"message": "Login berhasil",
+	// 	"user": gin.H{
+	// 		"id":       user.ID,
+	// 		"fullname": user.FullName,
+	// 		"email":    user.Email,
+	// 		"phone":    user.Phone,
+	// 		"role":     user.Role,
+	// 	},
+	// })
+
 }
