@@ -11,6 +11,7 @@ type User struct {
 	Role         string    `gorm:"type:varchar(255);not null"`
 	IsVerified   bool      `gorm:"column:is_verified"`
 	VerifiedAt   *time.Time `gorm:"column:verified_at"`
+	RegistrationDoc string    `gorm:"column:registration_doc"`
 	CreatedAt    *time.Time `gorm:"column:create_at"`
 	UpdatedAt    *time.Time `gorm:"column:update_at"`
 }

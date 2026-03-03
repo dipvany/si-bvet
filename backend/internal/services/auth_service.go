@@ -22,9 +22,18 @@ func LoginUser(email, password string) (*models.User, error) {
 	if err != nil {
 		return nil, errors.New("email tidak terdaftar")
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+
+	if !user.IsVerified {
+		return nil, errors.New("akun belum diverifikasi admin")
+	}
+
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(user.PasswordHash), 
+		[]byte(password),
+	)
 	if err != nil {
 		return nil, errors.New("password salah")
 	}
+
 	return user, nil
 }

@@ -10,28 +10,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RegisterRequest struct {
-	FullName string `json:"fullname" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Phone    string `json:"phone" binding:"required"`
-	Password string `json:"password" binding:"required,min=6"`
-}
+// type RegisterRequest struct {
+// 	FullName string `json:"fullname" binding:"required"`
+// 	Email    string `json:"email" binding:"required,email"`
+// 	Phone    string `json:"phone" binding:"required"`
+// 	Password string `json:"password" binding:"required,min=6"`
+// }
 
 func Register(c *gin.Context) {
-	var req RegisterRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	fullname := c.PostForm("fullname")
+	email := c.PostForm("email")
+	phone := c.PostForm("phone")
+	password := c.PostForm("password")
+
+	file, err := c.FormFile("registration_doc")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "dokumen wajib diupload"})
+		return
+	}
+
+	// Simpan file
+	filePath := "uploads/" + file.Filename
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menyimpan file"})
 		return
 	}
 
 	user := models.User{
-		FullName:     req.FullName,
-		Email:        req.Email,
-		Phone:        req.Phone,
-		PasswordHash: req.Password,
-		Role:         "customer",
-		IsVerified:   false,
+		FullName:        fullname,
+		Email:           email,
+		Phone:           phone,
+		PasswordHash:    password,
+		Role:            "customer",
+		IsVerified:      false,
+		RegistrationDoc: filePath,
 	}
 
 	if err := services.RegisterUser(&user); err != nil {
@@ -40,7 +53,7 @@ func Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Registrasi berhasil",
+		"message": "Registrasi berhasil, menunggu verifikasi admin",
 	})
 }
 
@@ -79,16 +92,5 @@ func Login(c *gin.Context) {
 			"role":     user.Role,
 		},
 	})
-
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"message": "Login berhasil",
-	// 	"user": gin.H{
-	// 		"id":       user.ID,
-	// 		"fullname": user.FullName,
-	// 		"email":    user.Email,
-	// 		"phone":    user.Phone,
-	// 		"role":     user.Role,
-	// 	},
-	// })
 
 }
