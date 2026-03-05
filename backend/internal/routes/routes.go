@@ -15,7 +15,7 @@ func RegisterRoutes(r *gin.Engine)  {
 		// PUBLIC
 		auth := api.Group("/auth")
 		{
-			auth.POST("/register", handlers.Register)
+			auth.POST("/register", handlers.RegisterCustomer)
 			auth.POST("/login", handlers.Login)
 		}
 
@@ -27,8 +27,9 @@ func RegisterRoutes(r *gin.Engine)  {
 
 			// ADMIN
 			adminGroup := protected.Group("/admin")
-			adminGroup.Use(middleware.RequireRole("admin"))	
+			adminGroup.Use(middleware.RequireRole("superadmin"))	
 			{
+				adminGroup.POST("/create-admin", handlers.CreateAdmin)
 				adminGroup.GET("/dashboard", handlers.AdminDashboard)
 				adminGroup.PUT("/verify/:id", handlers.VerifyUser)
 			}
@@ -38,6 +39,11 @@ func RegisterRoutes(r *gin.Engine)  {
 			customerGroup.Use(middleware.RequireRole("customer"))
 			{ 
 				customerGroup.GET("/dashboard", handlers.CustomerDashboard)
+				customerGroup.POST("/submissions", handlers.CreateSubmission)
+				customerGroup.GET("/submissions", handlers.GetMySubmissions)
+				// customerGroup.GET("/submissions/:id", handlers.GetSubmissionByID)
+				// customerGroup.PUT("/submissions/:id", handlers.UpdateSubmission)
+				// customerGroup.DELETE("/submissions/:id", handlers.DeleteSubmission)
 			}
 		}
 	

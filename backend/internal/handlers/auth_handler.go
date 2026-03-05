@@ -17,7 +17,7 @@ import (
 // 	Password string `json:"password" binding:"required,min=6"`
 // }
 
-func Register(c *gin.Context) {
+func RegisterCustomer(c *gin.Context) {
 
 	fullname := c.PostForm("fullname")
 	email := c.PostForm("email")
@@ -33,7 +33,9 @@ func Register(c *gin.Context) {
 	// Simpan file
 	filePath := "uploads/" + file.Filename
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menyimpan file"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "gagal menyimpan file", 
+		})
 		return
 	}
 
@@ -48,7 +50,9 @@ func Register(c *gin.Context) {
 	}
 
 	if err := services.RegisterUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(), 
+		})
 		return
 	}
 
