@@ -24,8 +24,8 @@ type Submission struct {
 	ProcessStatus    string    `gorm:"column:process_status;not null"`
 	AttachmentDoc string    `gorm:"column:attachment_doc"`
 
-	CreatedAt        time.Time 
-	UpdatedAt        time.Time 
+	// CreatedAt        time.Time 
+	// UpdatedAt        time.Time 
 
 	User User `gorm:"foreignKey:UserID"`
 }

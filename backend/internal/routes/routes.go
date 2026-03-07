@@ -39,13 +39,16 @@ func RegisterRoutes(r *gin.Engine)  {
 			customerGroup.Use(middleware.RequireRole("customer"))
 			{ 
 				customerGroup.GET("/dashboard", handlers.CustomerDashboard)
-				customerGroup.POST("/submissions", handlers.CreateSubmission)
-				customerGroup.GET("/submissions", handlers.GetMySubmissions)
-				// customerGroup.GET("/submissions/:id", handlers.GetSubmissionByID)
-				// customerGroup.PUT("/submissions/:id", handlers.UpdateSubmission)
-				// customerGroup.DELETE("/submissions/:id", handlers.DeleteSubmission)
+			}
+
+			submissionGroup := protected.Group("/submissions")
+			submissionGroup.Use(middleware.RequireRole("customer"))
+			{
+				submissionGroup.POST("/", handlers.CreateSubmission)
 			}
 		}
+
+		
 	
 		// api.GET("/ping", func(c *gin.Context) {
 		// 	c.JSON(200, gin.H{

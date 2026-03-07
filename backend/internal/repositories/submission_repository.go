@@ -18,3 +18,24 @@ func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
 
 	return submissions, err
 }
+
+func CreateSubmissionWithSamples(submission *models.Submission, samples []models.Sample) error {
+	
+	tx := db.DB.Begin()
+
+	if err := tx.Create(submission).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	for i := range samples {
+		samples[i].SubmissionID = submission.ID
+	}
+
+	if err := tx.Create(&samples).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
+}

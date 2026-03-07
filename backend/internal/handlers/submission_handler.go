@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	"si-bvet/internal/models"
+	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -10,20 +10,32 @@ import (
 
 func CreateSubmission(c *gin.Context) {
 	
-	userIDInterface, _ := c.Get("userID")
-	userID := userIDInterface.(uint)
-	
-	var req models.Submission
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "user_id tidak ditemukan di token",
+		})
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "invalid user_id type",
+		})
+		return
+	}
+		
+	var req dto.SubmissionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
-		
-	req.UserID = userID
 
-	if err := services.CreateSubmission(&req); err != nil {
+	err := services.CreateSubmissionWithSamples(userID, req)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
