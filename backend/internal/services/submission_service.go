@@ -12,10 +12,6 @@ func CreateSubmission(sub *models.Submission) error {
 	return repositories.CreateSubmission(sub)
 }
 
-func GetUserSubmission(userID uint) ([]models.Submission, error) {
-	return repositories.GetSubmissionsByUser(userID)
-}
-
 func CreateSubmissionWithSamples(userID uint, req dto.SubmissionRequest) error {
 
 	submission := models.Submission{
@@ -44,4 +40,12 @@ func CreateSubmissionWithSamples(userID uint, req dto.SubmissionRequest) error {
 	}
 
 	return repositories.CreateSubmissionWithSamples(&submission, samples)
+}
+
+func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
+	return repositories.GetSubmissionsByUser(userID)
+}
+
+func GetAllSubmissions() ([]models.Submission, error) {
+	return repositories.GetAllSubmissions()
 }

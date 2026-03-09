@@ -49,10 +49,17 @@ func CreateSubmission(c *gin.Context) {
 
 func GetMySubmissions(c *gin.Context) {
 
-	userIDInterface, _ := c.Get("userID")
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "user_id tidak ditemukan",
+		})
+		return
+	}
+
 	userID := userIDInterface.(uint)
 
-	data, err := services.GetUserSubmission(userID)
+	submissions, err := services.GetSubmissionsByUser(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -60,7 +67,20 @@ func GetMySubmissions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusOK, submissions)
+}
+
+func GetAllSubmissions(c *gin.Context) {
+
+	submissions, err := services.GetAllSubmissions()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, submissions)
 }
 
 

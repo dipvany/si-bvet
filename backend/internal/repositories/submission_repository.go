@@ -9,16 +9,6 @@ func CreateSubmission(sub *models.Submission) error {
 	return db.DB.Create(sub).Error
 }
 
-func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
-	var submissions []models.Submission
-
-	err := db.DB.Where("user_id = ?", userID).
-		Order("created_at desc").
-		Find(&submissions).Error
-
-	return submissions, err
-}
-
 func CreateSubmissionWithSamples(submission *models.Submission, samples []models.Sample) error {
 	
 	tx := db.DB.Begin()
@@ -38,4 +28,26 @@ func CreateSubmissionWithSamples(submission *models.Submission, samples []models
 	}
 
 	return tx.Commit().Error
+}
+
+func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
+	var submissions []models.Submission
+
+	err := db.DB.Where("user_id = ?", userID).
+		Order("id desc").
+		Find(&submissions).Error
+
+	return submissions, err
+}
+
+func GetAllSubmissions() ([]models.Submission, error) {
+
+	var submissions []models.Submission
+
+	err := db.DB.
+		Preload("User").
+		Order("id desc").
+		Find(&submissions).Error
+	
+	return submissions, err
 }
