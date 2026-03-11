@@ -39,6 +39,8 @@ func RegisterRoutes(r *gin.Engine)  {
 				adminGroup.GET("/dashboard", handlers.AdminDashboard)
 				adminGroup.PUT("/verify/:id", handlers.VerifyUser)
 				adminGroup.GET("/submissions", handlers.GetAllSubmissions)
+				adminGroup.PUT("/submissions/:id/approve", handlers.ApproveSubmission)
+				adminGroup.PUT("/submissions/:id/reject", handlers.RejectSubmission)
 			}
 
 			// CUSTOMER
@@ -46,14 +48,10 @@ func RegisterRoutes(r *gin.Engine)  {
 			customerGroup.Use(middleware.RequireRole("customer"))
 			{ 
 				customerGroup.GET("/dashboard", handlers.CustomerDashboard)
+				customerGroup.POST("/submissions", handlers.CreateSubmission)
+				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
 			}
 
-			submissionGroup := protected.Group("/submissions")
-			submissionGroup.Use(middleware.RequireRole("customer"))
-			{
-				submissionGroup.POST("/", handlers.CreateSubmission)
-				submissionGroup.GET("/my", handlers.GetMySubmissions)
-			}
 		}
 
 		

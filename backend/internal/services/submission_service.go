@@ -49,3 +49,11 @@ func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
 func GetAllSubmissions() ([]models.Submission, error) {
 	return repositories.GetAllSubmissions()
 }
+
+func ApproveSubmission(id uint) error {
+	return repositories.UpdateSubmissionStatus(id, "approved")
+}
+
+func RejectSubmission(id uint) error {
+	return repositories.UpdateSubmissionStatus(id, "rejected")
+}

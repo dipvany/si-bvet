@@ -51,3 +51,10 @@ func GetAllSubmissions() ([]models.Submission, error) {
 	
 	return submissions, err
 }
+
+func UpdateSubmissionStatus(id uint, status string) error {
+	return db.DB.
+		Model(&models.Submission{}).
+		Where("id = ?", id).
+		Update("process_status", status).Error
+}

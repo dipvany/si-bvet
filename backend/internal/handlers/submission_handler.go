@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -83,6 +84,56 @@ func GetAllSubmissions(c *gin.Context) {
 	c.JSON(http.StatusOK, submissions)
 }
 
+func ApproveSubmission(c *gin.Context) {
+	
+	idParam := c.Param("id")
+
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission ID",
+		})
+		return
+	}
+
+	err = services.ApproveSubmission(uint(idUint))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Submission approved",
+	})
+
+}
+
+func RejectSubmission(c *gin.Context) {
+	
+	idParam := c.Param("id")
+
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission ID",
+		})
+		return
+	}
+
+	err = services.RejectSubmission(uint(idUint))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Submission rejected",
+	})
+}
 
 	
 
