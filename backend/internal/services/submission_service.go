@@ -1,6 +1,7 @@
 package services
 
 import (
+	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -12,22 +13,29 @@ func CreateSubmission(sub *models.Submission) error {
 	return repositories.CreateSubmission(sub)
 }
 
-func CreateSubmissionWithSamples(userID uint, req dto.SubmissionRequest) error {
+func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest) error {
+
+	tx := db.DB.Begin()
 
 	submission := models.Submission{
 		UserID:        userID,
 		TypeService:   req.TypeService,
 		PurposeOfTest: req.PurposeOfTest,
 		SampleTaker:   req.SampleTaker,
-		SamplesCount:  int64(req.SamplesCount),
+		SamplesCount:  len(req.Samples),
 		Notes:         req.Notes,
 		ProcessStatus: "pending_verification",
 	}
 
-	var samples []models.Sample
+	if err := tx.Create(&submission).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
 
 	for _, s := range req.Samples {
-		samples = append(samples, models.Sample{
+		
+		sample := models.Sample{
+			SubmissionID: submission.ID,
 			SampleCodeCust:    s.SampleCodeCust,
 			SampleType:        s.SampleType,
 			Species:           s.Species,
@@ -35,11 +43,40 @@ func CreateSubmissionWithSamples(userID uint, req dto.SubmissionRequest) error {
 			Volume:            s.Volume,
 			Condition:         s.Condition,
 			LocationSmplTaken: s.LocationSmplTaken,
-			TotalSample:       s.TotalSample,
-		})
+			TotalSample:       int64(s.TotalSample),
+		}
+
+		if err := tx.Create(&sample).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		for _, t := range s.Tests {
+			
+			var service models.TestService
+
+			if err := tx.First(&service, t.TestServiceID).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			testReq := models.TestRequest{
+				SamplesID:      sample.ID,
+				TestServiceID: t.TestServiceID,
+				PriceAtMoment: service.Price,
+				Discount: 0,
+			}
+
+			if err := tx.Create(&testReq).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+
+		}
+
 	}
 
-	return repositories.CreateSubmissionWithSamples(&submission, samples)
+	return tx.Commit().Error
 }
 
 func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {

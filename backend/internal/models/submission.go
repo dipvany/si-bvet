@@ -20,7 +20,7 @@ type Submission struct {
 	CourierName       string     `gorm:"column:courier_name"`
 	CourierContact    string     `gorm:"column:courier_contact"`
 	Notes             string     `gorm:"column:notes"`
-	SamplesCount     int64     `gorm:"column:samples_count;not null"`
+	SamplesCount     int     `gorm:"column:samples_count;not null"`
 	ProcessStatus    string    `gorm:"column:process_status;not null"`
 	AttachmentDoc string    `gorm:"column:attachment_doc"`
 

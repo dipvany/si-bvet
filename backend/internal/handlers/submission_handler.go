@@ -28,6 +28,7 @@ func CreateSubmission(c *gin.Context) {
 	}
 		
 	var req dto.SubmissionRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -35,7 +36,7 @@ func CreateSubmission(c *gin.Context) {
 		return
 	}
 
-	err := services.CreateSubmissionWithSamples(userID, req)
+	err := services.CreateSubmissionWithSamplesAndTests(userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
