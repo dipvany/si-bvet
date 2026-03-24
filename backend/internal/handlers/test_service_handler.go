@@ -1,0 +1,124 @@
+package handlers
+
+import (
+	"net/http"
+	"si-bvet/internal/dto"
+	"si-bvet/internal/services"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+func CreateTestService(c *gin.Context) {
+	
+	var req dto.TestServiceRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	err := services.CreateTestService(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Jenis layanan pengujian berhasil dibuat",
+	})
+}
+
+func GetAllTestServices(c *gin.Context) {
+	services, err := services.GetAllTestServices()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, services)
+}
+
+func GetTestServiceByID(c *gin.Context) {
+	idParam := c.Param("id")
+
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID tidak valid",
+		})
+		return
+	}
+
+	service, err := services.GetTestServiceByID(uint(idUint))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Jenis layanan pengujian tidak ditemukan",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, service)
+}
+
+func UpdateTestService(c *gin.Context) {
+	idParam := c.Param("id")
+
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID tidak valid",
+		})
+		return
+	}
+
+	var req dto.TestServiceRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	err = services.UpdateTestService(uint(idUint), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Jenis layanan pengujian berhasil diperbarui",
+	})
+}
+
+func DeleteTestService(c *gin.Context) {
+	idParam := c.Param("id")
+
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID tidak valid",
+		})
+		return
+	}
+
+	err = services.DeleteTestService(uint(idUint))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Jenis layanan pengujian berhasil dihapus",
+	})
+}

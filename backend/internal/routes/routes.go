@@ -38,9 +38,16 @@ func RegisterRoutes(r *gin.Engine)  {
 			{
 				adminGroup.GET("/dashboard", handlers.AdminDashboard)
 				adminGroup.PUT("/verify/:id", handlers.VerifyUser)
+
 				adminGroup.GET("/submissions", handlers.GetAllSubmissions)
 				adminGroup.PUT("/submissions/:id/approve", handlers.ApproveSubmission)
 				adminGroup.PUT("/submissions/:id/reject", handlers.RejectSubmission)
+
+				adminGroup.POST("/test-services", handlers.CreateTestService)
+				adminGroup.GET("/test-services", handlers.GetAllTestServices)
+				adminGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
+				adminGroup.PUT("/test-services/:id", handlers.UpdateTestService)
+				adminGroup.DELETE("/test-services/:id", handlers.DeleteTestService)
 			}
 
 			// CUSTOMER
@@ -50,11 +57,12 @@ func RegisterRoutes(r *gin.Engine)  {
 				customerGroup.GET("/dashboard", handlers.CustomerDashboard)
 				customerGroup.POST("/submissions", handlers.CreateSubmission)
 				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
+				
+				customerGroup.GET("/test-services", handlers.GetAllTestServices)
+				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
 			}
 
 		}
-
-		
 	
 		// api.GET("/ping", func(c *gin.Context) {
 		// 	c.JSON(200, gin.H{
