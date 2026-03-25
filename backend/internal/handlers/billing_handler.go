@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"net/http"
+	"si-bvet/internal/dto"
 	"si-bvet/internal/repositories"
 	"si-bvet/internal/services"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,17 +16,14 @@ func CreateBilling(c *gin.Context) {
 	idParam := c.Param("submission_id")
 	idUint, _ := strconv.ParseUint(idParam, 10, 64)
 	
-	var req struct {
-		Code   string  `json:"code"`
-		Amount float64 `json:"amount"`
-	}
+	var req dto.BillingRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := services.CreateBilling(uint(idUint), req.Code, req.Amount)
+	err := services.CreateBilling(uint(idUint), req.EBillingCode, req.TotalAmount, time.Now())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -55,17 +54,14 @@ func UpdateBilling(c *gin.Context) {
 	idParam := c.Param("submission_id")
 	idUint, _ := strconv.ParseUint(idParam, 10, 64)
 
-	var req struct {
-		Code   string  `json:"code"`
-		Amount float64 `json:"amount"`
-	}
+	var req dto.BillingRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := services.UpdateBilling(uint(idUint), req.Code, req.Amount)
+	err := services.UpdateBilling(uint(idUint), req.EBillingCode, req.TotalAmount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func CreateBilling(submissionID uint, code string, amount float64) error {
-	now := time.Now()
+func CreateBilling(submissionID uint, code string, amount float64, now time.Time) error {
+	now = time.Now()
 
 	// cek apakah billing sudah ada untuk submission ini
 	exists, _ := repositories.IsBillingExists(submissionID)
