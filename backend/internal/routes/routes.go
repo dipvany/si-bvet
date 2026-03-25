@@ -48,6 +48,12 @@ func RegisterRoutes(r *gin.Engine)  {
 				adminGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
 				adminGroup.PUT("/test-services/:id", handlers.UpdateTestService)
 				adminGroup.DELETE("/test-services/:id", handlers.DeleteTestService)
+
+				adminGroup.POST("/billings/:submission_id", handlers.CreateBilling)
+				adminGroup.GET("/billings/:submission_id", handlers.GetBillingBySubmissionID)
+				adminGroup.PUT("/billings/:submission_id", handlers.UpdateBilling)
+				adminGroup.PUT("/billings/verify/:submission_id", handlers.VerifyPayment)
+				adminGroup.PUT("/billings/reject/:submission_id", handlers.RejectPayment)
 			}
 
 			// CUSTOMER
@@ -60,6 +66,9 @@ func RegisterRoutes(r *gin.Engine)  {
 				
 				customerGroup.GET("/test-services", handlers.GetAllTestServices)
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
+
+				customerGroup.GET("/billings/:submission_id", handlers.GetBillingBySubmissionID)
+				customerGroup.POST("/billings/upload-proof/:submission_id", handlers.UploadBillingProof)
 			}
 
 		}

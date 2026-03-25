@@ -10,8 +10,9 @@ type Billing struct {
 	PaymentStatus string  `gorm:"column:payment_status"`
 	PaidAt       *time.Time `gorm:"column:paid_at"`
 	IssuedAt     *time.Time `gorm:"column:issued_at"`
+	ProofPayment string `gorm:"column:proof_payment"`
 
-	Submission Submission `gorm:"foreignKey:SubmissionID"`
+	// Submission Submission `gorm:"foreignKey:SubmissionID"`
 }
 
 func (Billing) TableName() string {
