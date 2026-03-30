@@ -1,0 +1,80 @@
+package handlers
+
+import (
+	"net/http"
+	"si-bvet/internal/services"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+)
+
+func UploadLHU(c *gin.Context) {
+
+	idParam := c.Param("submission_id")
+	idUint, _ := strconv.ParseUint(idParam, 10, 64)
+
+	noLHU := c.PostForm("no_lhu")
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "file wajib diupload",
+		})
+		return
+	}
+
+	filePath := "uploads/lhu/" + file.Filename
+
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "gagal upload file",
+		})
+		return
+	}
+
+	err = services.UploadLHU(uint(idUint), noLHU, filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "LHU berhasil diupload",
+	})
+}
+
+func GetLHU(c *gin.Context) {
+
+	idParam := c.Param("submission_id")
+	idUint, _ := strconv.ParseUint(idParam, 10, 64)
+
+	lhu, err := services.GetLHU(uint(idUint))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "LHU belum tersedia",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, lhu)
+}
+
+// download LHU
+func DownloadLHU(c *gin.Context) {
+
+	idParam := c.Param("submission_id")
+	idUint, _ := strconv.ParseUint(idParam, 10, 64)
+
+	lhu, err := services.GetLHU(uint(idUint))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "LHU belum tersedia",
+		})
+		return
+	}
+
+	c.FileAttachment(lhu.FilePath, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
+}
+

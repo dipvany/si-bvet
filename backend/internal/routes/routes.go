@@ -54,6 +54,9 @@ func RegisterRoutes(r *gin.Engine)  {
 				adminGroup.PUT("/billings/:submission_id", handlers.UpdateBilling)
 				adminGroup.PUT("/billings/verify/:submission_id", handlers.VerifyPayment)
 				adminGroup.PUT("/billings/reject/:submission_id", handlers.RejectPayment)
+
+				adminGroup.PUT("/lhu/upload/:submission_id", handlers.UploadLHU)
+				adminGroup.GET("/lhu/:submission_id", handlers.GetLHU)
 			}
 
 			// CUSTOMER
@@ -69,6 +72,9 @@ func RegisterRoutes(r *gin.Engine)  {
 
 				customerGroup.GET("/billings/:submission_id", handlers.GetBillingBySubmissionID)
 				customerGroup.POST("/billings/upload-proof/:submission_id", handlers.UploadBillingProof)
+
+				customerGroup.GET("/lhu/:submission_id", handlers.GetLHU)
+				customerGroup.GET("/lhu/download/:submission_id", handlers.DownloadLHU)
 			}
 
 		}
