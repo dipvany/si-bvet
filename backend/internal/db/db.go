@@ -2,7 +2,9 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"si-bvet/internal/models"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,6 +30,26 @@ func InitDB() error {
 	}
 	
 	DB = db
+	
+	// Auto migrate models
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.Admin{},
+		&models.Customer{},
+		&models.Submission{},
+		&models.Sample{},
+		&models.Billing{},
+		&models.LhuDocument{},
+		&models.Feedback{},
+		&models.Complaint{},
+		&models.TestService{},
+		&models.TestRequest{},
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Database connected & automigrate success")
 	return nil
 	
 }

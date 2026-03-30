@@ -57,6 +57,11 @@ func RegisterRoutes(r *gin.Engine)  {
 
 				adminGroup.PUT("/lhu/upload/:submission_id", handlers.UploadLHU)
 				adminGroup.GET("/lhu/:submission_id", handlers.GetLHU)
+
+				adminGroup.GET("/feedbacks", handlers.GetAllFeedbacks)
+
+				adminGroup.GET("/complaints", handlers.GetAllComplaints)
+				adminGroup.PUT("/complaints/respond/:id", handlers.UpdateComplaintResponse)
 			}
 
 			// CUSTOMER
@@ -75,6 +80,12 @@ func RegisterRoutes(r *gin.Engine)  {
 
 				customerGroup.GET("/lhu/:submission_id", handlers.GetLHU)
 				customerGroup.GET("/lhu/download/:submission_id", handlers.DownloadLHU)
+
+				customerGroup.POST("/feedback", handlers.CreateFeedback)
+				customerGroup.GET("/feedback", handlers.GetMyFeedbacks)
+
+				customerGroup.GET("/complaints", handlers.GetMyComplaints)
+				customerGroup.POST("/complaints", handlers.CreateComplaint)
 			}
 
 		}
