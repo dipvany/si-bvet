@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func CreateLHu(submissionID uint, noLhu string, filePath string, dateOfPub string) error {
+func CreateLHu(submissionID uint, noLhu string, filePath string, dateOfPub *time.Time) error {
 
 	// cek apakah LHu sudah ada untuk submission ini
 	existingLHu, err := repositories.GetLhuBySubmissionID(submissionID)
@@ -45,7 +45,7 @@ func UploadLHU(submissionID uint, noLHU string, filePath string) error {
 		SubmissionID: submissionID,
 		NoLhu:        noLHU,
 		FilePath:     filePath,
-		DateOfPub:    now.Format("2006-01-02"),
+		DateOfPub:    &now,
 	}
 
 	err := repositories.CreateLhu(&lhu)

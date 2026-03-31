@@ -88,3 +88,14 @@ func VerifyUser(c *gin.Context) {
 		"message": "User berhasil diverifikasi",
 	})
 }
+
+func DeleteAdminAccount(c *gin.Context) {
+
+	id := c.Param("id")
+
+	var user models.User
+	if err := db.DB.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "admin tidak ditemukan"})
+		return
+	}
+}

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
@@ -87,10 +88,119 @@ func GetAllSubmissions() ([]models.Submission, error) {
 	return repositories.GetAllSubmissions()
 }
 
+func UpdateSubmission(id uint, data map[string]interface{}) error {
+	return repositories.UpdateSubmission(id, data)
+}
+
 func ApproveSubmission(id uint) error {
 	return repositories.UpdateSubmissionStatus(id, "approved")
 }
 
 func RejectSubmission(id uint) error {
 	return repositories.UpdateSubmissionStatus(id, "rejected")
+}
+
+func UpdateSubmissionWithSamplesAndTests(
+	submissionID uint,
+	userID uint,
+	req dto.UpdateSubmissionRequest,
+) error {
+
+	tx := db.DB.Begin()
+
+	var submission models.Submission
+	if err := tx.First(&submission, submissionID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// ownership check
+	if submission.UserID != userID {
+		tx.Rollback()
+		return errors.New("unauthorized")
+	}
+
+	// hanya boleh edit sebelum diverifikasi
+	if submission.ProcessStatus != "pending_verification" {
+		tx.Rollback()
+		return errors.New("submission tidak dapat diedit")
+	}
+
+	// update parent submission
+	submission.TypeService = req.TypeService
+	submission.PurposeOfTest = req.PurposeOfTest
+	submission.SampleTaker = req.SampleTaker
+	submission.Notes = req.Notes
+	submission.SamplesCount = len(req.Samples)
+
+	if err := tx.Save(&submission).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// hapus child lama
+	// if err := tx.Where("submission_id = ?", submissionID).
+	// 	Delete(&models.Sample{}).Error; err != nil {
+	// 	tx.Rollback()
+	// 	return err
+	// }
+
+	// hapus test request via join sample
+	if err := tx.Exec(`
+		DELETE FROM "TestRequest"
+		WHERE samples_id IN (
+			SELECT id FROM "Samples" WHERE submission_id = ?
+		)
+	`, submissionID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Where("submission_id = ?", submissionID).
+		Delete(&models.Sample{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+
+	// insert ulang sample + test baru
+	for _, sampleReq := range req.Samples {
+		sample := models.Sample{
+			SubmissionID:      submission.ID,
+			SampleCodeCust:    sampleReq.SampleCodeCust,
+			SampleType:        sampleReq.SampleType,
+			Species:           sampleReq.Species,
+			Age:               sampleReq.Age,
+			Volume:            sampleReq.Volume,
+			Condition:         sampleReq.Condition,
+			LocationSmplTaken: sampleReq.LocationSmplTaken,
+			TotalSample:       int64(sampleReq.TotalSample),
+		}
+
+		if err := tx.Create(&sample).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		for _, testReq := range sampleReq.Tests {
+			var service models.TestService
+			if err := tx.First(&service, testReq.TestServiceID).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+
+			test := models.TestRequest{
+				SamplesID:     sample.ID,
+				TestServiceID: testReq.TestServiceID,
+				PriceAtMoment: service.Price,
+			}
+
+			if err := tx.Create(&test).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	return tx.Commit().Error
 }

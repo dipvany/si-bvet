@@ -24,6 +24,7 @@ func RegisterRoutes(r *gin.Engine)  {
 		protected.Use(middleware.AuthMiddleware())
 		{
 			protected.GET("/profile", handlers.Profile)
+			protected.PUT("/profile", handlers.UpdateProfile)
 
 			// SUPERADMIN
 			superAdminGroup := protected.Group("/superadmin")
@@ -71,6 +72,7 @@ func RegisterRoutes(r *gin.Engine)  {
 				customerGroup.GET("/dashboard", handlers.CustomerDashboard)
 				customerGroup.POST("/submissions", handlers.CreateSubmission)
 				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
+				customerGroup.PUT("/submissions/:id", handlers.UpdateSubmission)
 				
 				customerGroup.GET("/test-services", handlers.GetAllTestServices)
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)

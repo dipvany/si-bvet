@@ -23,3 +23,11 @@ type SubmissionRequest struct {
 	Notes         string        `json:"notes"`
 	Samples       []SampleInput `json:"samples"`
 }
+
+type UpdateSubmissionRequest struct {
+	TypeService   string        `json:"type_service,omitempty"`
+	PurposeOfTest string        `json:"purpose_of_test,omitempty"`
+	SampleTaker   string        `json:"sample_taker,omitempty"`
+	Notes         string        `json:"notes,omitempty"`
+	Samples       []SampleInput `json:"samples,omitempty"`
+}

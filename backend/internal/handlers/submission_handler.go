@@ -136,5 +136,40 @@ func RejectSubmission(c *gin.Context) {
 	})
 }
 
-	
+func UpdateSubmission(c *gin.Context) {
 
+	userID := c.MustGet("user_id").(uint)
+
+	idParam := c.Param("id")
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission id",
+		})
+		return
+	}
+
+	var req dto.UpdateSubmissionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	err = services.UpdateSubmissionWithSamplesAndTests(
+		uint(idUint),
+		userID,
+		req,
+	)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Submission berhasil diperbarui",
+	})
+}

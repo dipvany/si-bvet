@@ -52,9 +52,22 @@ func GetAllSubmissions() ([]models.Submission, error) {
 	return submissions, err
 }
 
+// update submission sebelum diapprove/reject
+func UpdateSubmission(id uint, data map[string]interface{}) error {
+	return db.DB.Model(&models.Submission{}).
+		Where("id = ?", id).
+		Updates(data).Error
+}
+
 func UpdateSubmissionStatus(id uint, status string) error {
 	return db.DB.
 		Model(&models.Submission{}).
 		Where("id = ?", id).
 		Update("process_status", status).Error
+}
+
+func GetSubmissionByID(id uint) (models.Submission, error) {
+	var submission models.Submission
+	err := db.DB.First(&submission, id).Error
+	return submission, err
 }
