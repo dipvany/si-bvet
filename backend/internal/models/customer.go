@@ -9,6 +9,7 @@ type Customer struct {
 	PICContact   string `json:"pic_contact" gorm:"column:pic_contact"`
 	Province     string `json:"province" gorm:"column:province"`
 	City         string `json:"city" gorm:"column:city"`
+	District     string `json:"district" gorm:"column:district"`
 	Village      string `json:"village" gorm:"column:village"`
 	Address      string `json:"address" gorm:"type:text"`
 	ZipCode      string `json:"zip_code" gorm:"column:zip_code"`

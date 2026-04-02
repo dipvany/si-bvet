@@ -1,0 +1,2183 @@
+{
+  "info": {
+    "name": "SI-BVET Temporary API Contract",
+    "description": "Temporary API contract for frontend-backend communication. Source of truth is current Gin routes and handlers.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token_superadmin",
+      "value": ""
+    },
+    {
+      "key": "token_admin",
+      "value": ""
+    },
+    {
+      "key": "token_customer",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": "1"
+    },
+    {
+      "key": "submission_id",
+      "value": "1"
+    },
+    {
+      "key": "test_service_id",
+      "value": "1"
+    },
+    {
+      "key": "complaint_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth (Public)",
+      "item": [
+        {
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "fullname",
+                  "value": "PT Maju Sehat",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "customer@mail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "08123456789",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "secret123",
+                  "type": "text"
+                },
+                {
+                  "key": "registration_doc",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/auth/register",
+            "description": "Expected success: 201 { message }."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Registrasi berhasil, menunggu verifikasi admin\"\n}"
+            },
+            {
+              "name": "Bad Request",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"dokumen wajib diupload\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@mail.com\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/auth/login",
+            "description": "Expected success: 200 { message, token, user }"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Login berhasil\",\n  \"token\": \"<jwt_token>\",\n  \"user\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\"\n  }\n}"
+            },
+            {
+              "name": "Bad Request",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"invalid email or password\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Common Protected",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/profile"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"profile\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\",\n    \"customer\": {\n      \"group\": \"Perusahaan\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"PT Maju Sehat Tbk\",\n  \"phone\": \"08123456000\",\n  \"group\": \"Perusahaan\",\n  \"is_membership\": true,\n  \"membership_no\": \"MEM-001\",\n  \"pic_name\": \"Budi\",\n  \"pic_contact\": \"08129876543\",\n  \"province\": \"Lampung\",\n  \"city\": \"Bandar Lampung\",\n  \"district\": \"Rajabasa\",\n  \"village\": \"Gedong Meneng\",\n  \"address\": \"Jl. Soekarno Hatta\",\n  \"zip_code\": \"35141\",\n  \"occupation\": \"Peternakan\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/profile"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Profile berhasil diperbarui\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/dashboard"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Welcome to the customer dashboard\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Superadmin",
+      "item": [
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Admin Lab\",\n  \"email\": \"admin@mail.com\",\n  \"phone\": \"081200001111\",\n  \"password\": \"secret123\",\n  \"position\": \"Analis\",\n  \"unit_lab\": \"Virologi\",\n  \"employee_no\": \"EMP-001\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/superadmin/manage-account"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Admin berhasil dibuat\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Admin Account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Admin Lab Update\",\n  \"email\": \"admin.update@mail.com\",\n  \"phone\": \"081200001112\",\n  \"position\": \"Koordinator\",\n  \"unit_lab\": \"Bakteriologi\",\n  \"employee_no\": \"EMP-002\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Admin berhasil diperbarui\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Admin Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}",
+            "description": "Handler currently has incomplete implementation in backend. Keep as temporary contract endpoint only."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "Not Implemented",
+              "code": 501,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"temporary: endpoint registered but handler not finalized\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Admin",
+      "item": [
+        {
+          "name": "Get Unverified Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/manage-customer/unverified"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"customers\": [\n    {\n      \"id\": 2,\n      \"fullname\": \"PT Contoh\",\n      \"email\": \"new@mail.com\",\n      \"is_verified\": false\n    }\n  ]\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/manage-customer/verify/{{user_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"User berhasil diverifikasi\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/manage-customer/reject/{{user_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"User verification rejected and deleted\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/submissions"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"no_ticket\": \"TCK-2026-001\",\n    \"process_status\": \"submitted\"\n  }\n]"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Approve Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/approve"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Submission approved\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/reject"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Submission rejected\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Test Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_name\": \"PCR AI\",\n  \"unit_lab\": \"Virologi\",\n  \"target\": \"Avian Influenza\",\n  \"price\": 250000,\n  \"description\": \"Pemeriksaan PCR AI\",\n  \"sample_reqmt\": \"Swab trakea\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/test-services"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Jenis layanan pengujian berhasil dibuat\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Test Services (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/test-services"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"test_name\": \"PCR AI\",\n    \"unit_lab\": \"Virologi\",\n    \"price\": 250000\n  }\n]"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Test Service By ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 1,\n  \"test_name\": \"PCR AI\",\n  \"unit_lab\": \"Virologi\",\n  \"price\": 250000\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Test Service",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_name\": \"PCR AI Updated\",\n  \"unit_lab\": \"Virologi\",\n  \"target\": \"AI H5\",\n  \"price\": 275000,\n  \"description\": \"Pemeriksaan PCR AI update\",\n  \"sample_reqmt\": \"Swab kloaka\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Jenis layanan pengujian berhasil diperbarui\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Test Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Jenis layanan pengujian berhasil dihapus\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Billing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ebilling_code\": \"E-BILL-001\",\n  \"total_amount\": 550000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Billing created successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Billing By Submission (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 10,\n  \"submission_id\": 1,\n  \"ebilling_code\": \"E-BILL-001\",\n  \"total_amount\": 550000,\n  \"payment_status\": \"unpaid\",\n  \"proof_payment\": \"\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Billing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ebilling_code\": \"E-BILL-002\",\n  \"total_amount\": 600000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Billing updated successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/billings/verify/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Payment verified successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Reject Payment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/billings/reject/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Payment rejected successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload LHU",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "no_lhu",
+                  "value": "LHU-2026-0001",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/admin/lhu/upload/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"LHU berhasil diupload\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get LHU (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/lhu/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 4,\n  \"submission_id\": 1,\n  \"no_lhu\": \"LHU-2026-0001\",\n  \"file_path\": \"uploads/lhu/lhu-1.pdf\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/feedbacks"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"feedbacks\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"rating\": 5,\n      \"comments\": \"Pelayanan sangat baik\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Complaints",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/complaints"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"complaints\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"subjects\": \"Keterlambatan hasil\",\n      \"status\": \"open\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Respond Complaint",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"admin_response\": \"Terima kasih atas laporannya, kami tindak lanjuti.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/complaints/respond/{{complaint_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Complaint response updated successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Customer",
+      "item": [
+        {
+          "name": "Create Submission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type_service\": \"Reguler\",\n  \"purpose_of_test\": \"Surveilans\",\n  \"sample_taker\": \"Petugas Lapangan\",\n  \"notes\": \"Mohon diproses cepat\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"SMPL-001\",\n      \"sample_type\": \"Swab\",\n      \"species\": \"Ayam\",\n      \"age\": \"12 minggu\",\n      \"volume\": \"1 ml\",\n      \"condition\": \"Baik\",\n      \"location_smpl_taken\": \"Lampung Selatan\",\n      \"total_sample\": 10,\n      \"tests\": [\n        { \"test_service_id\": 1 },\n        { \"test_service_id\": 2 }\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/customer/submissions"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Pengajuan berhasil dibuat\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get My Submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/submissions/my"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"no_ticket\": \"TCK-2026-001\",\n    \"process_status\": \"submitted\",\n    \"samples_count\": 1\n  }\n]"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type_service\": \"Prioritas\",\n  \"purpose_of_test\": \"Investigasi\",\n  \"notes\": \"Update data sample\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Submission berhasil diperbarui\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Test Services (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/test-services"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "[\n  {\n    \"id\": 1,\n    \"test_name\": \"PCR AI\",\n    \"unit_lab\": \"Virologi\",\n    \"price\": 250000\n  }\n]"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Test Service By ID (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/test-services/{{test_service_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 1,\n  \"test_name\": \"PCR AI\",\n  \"unit_lab\": \"Virologi\",\n  \"price\": 250000\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Billing By Submission (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/billings/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 10,\n  \"submission_id\": 1,\n  \"ebilling_code\": \"E-BILL-001\",\n  \"total_amount\": 550000,\n  \"payment_status\": \"unpaid\",\n  \"proof_payment\": \"\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload Billing Proof",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "proof",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/customer/billings/upload-proof/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Proof of payment updated successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get LHU (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/lhu/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": 4,\n  \"submission_id\": 1,\n  \"no_lhu\": \"LHU-2026-0001\",\n  \"file_path\": \"uploads/lhu/lhu-1.pdf\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download LHU (Customer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/lhu/download/{{submission_id}}"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"data\": \"binary/pdf file stream\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comments\": \"Pelayanan sangat baik\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/customer/feedback"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Feedback submitted successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get My Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/feedback"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"feedbacks\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"rating\": 5,\n      \"comments\": \"Pelayanan sangat baik\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get My Complaints",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/complaints"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"complaints\": [\n    {\n      \"id\": 1,\n      \"subjects\": \"Keterlambatan hasil\",\n      \"status\": \"open\",\n      \"admin_response\": \"\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Complaint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "subjects",
+                  "value": "Keterlambatan hasil",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Hasil belum keluar lebih dari SLA",
+                  "type": "text"
+                },
+                {
+                  "key": "attachment",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/api/customer/complaints"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Complaint submitted successfully\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

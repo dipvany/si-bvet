@@ -18,30 +18,47 @@ func GetUserByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func GetUserByID(userID uint) (models.User, error) {
-	var user models.User
-	err := db.DB.First(&user, userID).Error
-	return user, err
-}
+func UpdateUserProfile(userID uint, data map[string]interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
 
-func UpdateUserProfile(userID uint, fullName string, phone string) error {
 	return db.DB.Model(&models.User{}).
 		Where("id = ?", userID).
-		Updates(map[string]interface{}{
-			"fullname": fullName,
-			"phone":    phone,
-		}).Error
+		Updates(data).Error
 }
 
 func UpdateCustomerProfile(userID uint, data map[string]interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
+
 	return db.DB.Model(&models.Customer{}).
 		Where("user_id = ?", userID).
 		Updates(data).Error
 }
 
 func UpdateAdminProfile(userID uint, data map[string]interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
+
 	return db.DB.Model(&models.Admin{}).
 		Where("user_id = ?", userID).
 		Updates(data).Error
+}
+
+// get customer yang belum diverifikasi
+func GetUnverifiedCustomers() ([]models.User, error) {
+	var users []models.User
+	err := db.DB.Where("role = ? AND is_verified = ?", "customer", false).Find(&users).Error
+	return users, err
+}
+
+// get semua data profile berdasarkan userID dan role
+func GetUserProfile(userID uint) (models.User, error) {
+	var user models.User
+	err := db.DB.Preload("Customer").Preload("Admin").Where("id = ?", userID).First(&user).Error
+	return user, err
 }
 

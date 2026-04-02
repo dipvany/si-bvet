@@ -12,6 +12,8 @@ type User struct {
 	IsVerified   bool      `json:"is_verified" gorm:"column:is_verified"`
 	VerifiedAt   *time.Time `json:"verified_at" gorm:"column:verified_at"`
 	RegistrationDoc string    `json:"-" gorm:"column:registration_doc"`
+	Customer     *Customer `json:"customer,omitempty" gorm:"foreignKey:UserID;references:ID"`
+	Admin        *Admin    `json:"admin,omitempty" gorm:"foreignKey:UserID;references:ID"`
 	CreatedAt    *time.Time `json:"created_at" gorm:"column:create_at"`
 	UpdatedAt    *time.Time `json:"updated_at" gorm:"column:update_at"`
 }

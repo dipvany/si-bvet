@@ -24,55 +24,60 @@ func RegisterRoutes(r *gin.Engine)  {
 		protected.Use(middleware.AuthMiddleware())
 		{
 			protected.GET("/profile", handlers.Profile)
-			protected.PUT("/profile", handlers.UpdateProfile)
+			protected.PATCH("/profile", handlers.UpdateProfile)
+			protected.GET("/dashboard", handlers.UserDashboard)
 
 			// SUPERADMIN
 			superAdminGroup := protected.Group("/superadmin")
 			superAdminGroup.Use(middleware.RequireRole("superadmin"))
 			{
-				superAdminGroup.POST("/create-admin", handlers.CreateAdmin)
+				superAdminGroup.POST("/manage-account", handlers.CreateAdmin)
+				superAdminGroup.PATCH("/manage-account/:id", handlers.UpdateAdminAccount)
+				superAdminGroup.DELETE("/manage-account/:id", handlers.DeleteAdminAccount)
 			}
 
 			// ADMIN
 			adminGroup := protected.Group("/admin")
 			adminGroup.Use(middleware.RequireRole("superadmin", "admin"))	
 			{
-				adminGroup.GET("/dashboard", handlers.AdminDashboard)
-				adminGroup.PUT("/verify/:id", handlers.VerifyUser)
+
+				adminGroup.GET("/manage-customer/unverified", handlers.GetUnverifiedCustomers)
+				adminGroup.PATCH("/manage-customer/verify/:id", handlers.VerifyUser)
+				adminGroup.PATCH("/manage-customer/reject/:id", handlers.RejectUser)
 
 				adminGroup.GET("/submissions", handlers.GetAllSubmissions)
-				adminGroup.PUT("/submissions/:id/approve", handlers.ApproveSubmission)
-				adminGroup.PUT("/submissions/:id/reject", handlers.RejectSubmission)
+				adminGroup.PATCH("/submissions/:id/approve", handlers.ApproveSubmission)
+				adminGroup.PATCH("/submissions/:id/reject", handlers.RejectSubmission)
 
 				adminGroup.POST("/test-services", handlers.CreateTestService)
 				adminGroup.GET("/test-services", handlers.GetAllTestServices)
 				adminGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
-				adminGroup.PUT("/test-services/:id", handlers.UpdateTestService)
+				adminGroup.PATCH("/test-services/:id", handlers.UpdateTestService)
 				adminGroup.DELETE("/test-services/:id", handlers.DeleteTestService)
 
 				adminGroup.POST("/billings/:submission_id", handlers.CreateBilling)
 				adminGroup.GET("/billings/:submission_id", handlers.GetBillingBySubmissionID)
-				adminGroup.PUT("/billings/:submission_id", handlers.UpdateBilling)
-				adminGroup.PUT("/billings/verify/:submission_id", handlers.VerifyPayment)
-				adminGroup.PUT("/billings/reject/:submission_id", handlers.RejectPayment)
+				adminGroup.PATCH("/billings/:submission_id", handlers.UpdateBilling)
+				adminGroup.PATCH("/billings/verify/:submission_id", handlers.VerifyPayment)
+				adminGroup.PATCH("/billings/reject/:submission_id", handlers.RejectPayment)
 
-				adminGroup.PUT("/lhu/upload/:submission_id", handlers.UploadLHU)
+				adminGroup.PATCH("/lhu/upload/:submission_id", handlers.UploadLHU)
 				adminGroup.GET("/lhu/:submission_id", handlers.GetLHU)
 
 				adminGroup.GET("/feedbacks", handlers.GetAllFeedbacks)
 
 				adminGroup.GET("/complaints", handlers.GetAllComplaints)
-				adminGroup.PUT("/complaints/respond/:id", handlers.UpdateComplaintResponse)
+				adminGroup.PATCH("/complaints/respond/:id", handlers.UpdateComplaintResponse)
 			}
 
 			// CUSTOMER
 			customerGroup := protected.Group("/customer")
 			customerGroup.Use(middleware.RequireRole("customer"))
 			{ 
-				customerGroup.GET("/dashboard", handlers.CustomerDashboard)
+
 				customerGroup.POST("/submissions", handlers.CreateSubmission)
 				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
-				customerGroup.PUT("/submissions/:id", handlers.UpdateSubmission)
+				customerGroup.PATCH("/submissions/:id", handlers.UpdateSubmission)
 				
 				customerGroup.GET("/test-services", handlers.GetAllTestServices)
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)

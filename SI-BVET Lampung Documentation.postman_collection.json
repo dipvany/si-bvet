@@ -1,0 +1,621 @@
+{
+  "info": {
+    "_postman_id": "afdb7c31-0251-40c6-a08b-e253e62b377b",
+    "name": "SI-BVET Lampung Documentation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "38896303"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Dashboard",
+          "item": [
+            {
+              "name": "Dashboard Superadmin",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NTEwNjAzMywiaWF0IjoxNzc1MDE5NjMzfQ.lCkflzUWOrYlcnQ04NydUjZf9yYr3SEQlSA7u7ZCSE0",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/dashboard",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "dashboard"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "Dashboard Superadmin",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{base_url}}/dashboard",
+                      "host": [
+                        "{{base_url}}"
+                      ],
+                      "path": [
+                        "dashboard"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json; charset=utf-8"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 01 Apr 2026 05:39:38 GMT"
+                    },
+                    {
+                      "key": "Content-Length",
+                      "value": "49"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"message\": \"Welcome to the superadmin dashboard\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"divany@test.com\",\r\n  \"password\": \"password123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Login User",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"email\": \"divany@test.com\",\r\n  \"password\": \"password123\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/auth/login",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Tue, 31 Mar 2026 09:44:48 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "303"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Login berhasil\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NTAzNjY4OCwiaWF0IjoxNzc0OTUwMjg4fQ.MJ6P_fCg-t7HsLIeGmKsF1E86Wys5h7VwIlsKz0a2rs\",\n    \"user\": {\n        \"email\": \"divany@test.com\",\n        \"fullname\": \"Divany Pangestika\",\n        \"id\": 4,\n        \"role\": \"superadmin\"\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Register Customer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NTAzNjY4OCwiaWF0IjoxNzc0OTUwMjg4fQ.MJ6P_fCg-t7HsLIeGmKsF1E86Wys5h7VwIlsKz0a2rs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "fullname",
+                  "value": "Siti Aisyah",
+                  "type": "text",
+                  "uuid": "616dc217-cb86-42a9-b8ba-698afc746be2"
+                },
+                {
+                  "key": "email",
+                  "value": "sitiaisyah@mail.com",
+                  "type": "text",
+                  "uuid": "e137214c-5375-4652-b62d-cbc227274f01"
+                },
+                {
+                  "key": "phone",
+                  "value": "08123456789",
+                  "type": "text",
+                  "uuid": "94e7de57-056c-408c-aa3e-cbcd84e1ef0a"
+                },
+                {
+                  "key": "password_hash",
+                  "value": "siti12345678",
+                  "type": "text",
+                  "uuid": "4233fc79-8b73-48b0-a0e9-33c565e3f5d1"
+                },
+                {
+                  "key": "registration_doc",
+                  "type": "file",
+                  "uuid": "fa33a57a-ca45-424c-987f-89097072c897",
+                  "src": "/D:/Documents/File Kuliah/Skripsweet/Surat-surat/SURAT PENGANTAR IZIN PENELITIAN_AMEL-DIVANY.pdf"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Register Customer",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "fullname",
+                      "value": "Siti Aisyah",
+                      "type": "text",
+                      "uuid": "616dc217-cb86-42a9-b8ba-698afc746be2"
+                    },
+                    {
+                      "key": "email",
+                      "value": "sitiaisyah@mail.com",
+                      "type": "text",
+                      "uuid": "e137214c-5375-4652-b62d-cbc227274f01"
+                    },
+                    {
+                      "key": "phone",
+                      "value": "08123456789",
+                      "type": "text",
+                      "uuid": "94e7de57-056c-408c-aa3e-cbcd84e1ef0a"
+                    },
+                    {
+                      "key": "password_hash",
+                      "value": "siti12345678",
+                      "type": "text",
+                      "uuid": "4233fc79-8b73-48b0-a0e9-33c565e3f5d1"
+                    },
+                    {
+                      "key": "registration_doc",
+                      "type": "file",
+                      "uuid": "fa33a57a-ca45-424c-987f-89097072c897",
+                      "src": "/D:/Documents/File Kuliah/Skripsweet/Surat-surat/SURAT PENGANTAR IZIN PENELITIAN_AMEL-DIVANY.pdf"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 01 Apr 2026 05:08:09 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "60"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Registrasi berhasil, menunggu verifikasi admin\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Register Customer Copy",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NTAzNjY4OCwiaWF0IjoxNzc0OTUwMjg4fQ.MJ6P_fCg-t7HsLIeGmKsF1E86Wys5h7VwIlsKz0a2rs",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "fullname",
+                  "value": "Joko Permono",
+                  "type": "text",
+                  "uuid": "616dc217-cb86-42a9-b8ba-698afc746be2"
+                },
+                {
+                  "key": "email",
+                  "value": "jokopermono@mail.com",
+                  "type": "text",
+                  "uuid": "e137214c-5375-4652-b62d-cbc227274f01"
+                },
+                {
+                  "key": "phone",
+                  "value": "08123456789",
+                  "type": "text",
+                  "uuid": "94e7de57-056c-408c-aa3e-cbcd84e1ef0a"
+                },
+                {
+                  "key": "password_hash",
+                  "value": "joko12345678",
+                  "type": "text",
+                  "uuid": "4233fc79-8b73-48b0-a0e9-33c565e3f5d1"
+                },
+                {
+                  "key": "registration_doc",
+                  "type": "file",
+                  "uuid": "4d1179e7-be4b-4acc-9657-daded8a98e1c",
+                  "src": "/D:/Documents/File Kuliah/Skripsweet/Surat-surat/SURAT PENGANTAR IZIN PENELITIAN.docx"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Register Customer Copy",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "fullname",
+                      "value": "Joko Permono",
+                      "type": "text",
+                      "uuid": "616dc217-cb86-42a9-b8ba-698afc746be2"
+                    },
+                    {
+                      "key": "email",
+                      "value": "jokopermono@mail.com",
+                      "type": "text",
+                      "uuid": "e137214c-5375-4652-b62d-cbc227274f01"
+                    },
+                    {
+                      "key": "phone",
+                      "value": "08123456789",
+                      "type": "text",
+                      "uuid": "94e7de57-056c-408c-aa3e-cbcd84e1ef0a"
+                    },
+                    {
+                      "key": "password_hash",
+                      "value": "joko12345678",
+                      "type": "text",
+                      "uuid": "4233fc79-8b73-48b0-a0e9-33c565e3f5d1"
+                    },
+                    {
+                      "key": "registration_doc",
+                      "type": "file",
+                      "uuid": "4d1179e7-be4b-4acc-9657-daded8a98e1c",
+                      "src": "/D:/Documents/File Kuliah/Skripsweet/Surat-surat/SURAT PENGANTAR IZIN PENELITIAN.docx"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/register",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 01 Apr 2026 06:03:51 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "60"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Registrasi berhasil, menunggu verifikasi admin\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin/Superadmin",
+      "item": [
+        {
+          "name": "Manage Unverified Customer",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NTEwNjAzMywiaWF0IjoxNzc1MDE5NjMzfQ.lCkflzUWOrYlcnQ04NydUjZf9yYr3SEQlSA7u7ZCSE0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/manage-customer/unverified",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "manage-customer",
+                "unverified"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Manage Unverified Customer",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/manage-customer/unverified",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "manage-customer",
+                    "unverified"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 01 Apr 2026 06:04:29 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "489"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"customers\": [\n        {\n            \"id\": 7,\n            \"fullname\": \"Siti Aisyah\",\n            \"email\": \"sitiaisyah@mail.com\",\n            \"phone\": \"08123456789\",\n            \"role\": \"customer\",\n            \"is_verified\": false,\n            \"verified_at\": null,\n            \"created_at\": \"2026-04-01T12:08:09.304068+07:00\",\n            \"updated_at\": \"2026-04-01T12:08:09.304068+07:00\"\n        },\n        {\n            \"id\": 8,\n            \"fullname\": \"Joko Permono\",\n            \"email\": \"jokopermono@mail.com\",\n            \"phone\": \"08123456789\",\n            \"role\": \"customer\",\n            \"is_verified\": false,\n            \"verified_at\": null,\n            \"created_at\": \"2026-04-01T13:03:51.001+07:00\",\n            \"updated_at\": \"2026-04-01T13:03:51.001+07:00\"\n        }\n    ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify Customer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJyb2xlIjoic3VwZXJhZG1pbiIsImV4cCI6MTc3NTEwOTI3OSwiaWF0IjoxNzc1MDIyODc5fQ.Llc5J-GEkhLXZ7r2PRwSUjKosBArlodIr9WkazPjerA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/manage-customer/verify/7",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "manage-customer",
+                "verify",
+                "7"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Verify Customer",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/manage-customer/verify/7",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "manage-customer",
+                    "verify",
+                    "7"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Wed, 01 Apr 2026 06:06:31 GMT"
+                },
+                {
+                  "key": "Content-Length",
+                  "value": "40"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"User berhasil diverifikasi\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": ""
+    }
+  ]
+}

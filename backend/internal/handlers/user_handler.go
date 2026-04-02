@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// get user profile
+// get semua data profile berdasarkan userID dan role
 func Profile(c *gin.Context) {
 
 	userID := c.MustGet("user_id").(uint)
-	user, err := services.GetUserByID(userID)
 
+	profile, err := services.GetUserProfile(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -22,7 +22,7 @@ func Profile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"profile": profile,
 	})
 }
 
@@ -31,7 +31,7 @@ func UpdateProfile(c *gin.Context) {
 	userID := c.MustGet("user_id").(uint)
 	role := c.MustGet("role").(string)
 
-	var req dto.UpdateProfileRequest
+	var req dto.ProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -51,3 +51,13 @@ func UpdateProfile(c *gin.Context) {
 		"message": "Profile berhasil diperbarui",
 	})
 }
+
+// dashboard user berdasarkan role
+func UserDashboard(c *gin.Context) {
+
+	role := c.MustGet("role").(string)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome to the " + role + " dashboard",
+	})
+}
+

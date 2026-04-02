@@ -14,42 +14,87 @@ func GetUserByEmail(email string) (*models.User, error) {
 	return repositories.GetUserByEmail(email)
 }
 
-func GetUserByID(userID uint) (models.User, error) {
-	return repositories.GetUserByID(userID)
-}
-
-func UpdateProfile(userID uint, role string, req dto.UpdateProfileRequest) error {
+func UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
+	userUpdates := map[string]interface{}{}
+	if req.FullName != nil {
+		userUpdates["fullname"] = *req.FullName
+	}
+	if req.Phone != nil {
+		userUpdates["phone"] = *req.Phone
+	}
 
 	// update common user data
-	if err := repositories.UpdateUserProfile(userID, req.FullName, req.Phone); err != nil {
+	if err := repositories.UpdateUserProfile(userID, userUpdates); err != nil {
 		return err
 	}
 
 	if role == "customer" {
-		return repositories.UpdateCustomerProfile(userID, map[string]interface{}{
-			"group":         req.Group,
-			"is_membership": req.IsMembership,
-			"membership_no": req.MembershipNo,
-			"pic_name":      req.PICName,
-			"pic_contact":   req.PICContact,
-			"province":      req.Province,
-			"city":          req.City,
-			"village":       req.Village,
-			"address":       req.Address,
-			"zip_code":      req.ZipCode,
-			"occupation":    req.Occupation,
-		})
+		customerUpdates := map[string]interface{}{}
+		if req.Group != nil {
+			customerUpdates["group"] = *req.Group
+		}
+		if req.IsMembership != nil {
+			customerUpdates["is_membership"] = *req.IsMembership
+		}
+		if req.MembershipNo != nil {
+			customerUpdates["membership_no"] = *req.MembershipNo
+		}
+		if req.PICName != nil {
+			customerUpdates["pic_name"] = *req.PICName
+		}
+		if req.PICContact != nil {
+			customerUpdates["pic_contact"] = *req.PICContact
+		}
+		if req.Province != nil {
+			customerUpdates["province"] = *req.Province
+		}
+		if req.City != nil {
+			customerUpdates["city"] = *req.City
+		}
+		if req.District != nil {
+			customerUpdates["district"] = *req.District
+		}
+		if req.Village != nil {
+			customerUpdates["village"] = *req.Village
+		}
+		if req.Address != nil {
+			customerUpdates["address"] = *req.Address
+		}
+		if req.ZipCode != nil {
+			customerUpdates["zip_code"] = *req.ZipCode
+		}
+		if req.Occupation != nil {
+			customerUpdates["occupation"] = *req.Occupation
+		}
+
+		return repositories.UpdateCustomerProfile(userID, customerUpdates)
 	}
 
 	if role == "admin" {
-		return repositories.UpdateAdminProfile(userID, map[string]interface{}{
-			"position":    req.Position,
-			"unit_lab":    req.UnitLab,
-			"employee_no": req.EmployeeNo,
-		})
+		adminUpdates := map[string]interface{}{}
+		if req.Position != nil {
+			adminUpdates["position"] = *req.Position
+		}
+		if req.UnitLab != nil {
+			adminUpdates["unit_lab"] = *req.UnitLab
+		}
+		if req.EmployeeNo != nil {
+			adminUpdates["employee_no"] = *req.EmployeeNo
+		}
+
+		return repositories.UpdateAdminProfile(userID, adminUpdates)
 	}
 
 	return nil
 }
 
+// get profile lengkap berdasarkan userID
+func GetUserProfile(userID uint) (models.User, error) {
+	return repositories.GetUserProfile(userID)
+}
+
+// get customer yang belum diverifikasi
+func GetUnverifiedCustomers() ([]models.User, error) {
+	return repositories.GetUnverifiedCustomers()
+}
 
