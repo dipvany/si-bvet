@@ -22,6 +22,7 @@ func Profile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
+		"message": "Profile retrieved successfully",
 		"profile": profile,
 	})
 }
@@ -48,7 +49,7 @@ func UpdateProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Profile berhasil diperbarui",
+		"message": "Profile updated successfully",
 	})
 }
 

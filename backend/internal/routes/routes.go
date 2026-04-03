@@ -34,6 +34,7 @@ func RegisterRoutes(r *gin.Engine)  {
 				superAdminGroup.POST("/manage-account", handlers.CreateAdmin)
 				superAdminGroup.PATCH("/manage-account/:id", handlers.UpdateAdminAccount)
 				superAdminGroup.DELETE("/manage-account/:id", handlers.DeleteAdminAccount)
+				superAdminGroup.GET("/manage-account", handlers.GetAllAdminAccounts)
 			}
 
 			// ADMIN

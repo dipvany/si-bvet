@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"si-bvet/internal/db"
@@ -50,10 +51,39 @@ func CreateAdmin(c *gin.Context) {
 	db.DB.Create(&admin)
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Admin berhasil dibuat",
+		"message": "Admin account created successfully",
 	})
 }
 
+// get all admin account
+func GetAllAdminAccounts(c *gin.Context) {
+
+	var admins []models.Admin
+	if err := db.DB.Preload("User").Find(&admins).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve admin accounts"})
+		return
+	}
+
+	var adminList []map[string]interface{}
+	for _, admin := range admins {
+		adminData := map[string]interface{}{
+			"id":         admin.User.ID,
+			"fullname":   admin.User.FullName,
+			"email":      admin.User.Email,
+			"phone":      admin.User.Phone,
+			"position":   admin.Position,
+			"unit_lab":   admin.UnitLab,	
+			"employee_no": admin.EmployeeNo,
+			"role":       admin.User.Role,
+		}
+		adminList = append(adminList, adminData)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Admin accounts retrieved successfully",
+		"admins": adminList,
+	})
+}
 
 func VerifyUser(c *gin.Context) {
 
@@ -61,7 +91,7 @@ func VerifyUser(c *gin.Context) {
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user tidak ditemukan"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
@@ -72,7 +102,7 @@ func VerifyUser(c *gin.Context) {
 	db.DB.Save(&user)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "User berhasil diverifikasi",
+		"message": "User verification successful",
 	})
 }
 
@@ -83,7 +113,7 @@ func RejectUser(c *gin.Context) {
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user tidak ditemukan"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
@@ -100,35 +130,42 @@ func DeleteAdminAccount(c *gin.Context) {
 
 	var user models.User
 	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "admin tidak ditemukan"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "admin not found"})
 		return
 	}
 
 	db.DB.Delete(&user)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Admin berhasil dihapus",
+		"message": "Admin successfully deleted",
 	})
 }
 
 // update admin account details (except password)
 func UpdateAdminAccount(c *gin.Context) {
-	id := c.Param("id")
-
-	var user models.User
-	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "admin tidak ditemukan"})
+	idParam := c.Param("id")
+	userID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid admin id"})
 		return
 	}
 
+	var admin models.Admin
+	if err := db.DB.Preload("User").Where("user_id = ?", uint(userID)).First(&admin).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "admin profile not found for this user"})
+		return
+	}
+
+	user := admin.User
+
 	var req struct {
-		FullName string `json:"fullname"`
-		Email    string `json:"email" binding:"email"`
-		Phone    string `json:"phone"`
-		Position string `json:"position"` 
-		UnitLab   string `json:"unit_lab"`
-		EmployeeNo string `json:"employee_no"` 
-		Role	 string `json:"role"`
+		FullName   *string `json:"fullname"`
+		Email      *string `json:"email" binding:"omitempty,email"`
+		Phone      *string `json:"phone"`
+		Position   *string `json:"position"`
+		UnitLab    *string `json:"unit_lab"`
+		EmployeeNo *string `json:"employee_no"`
+		Role       *string `json:"role"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -138,26 +175,34 @@ func UpdateAdminAccount(c *gin.Context) {
 		return
 	}
 
-	user.FullName = req.FullName
-	user.Email = req.Email
-	user.Phone = req.Phone
-	user.Role = req.Role
-
-	var admin models.Admin
-	if err := db.DB.Where("user_id = ?", user.ID).First(&admin).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "admin tidak ditemukan"})
-		return
+	if req.FullName != nil {
+		user.FullName = *req.FullName
+	}
+	if req.Email != nil {
+		user.Email = *req.Email
+	}
+	if req.Phone != nil {
+		user.Phone = *req.Phone
+	}
+	if req.Role != nil {
+		user.Role = *req.Role
 	}
 
-	admin.Position = req.Position
-	admin.UnitLab = req.UnitLab
-	admin.EmployeeNo = req.EmployeeNo
+	if req.Position != nil {
+		admin.Position = *req.Position
+	}
+	if req.UnitLab != nil {
+		admin.UnitLab = *req.UnitLab
+	}
+	if req.EmployeeNo != nil {
+		admin.EmployeeNo = *req.EmployeeNo
+	}
 
 	db.DB.Save(&user)
 	db.DB.Save(&admin)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Admin berhasil diperbarui",
+		"message": "Admin successfully updated",
 	})
 }
 
@@ -172,6 +217,7 @@ func GetUnverifiedCustomers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
+		"message": "Unverified customers retrieved successfully",
 		"customers": customers,
 	})
 }

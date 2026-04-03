@@ -28,7 +28,7 @@ func CreateTestService(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Jenis layanan pengujian berhasil dibuat",
+		"message": "Test service created successfully",
 	})
 }
 
@@ -50,7 +50,7 @@ func GetTestServiceByID(c *gin.Context) {
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ID tidak valid",
+			"error": "invalid ID",
 		})
 		return
 	}
@@ -58,7 +58,7 @@ func GetTestServiceByID(c *gin.Context) {
 	service, err := services.GetTestServiceByID(uint(idUint))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Jenis layanan pengujian tidak ditemukan",
+			"error": "Test service not found",
 		})
 		return
 	}
@@ -72,7 +72,7 @@ func UpdateTestService(c *gin.Context) {
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ID tidak valid",
+			"error": "invalid ID",
 		})
 		return
 	}
@@ -95,7 +95,7 @@ func UpdateTestService(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Jenis layanan pengujian berhasil diperbarui",
+		"message": "Test service updated successfully",
 	})
 }
 
@@ -105,7 +105,7 @@ func DeleteTestService(c *gin.Context) {
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "ID tidak valid",
+			"error": "invalid ID",
 		})
 		return
 	}
@@ -119,6 +119,6 @@ func DeleteTestService(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Jenis layanan pengujian berhasil dihapus",
+		"message": "Test service deleted successfully",
 	})
 }

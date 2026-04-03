@@ -20,7 +20,7 @@ func RegisterCustomer(c *gin.Context) {
 
 	file, err := c.FormFile("registration_doc")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "dokumen wajib diupload"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "document registration is required"})
 		return
 	}
 
@@ -28,7 +28,7 @@ func RegisterCustomer(c *gin.Context) {
 	filePath := "uploads/" + file.Filename
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "gagal menyimpan file", 
+			"error": "failed to save file",
 		})
 		return
 	}
@@ -51,7 +51,7 @@ func RegisterCustomer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Registrasi berhasil, menunggu verifikasi admin",
+		"message": "Registration successful, waiting for admin verification",
 	})
 }
 
@@ -77,7 +77,7 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login berhasil",
+		"message": "Login successful",
 		"token": token,
 		"user": gin.H{
 			"id":       user.ID,

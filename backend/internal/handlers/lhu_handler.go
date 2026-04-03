@@ -18,7 +18,7 @@ func UploadLHU(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "file wajib diupload",
+			"error": "file LHU is required",
 		})
 		return
 	}
@@ -27,7 +27,7 @@ func UploadLHU(c *gin.Context) {
 
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "gagal upload file",
+			"error": "failed to save file",
 		})
 		return
 	}
@@ -41,7 +41,7 @@ func UploadLHU(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "LHU berhasil diupload",
+		"message": "LHU file uploaded successfully",
 	})
 }
 
@@ -53,7 +53,7 @@ func GetLHU(c *gin.Context) {
 	lhu, err := services.GetLHU(uint(idUint))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "LHU belum tersedia",
+			"error": "LHU not available yet",
 		})
 		return
 	}
@@ -70,7 +70,7 @@ func DownloadLHU(c *gin.Context) {
 	lhu, err := services.GetLHU(uint(idUint))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "LHU belum tersedia",
+			"error": "LHU not available yet",
 		})
 		return
 	}

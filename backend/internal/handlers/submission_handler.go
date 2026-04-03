@@ -14,7 +14,7 @@ func CreateSubmission(c *gin.Context) {
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "user_id tidak ditemukan di token",
+			"error": "user_id not found",
 		})
 		return
 	}
@@ -45,7 +45,7 @@ func CreateSubmission(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Pengajuan berhasil dibuat",
+		"message": "Submission created successfully",
 	})
 }
 
@@ -54,7 +54,7 @@ func GetMySubmissions(c *gin.Context) {
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "user_id tidak ditemukan",
+			"error": "user_id not found",
 		})
 		return
 	}
@@ -170,7 +170,7 @@ func UpdateSubmission(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Submission berhasil diperbarui",
+		"message": "Submission updated successfully",
 	})
 }
 
@@ -199,7 +199,7 @@ func GetSubmissionTrackingTimeline(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Tracking timeline berhasil diambil",
+		"message": "Tracking timeline retrieved successfully",
 		"data":    resp,
 	})
 }
