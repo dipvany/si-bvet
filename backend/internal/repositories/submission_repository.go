@@ -71,3 +71,14 @@ func GetSubmissionByID(id uint) (models.Submission, error) {
 	err := db.DB.First(&submission, id).Error
 	return submission, err
 }
+
+func GetSubmissionTracking(id uint) (models.Submission, error) {
+	var submission models.Submission
+	
+	err := db.DB.
+		Preload("Billing").
+		Preload("LHU").
+		First(&submission, id).Error
+		
+	return submission, err
+}

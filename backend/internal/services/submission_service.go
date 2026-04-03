@@ -204,3 +204,89 @@ func UpdateSubmissionWithSamplesAndTests(
 
 	return tx.Commit().Error
 }
+
+func GetSubmissionTracking(submissionID uint, userID uint) (dto.SubmissionTrackingResponse, error) {
+
+	submission, err := repositories.GetSubmissionTracking(submissionID)
+	if err != nil {
+		return dto.SubmissionTrackingResponse{}, err
+	}
+
+	// ownership validation
+	if submission.UserID != userID {
+		return dto.SubmissionTrackingResponse{}, errors.New("unauthorized")
+	}
+
+	resp := dto.SubmissionTrackingResponse{
+		SubmissionID:  submission.ID,
+		ProcessStatus: submission.ProcessStatus,
+		LHUAvailable:  submission.Lhu != nil,
+	}
+
+	if submission.Billing != nil {
+		resp.BillingStatus = submission.Billing.PaymentStatus
+	}
+
+	return resp, nil
+}
+
+func GetSubmissionTrackingTimeline(
+	submissionID uint,
+	userID uint,
+) (dto.SubmissionTrackingTimelineResponse, error) {
+
+	submission, err := repositories.GetSubmissionTracking(submissionID)
+	if err != nil {
+		return dto.SubmissionTrackingTimelineResponse{}, err
+	}
+
+	if submission.UserID != userID {
+		return dto.SubmissionTrackingTimelineResponse{}, errors.New("unauthorized")
+	}
+
+	steps := []dto.TrackingStep{
+		{Step: 1, Label: "Pengajuan dibuat", Status: "completed"},
+		{Step: 2, Label: "Diverifikasi admin", Status: "pending"},
+		{Step: 3, Label: "Menunggu pembayaran", Status: "pending"},
+		{Step: 4, Label: "Sedang diproses lab", Status: "pending"},
+		{Step: 5, Label: "LHU tersedia", Status: "pending"},
+	}
+
+	currentStep := 1
+
+	switch submission.ProcessStatus {
+	case "pending_verification":
+		currentStep = 1
+		steps[0].Status = "current"
+
+	case "menunggu_pembayaran":
+		currentStep = 3
+		steps[1].Status = "completed"
+		steps[2].Status = "current"
+
+	case "menunggu_verifikasi_pembayaran":
+		currentStep = 3
+		steps[1].Status = "completed"
+		steps[2].Status = "current"
+
+	case "diproses":
+		currentStep = 4
+		steps[1].Status = "completed"
+		steps[2].Status = "completed"
+		steps[3].Status = "current"
+
+	case "selesai":
+		currentStep = 5
+		for i := range steps[:4] {
+			steps[i].Status = "completed"
+		}
+		steps[4].Status = "current"
+	}
+
+	return dto.SubmissionTrackingTimelineResponse{
+		SubmissionID:  submission.ID,
+		CurrentStep:   currentStep,
+		CurrentStatus: submission.ProcessStatus,
+		Timeline:      steps,
+	}, nil
+}

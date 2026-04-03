@@ -78,6 +78,7 @@ func RegisterRoutes(r *gin.Engine)  {
 				customerGroup.POST("/submissions", handlers.CreateSubmission)
 				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
 				customerGroup.PATCH("/submissions/:id", handlers.UpdateSubmission)
+				customerGroup.GET("/submissions/:id/tracking", handlers.GetSubmissionTrackingTimeline)
 				
 				customerGroup.GET("/test-services", handlers.GetAllTestServices)
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)

@@ -173,3 +173,33 @@ func UpdateSubmission(c *gin.Context) {
 		"message": "Submission berhasil diperbarui",
 	})
 }
+
+func GetSubmissionTrackingTimeline(c *gin.Context) {
+
+	userID := c.MustGet("user_id").(uint)
+
+	idParam := c.Param("id")
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission id",
+		})
+		return
+	}
+
+	resp, err := services.GetSubmissionTrackingTimeline(
+		uint(idUint),
+		userID,
+	)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tracking timeline berhasil diambil",
+		"data":    resp,
+	})
+}
