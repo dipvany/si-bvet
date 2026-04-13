@@ -82,7 +82,10 @@ func GetAllSubmissions(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, submissions)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Submissions retrieved successfully",
+		"data": submissions,
+	})
 }
 
 func ApproveSubmission(c *gin.Context) {

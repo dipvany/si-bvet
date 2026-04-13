@@ -76,5 +76,9 @@ func DownloadLHU(c *gin.Context) {
 	}
 
 	c.FileAttachment(lhu.FilePath, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
+	
+	c.JSON(http.StatusOK, gin.H{
+		"message": "LHU downloaded successfully",
+	})
 }
 

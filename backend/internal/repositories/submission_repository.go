@@ -82,3 +82,19 @@ func GetSubmissionTracking(id uint) (models.Submission, error) {
 		
 	return submission, err
 }
+
+func GetSubmissionsForExport(ids []uint, exportAll bool) ([]models.Submission, error) {
+	var submissions []models.Submission
+	
+	query := db.DB.
+		Preload("User").
+		Preload("Samples.TestRequests.TestService").
+		Preload("Billing")
+
+	if !exportAll {
+		query = query.Where("id IN ?", ids)
+	}
+
+	err := query.Find(&submissions).Error
+	return submissions, err
+}
