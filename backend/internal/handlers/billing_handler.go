@@ -15,7 +15,7 @@ func CreateBilling(c *gin.Context) {
 
 	idParam := c.Param("submission_id")
 	idUint, _ := strconv.ParseUint(idParam, 10, 64)
-	
+
 	var req dto.BillingRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -23,7 +23,14 @@ func CreateBilling(c *gin.Context) {
 		return
 	}
 
-	err := services.CreateBilling(uint(idUint), req.EBillingCode, req.TotalAmount, time.Now())
+	err := services.CreateBilling(
+		uint(idUint),
+		req.EBillingCode,
+		req.TotalAmount,
+		req.NoRegistration,
+		req.NoEpi,
+		time.Now(),
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -61,7 +68,13 @@ func UpdateBilling(c *gin.Context) {
 		return
 	}
 
-	err := services.UpdateBilling(uint(idUint), req.EBillingCode, req.TotalAmount)
+	err := services.UpdateBilling(
+		uint(idUint),
+		req.EBillingCode,
+		req.TotalAmount,
+		req.NoRegistration,
+		req.NoEpi,
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -98,7 +111,7 @@ func UploadBillingProof(c *gin.Context) {
 
 	// Update submission status to "awaiting_verification"
 	repositories.UpdateSubmissionStatus(uint(idUint), "awaiting_verification")
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Proof of payment updated successfully",
 	})
@@ -128,7 +141,7 @@ func RejectPayment(c *gin.Context) {
 	err := services.RejectPayment(uint(idUint))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return 
+		return
 
 	}
 
