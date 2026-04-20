@@ -28,15 +28,15 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 		ProcessStatus: "pending_verification",
 	}
 
-	if err := tx.Create(&submission).Error; err != nil {
+	if err := repositories.CreateSubmissionWithTicket(tx, &submission); err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	for _, s := range req.Samples {
-		
+
 		sample := models.Sample{
-			SubmissionID: submission.ID,
+			SubmissionID:      submission.ID,
 			SampleCodeCust:    s.SampleCodeCust,
 			SampleType:        s.SampleType,
 			Species:           s.Species,
@@ -53,7 +53,7 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 		}
 
 		for _, t := range s.Tests {
-			
+
 			var service models.TestService
 
 			if err := tx.First(&service, t.TestServiceID).Error; err != nil {
@@ -62,10 +62,10 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 			}
 
 			testReq := models.TestRequest{
-				SamplesID:      sample.ID,
+				SamplesID:     sample.ID,
 				TestServiceID: t.TestServiceID,
 				PriceAtMoment: service.Price,
-				Discount: 0,
+				Discount:      0,
 			}
 
 			if err := tx.Create(&testReq).Error; err != nil {
@@ -161,7 +161,6 @@ func UpdateSubmissionWithSamplesAndTests(
 		tx.Rollback()
 		return err
 	}
-
 
 	// insert ulang sample + test baru
 	for _, sampleReq := range req.Samples {

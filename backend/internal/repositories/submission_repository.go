@@ -1,33 +1,34 @@
 package repositories
 
 import (
+	"fmt"
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 func CreateSubmission(sub *models.Submission) error {
-	return db.DB.Create(sub).Error
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		return CreateSubmissionWithTicket(tx, sub)
+	})
 }
 
-func CreateSubmissionWithSamples(submission *models.Submission, samples []models.Sample) error {
-	
-	tx := db.DB.Begin()
-
-	if err := tx.Create(submission).Error; err != nil {
-		tx.Rollback()
+func CreateSubmissionWithTicket(tx *gorm.DB, sub *models.Submission) error {
+	if err := tx.Create(sub).Error; err != nil {
 		return err
 	}
 
-	for i := range samples {
-		samples[i].SubmissionID = submission.ID
-	}
+	ticket := fmt.Sprintf("TCK-%d-%03d", time.Now().Year(), sub.ID)
 
-	if err := tx.Create(&samples).Error; err != nil {
-		tx.Rollback()
+	if err := tx.Model(sub).Update("no_ticket", ticket).Error; err != nil {
 		return err
 	}
 
-	return tx.Commit().Error
+	sub.NoTicket = ticket
+
+	return nil
 }
 
 func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
@@ -48,7 +49,7 @@ func GetAllSubmissions() ([]models.Submission, error) {
 		Preload("User").
 		Order("id desc").
 		Find(&submissions).Error
-	
+
 	return submissions, err
 }
 
@@ -74,18 +75,18 @@ func GetSubmissionByID(id uint) (models.Submission, error) {
 
 func GetSubmissionTracking(id uint) (models.Submission, error) {
 	var submission models.Submission
-	
+
 	err := db.DB.
 		Preload("Billing").
 		Preload("LHU").
 		First(&submission, id).Error
-		
+
 	return submission, err
 }
 
 func GetSubmissionsForExport(ids []uint, exportAll bool) ([]models.Submission, error) {
 	var submissions []models.Submission
-	
+
 	query := db.DB.
 		Preload("User").
 		Preload("Samples.TestRequests.TestService").
