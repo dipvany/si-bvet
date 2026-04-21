@@ -77,7 +77,12 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	NotifySubmissionStatusChanged(submission.ID, submission.ProcessStatus)
+	return nil
 }
 
 func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
@@ -93,11 +98,20 @@ func UpdateSubmission(id uint, data map[string]interface{}) error {
 }
 
 func ApproveSubmission(id uint) error {
-	return repositories.UpdateSubmissionStatus(id, "approved")
+	return UpdateSubmissionStatusWithNotification(id, "approved")
 }
 
 func RejectSubmission(id uint) error {
-	return repositories.UpdateSubmissionStatus(id, "rejected")
+	return UpdateSubmissionStatusWithNotification(id, "rejected")
+}
+
+func UpdateSubmissionStatusWithNotification(submissionID uint, status string) error {
+	if err := repositories.UpdateSubmissionStatus(submissionID, status); err != nil {
+		return err
+	}
+
+	NotifySubmissionStatusChanged(submissionID, status)
+	return nil
 }
 
 func UpdateSubmissionWithSamplesAndTests(

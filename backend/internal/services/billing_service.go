@@ -21,7 +21,7 @@ func CreateBilling(submissionID uint, code string, amount float64, noRegistratio
 		return errors.New("billing sudah ada untuk submission ini")
 	}
 
-	return db.DB.Transaction(func(tx *gorm.DB) error {
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
 		billing := models.Billing{
 			SubmissionID:  submissionID,
 			EBillingCode:  code,
@@ -46,6 +46,12 @@ func CreateBilling(submissionID uint, code string, amount float64, noRegistratio
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	NotifySubmissionStatusChanged(submissionID, "awaiting_payment")
+	return nil
 }
 
 func GetBillingBySubmissionID(submissionID uint) (*models.Billing, error) {
@@ -94,7 +100,12 @@ func VerifyPayment(submissionID uint) error {
 		return err
 	}
 
-	return repositories.UpdateSubmissionStatus(submissionID, "processed")
+	if err := UpdateSubmissionStatusWithNotification(submissionID, "processed"); err != nil {
+		return err
+	}
+
+	NotifyPaymentSuccess(submissionID)
+	return nil
 }
 
 // function untuk menolak pembayaran
@@ -104,5 +115,5 @@ func RejectPayment(submissionID uint) error {
 		return err
 	}
 
-	return repositories.UpdateSubmissionStatus(submissionID, "payment_rejected")
+	return UpdateSubmissionStatusWithNotification(submissionID, "payment_rejected")
 }

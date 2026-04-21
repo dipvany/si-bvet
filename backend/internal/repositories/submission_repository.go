@@ -73,6 +73,15 @@ func GetSubmissionByID(id uint) (models.Submission, error) {
 	return submission, err
 }
 
+func GetSubmissionByIDWithUser(id uint) (models.Submission, error) {
+	var submission models.Submission
+	err := db.DB.
+		Preload("User").
+		First(&submission, id).Error
+
+	return submission, err
+}
+
 func GetSubmissionTracking(id uint) (models.Submission, error) {
 	var submission models.Submission
 

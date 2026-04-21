@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"si-bvet/internal/dto"
-	"si-bvet/internal/repositories"
 	"si-bvet/internal/services"
 	"strconv"
 	"time"
@@ -109,8 +108,10 @@ func UploadBillingProof(c *gin.Context) {
 		return
 	}
 
-	// Update submission status to "awaiting_verification"
-	repositories.UpdateSubmissionStatus(uint(idUint), "awaiting_verification")
+	if err := services.UpdateSubmissionStatusWithNotification(uint(idUint), "awaiting_verification"); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Proof of payment updated successfully",

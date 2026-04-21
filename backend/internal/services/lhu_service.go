@@ -17,9 +17,9 @@ func CreateLHu(submissionID uint, noLhu string, filePath string, dateOfPub *time
 
 	lhu := models.LhuDocument{
 		SubmissionID: submissionID,
-		NoLhu: noLhu,
-		FilePath: filePath,
-		DateOfPub: dateOfPub,
+		NoLhu:        noLhu,
+		FilePath:     filePath,
+		DateOfPub:    dateOfPub,
 	}
 
 	return repositories.CreateLhu(&lhu)
@@ -54,7 +54,12 @@ func UploadLHU(submissionID uint, noLHU string, filePath string) error {
 	}
 
 	// update status submission jadi selesai
-	return repositories.UpdateSubmissionStatus(submissionID, "done")
+	if err := UpdateSubmissionStatusWithNotification(submissionID, "done"); err != nil {
+		return err
+	}
+
+	NotifyLHUAvailable(submissionID)
+	return nil
 }
 
 func GetLHU(submissionID uint) (models.LhuDocument, error) {

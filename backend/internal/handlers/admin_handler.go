@@ -14,7 +14,7 @@ import (
 )
 
 func CreateAdmin(c *gin.Context) {
-	
+
 	var req dto.AdminRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,21 +67,21 @@ func GetAllAdminAccounts(c *gin.Context) {
 	var adminList []map[string]interface{}
 	for _, admin := range admins {
 		adminData := map[string]interface{}{
-			"id":         admin.User.ID,
-			"fullname":   admin.User.FullName,
-			"email":      admin.User.Email,
-			"phone":      admin.User.Phone,
-			"position":   admin.Position,
-			"unit_lab":   admin.UnitLab,	
+			"id":          admin.User.ID,
+			"fullname":    admin.User.FullName,
+			"email":       admin.User.Email,
+			"phone":       admin.User.Phone,
+			"position":    admin.Position,
+			"unit_lab":    admin.UnitLab,
 			"employee_no": admin.EmployeeNo,
-			"role":       admin.User.Role,
+			"role":        admin.User.Role,
 		}
 		adminList = append(adminList, adminData)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Admin accounts retrieved successfully",
-		"admins": adminList,
+		"admins":  adminList,
 	})
 }
 
@@ -100,6 +100,7 @@ func VerifyUser(c *gin.Context) {
 	user.VerifiedAt = &now
 
 	db.DB.Save(&user)
+	services.SendVerificationApprovedEmail(user.FullName, user.Email)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User verification successful",
@@ -116,6 +117,8 @@ func RejectUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
+
+	services.SendVerificationRejectedEmail(user.FullName, user.Email)
 
 	db.DB.Delete(&user)
 
@@ -217,7 +220,7 @@ func GetUnverifiedCustomers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Unverified customers retrieved successfully",
+		"message":   "Unverified customers retrieved successfully",
 		"customers": customers,
 	})
 }

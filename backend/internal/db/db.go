@@ -28,14 +28,15 @@ func InitDB() error {
 	if err != nil {
 		return err
 	}
-	
+
 	DB = db
-	
+
 	// Auto migrate models
 	err = DB.AutoMigrate(
 		&models.User{},
 		&models.Admin{},
 		&models.Customer{},
+		&models.Notification{},
 		&models.Submission{},
 		&models.Sample{},
 		&models.Billing{},
@@ -51,5 +52,5 @@ func InitDB() error {
 
 	log.Println("Database connected & automigrate success")
 	return nil
-	
+
 }

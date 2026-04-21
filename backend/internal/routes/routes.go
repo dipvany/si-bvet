@@ -7,7 +7,7 @@ import (
 	"si-bvet/internal/middleware"
 )
 
-func RegisterRoutes(r *gin.Engine)  {
+func RegisterRoutes(r *gin.Engine) {
 
 	api := r.Group("/api")
 	{
@@ -39,7 +39,7 @@ func RegisterRoutes(r *gin.Engine)  {
 
 			// ADMIN
 			adminGroup := protected.Group("/admin")
-			adminGroup.Use(middleware.RequireRole("superadmin", "admin"))	
+			adminGroup.Use(middleware.RequireRole("superadmin", "admin"))
 			{
 
 				adminGroup.GET("/manage-customer/unverified", handlers.GetUnverifiedCustomers)
@@ -75,13 +75,16 @@ func RegisterRoutes(r *gin.Engine)  {
 			// CUSTOMER
 			customerGroup := protected.Group("/customer")
 			customerGroup.Use(middleware.RequireRole("customer"))
-			{ 
+			{
+				customerGroup.GET("/notifications", handlers.GetMyNotifications)
+				customerGroup.PATCH("/notifications/:id/read", handlers.MarkNotificationAsRead)
+				customerGroup.PATCH("/notifications/read-all", handlers.MarkAllNotificationsAsRead)
 
 				customerGroup.POST("/submissions", handlers.CreateSubmission)
 				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
 				customerGroup.PATCH("/submissions/:id", handlers.UpdateSubmission)
 				customerGroup.GET("/submissions/:id/tracking", handlers.GetSubmissionTrackingTimeline)
-				
+
 				customerGroup.GET("/test-services", handlers.GetAllTestServices)
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
 
@@ -99,7 +102,7 @@ func RegisterRoutes(r *gin.Engine)  {
 			}
 
 		}
-	
+
 		// api.GET("/ping", func(c *gin.Context) {
 		// 	c.JSON(200, gin.H{
 		// 		"message": "pong",
