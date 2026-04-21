@@ -78,7 +78,7 @@
               ]
             },
             "url": "{{base_url}}/api/auth/register",
-            "description": "Expected success: 201 { message }."
+            "description": "Register a new customer account."
           },
           "response": [
             {
@@ -94,7 +94,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Registrasi berhasil, menunggu verifikasi admin\"\n}"
+              "body": "{\n  \"message\": \"Registration successful, waiting for admin verification\"\n}"
             },
             {
               "name": "Bad Request",
@@ -109,7 +109,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"error\": \"dokumen wajib diupload\"\n}"
+              "body": "{\n  \"error\": \"document registration is required\"\n}"
             }
           ]
         },
@@ -133,7 +133,7 @@
               }
             },
             "url": "{{base_url}}/api/auth/login",
-            "description": "Expected success: 200 { message, token, user }"
+            "description": "Login with email and password."
           },
           "response": [
             {
@@ -149,7 +149,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Login berhasil\",\n  \"token\": \"<jwt_token>\",\n  \"user\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\"\n  }\n}"
+              "body": "{\n  \"message\": \"Login successful\",\n  \"token\": \"<jwt_token>\",\n  \"user\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\"\n  }\n}"
             },
             {
               "name": "Bad Request",
@@ -183,7 +183,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/profile"
+            "url": "{{base_url}}/api/profile",
+            "description": "Get the authenticated user profile."
           },
           "response": [
             {
@@ -199,7 +200,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"profile\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\",\n    \"customer\": {\n      \"group\": \"Perusahaan\"\n    }\n  }\n}"
+              "body": "{\n  \"message\": \"Profile retrieved successfully\",\n  \"profile\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\",\n    \"customer\": {\n      \"group\": \"Perusahaan\"\n    }\n  }\n}"
             },
             {
               "name": "Unauthorized",
@@ -241,7 +242,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/profile"
+            "url": "{{base_url}}/api/profile",
+            "description": "Update the authenticated user profile."
           },
           "response": [
             {
@@ -257,7 +259,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Profile berhasil diperbarui\"\n}"
+              "body": "{\n  \"message\": \"Profile updated successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -286,7 +288,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/dashboard"
+            "url": "{{base_url}}/api/dashboard",
+            "description": "Get the dashboard welcome message."
           },
           "response": [
             {
@@ -349,7 +352,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/superadmin/manage-account"
+            "url": "{{base_url}}/api/superadmin/manage-account",
+            "description": "Create a new admin account."
           },
           "response": [
             {
@@ -365,7 +369,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Admin berhasil dibuat\"\n}"
+              "body": "{\n  \"message\": \"Admin account created successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -407,7 +411,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}"
+            "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}",
+            "description": "Update an admin account."
           },
           "response": [
             {
@@ -423,7 +428,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Admin berhasil diperbarui\"\n}"
+              "body": "{\n  \"message\": \"Admin successfully updated\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -453,7 +458,7 @@
               }
             ],
             "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}",
-            "description": "Handler currently has incomplete implementation in backend. Keep as temporary contract endpoint only."
+            "description": "Delete an admin account."
           },
           "response": [
             {
@@ -469,7 +474,53 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"error\": \"temporary: endpoint registered but handler not finalized\"\n}"
+              "body": "{\n  \"message\": \"Admin successfully deleted\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Admin Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              }
+            ],
+            "url": "{{base_url}}/api/superadmin/manage-account",
+            "description": "List all admin accounts."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Admin accounts retrieved successfully\",\n  \"admins\": [\n    {\n      \"id\": 1,\n      \"fullname\": \"Admin Lab\",\n      \"email\": \"admin@mail.com\",\n      \"phone\": \"081200001111\",\n      \"position\": \"Analis\",\n      \"unit_lab\": \"Virologi\",\n      \"employee_no\": \"EMP-001\",\n      \"role\": \"admin\"\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -503,7 +554,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/manage-customer/unverified"
+            "url": "{{base_url}}/api/admin/manage-customer/unverified",
+            "description": "List unverified customer accounts."
           },
           "response": [
             {
@@ -519,7 +571,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"customers\": [\n    {\n      \"id\": 2,\n      \"fullname\": \"PT Contoh\",\n      \"email\": \"new@mail.com\",\n      \"is_verified\": false\n    }\n  ]\n}"
+              "body": "{\n  \"message\": \"Unverified customers retrieved successfully\",\n  \"customers\": [\n    {\n      \"id\": 2,\n      \"fullname\": \"PT Contoh\",\n      \"email\": \"new@mail.com\",\n      \"is_verified\": false\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -548,7 +600,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/manage-customer/verify/{{user_id}}"
+            "url": "{{base_url}}/api/admin/manage-customer/verify/{{user_id}}",
+            "description": "Verify a customer account."
           },
           "response": [
             {
@@ -564,7 +617,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"User berhasil diverifikasi\"\n}"
+              "body": "{\n  \"message\": \"User verification successful\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -593,7 +646,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/manage-customer/reject/{{user_id}}"
+            "url": "{{base_url}}/api/admin/manage-customer/reject/{{user_id}}",
+            "description": "Reject and delete a customer account."
           },
           "response": [
             {
@@ -638,7 +692,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions"
+            "url": "{{base_url}}/api/admin/submissions",
+            "description": "List all submissions."
           },
           "response": [
             {
@@ -654,7 +709,7 @@
                 }
               ],
               "cookie": [],
-              "body": "[\n  {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"no_ticket\": \"TCK-2026-001\",\n    \"process_status\": \"submitted\"\n  }\n]"
+              "body": "{\n  \"message\": \"Submissions retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"no_ticket\": \"TCK-2026-001\",\n      \"process_status\": \"pending_verification\"\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -674,6 +729,65 @@
           ]
         },
         {
+          "name": "Export Submissions Excel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"export_all\": true,\n  \"submission_ids\": [1, 2]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/submissions/export",
+            "description": "Export submissions to Excel."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                }
+              ],
+              "cookie": [],
+              "body": "binary/xlsx file stream"
+            },
+            {
+              "name": "Bad Request",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"invalid request body\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Approve Submission",
           "request": {
             "method": "PATCH",
@@ -683,7 +797,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/approve"
+            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/approve",
+            "description": "Approve a submission."
           },
           "response": [
             {
@@ -728,7 +843,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/reject"
+            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/reject",
+            "description": "Reject a submission."
           },
           "response": [
             {
@@ -786,7 +902,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/test-services"
+            "url": "{{base_url}}/api/admin/test-services",
+            "description": "Create a test service."
           },
           "response": [
             {
@@ -802,7 +919,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Jenis layanan pengujian berhasil dibuat\"\n}"
+              "body": "{\n  \"message\": \"Test service created successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -831,7 +948,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/test-services"
+            "url": "{{base_url}}/api/admin/test-services",
+            "description": "List all test services for admin."
           },
           "response": [
             {
@@ -876,7 +994,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}"
+            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}",
+            "description": "Get a test service by ID."
           },
           "response": [
             {
@@ -934,7 +1053,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}"
+            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}",
+            "description": "Update a test service."
           },
           "response": [
             {
@@ -950,7 +1070,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Jenis layanan pengujian berhasil diperbarui\"\n}"
+              "body": "{\n  \"message\": \"Test service updated successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -979,7 +1099,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}"
+            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}",
+            "description": "Delete a test service."
           },
           "response": [
             {
@@ -995,7 +1116,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Jenis layanan pengujian berhasil dihapus\"\n}"
+              "body": "{\n  \"message\": \"Test service deleted successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -1037,7 +1158,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}",
+            "description": "Create billing for a submission."
           },
           "response": [
             {
@@ -1082,7 +1204,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}",
+            "description": "Get billing by submission ID."
           },
           "response": [
             {
@@ -1140,7 +1263,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}",
+            "description": "Update billing for a submission."
           },
           "response": [
             {
@@ -1185,7 +1309,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/verify/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/billings/verify/{{submission_id}}",
+            "description": "Mark billing as paid."
           },
           "response": [
             {
@@ -1230,7 +1355,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/reject/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/billings/reject/{{submission_id}}",
+            "description": "Reject a payment submission."
           },
           "response": [
             {
@@ -1290,7 +1416,8 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/admin/lhu/upload/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/lhu/upload/{{submission_id}}",
+            "description": "Upload an LHU document."
           },
           "response": [
             {
@@ -1306,7 +1433,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"LHU berhasil diupload\"\n}"
+              "body": "{\n  \"message\": \"LHU file uploaded successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -1335,7 +1462,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/lhu/{{submission_id}}"
+            "url": "{{base_url}}/api/admin/lhu/{{submission_id}}",
+            "description": "Get an LHU by submission ID."
           },
           "response": [
             {
@@ -1380,7 +1508,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/feedbacks"
+            "url": "{{base_url}}/api/admin/feedbacks",
+            "description": "List all feedback entries."
           },
           "response": [
             {
@@ -1425,7 +1554,8 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/complaints"
+            "url": "{{base_url}}/api/admin/complaints",
+            "description": "List all complaints."
           },
           "response": [
             {
@@ -1483,7 +1613,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/complaints/respond/{{complaint_id}}"
+            "url": "{{base_url}}/api/admin/complaints/respond/{{complaint_id}}",
+            "description": "Update a complaint response."
           },
           "response": [
             {
@@ -1546,7 +1677,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/submissions"
+            "url": "{{base_url}}/api/customer/submissions",
+            "description": "Create a new submission."
           },
           "response": [
             {
@@ -1562,7 +1694,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Pengajuan berhasil dibuat\"\n}"
+              "body": "{\n  \"message\": \"Submission created successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -1591,7 +1723,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/submissions/my"
+            "url": "{{base_url}}/api/customer/submissions/my",
+            "description": "List the current customer submissions."
           },
           "response": [
             {
@@ -1649,7 +1782,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}"
+            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}",
+            "description": "Update a customer submission."
           },
           "response": [
             {
@@ -1665,7 +1799,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Submission berhasil diperbarui\"\n}"
+              "body": "{\n  \"message\": \"Submission updated successfully\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -1685,6 +1819,52 @@
           ]
         },
         {
+          "name": "Get Submission Tracking Timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}/tracking",
+            "description": "Get submission tracking timeline."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Tracking timeline retrieved successfully\",\n  \"data\": {\n    \"submission_id\": 1,\n    \"current_step\": 1,\n    \"current_status\": \"pending_verification\",\n    \"timeline\": [\n      {\n        \"step\": 1,\n        \"label\": \"Pengajuan dibuat\",\n        \"status\": \"current\"\n      },\n      {\n        \"step\": 2,\n        \"label\": \"Diverifikasi admin\",\n        \"status\": \"pending\"\n      },\n      {\n        \"step\": 3,\n        \"label\": \"Menunggu pembayaran\",\n        \"status\": \"pending\"\n      },\n      {\n        \"step\": 4,\n        \"label\": \"Sedang diproses lab\",\n        \"status\": \"pending\"\n      },\n      {\n        \"step\": 5,\n        \"label\": \"LHU tersedia\",\n        \"status\": \"pending\"\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "Forbidden",
+              "originalRequest": {},
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"unauthorized\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Get All Test Services (Customer)",
           "request": {
             "method": "GET",
@@ -1694,7 +1874,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/test-services"
+            "url": "{{base_url}}/api/customer/test-services",
+            "description": "List test services for customers."
           },
           "response": [
             {
@@ -1739,7 +1920,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/test-services/{{test_service_id}}"
+            "url": "{{base_url}}/api/customer/test-services/{{test_service_id}}",
+            "description": "Get a test service by ID."
           },
           "response": [
             {
@@ -1784,7 +1966,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/billings/{{submission_id}}"
+            "url": "{{base_url}}/api/customer/billings/{{submission_id}}",
+            "description": "Get billing for a submission."
           },
           "response": [
             {
@@ -1839,7 +2022,8 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/customer/billings/upload-proof/{{submission_id}}"
+            "url": "{{base_url}}/api/customer/billings/upload-proof/{{submission_id}}",
+            "description": "Upload payment proof."
           },
           "response": [
             {
@@ -1884,7 +2068,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/lhu/{{submission_id}}"
+            "url": "{{base_url}}/api/customer/lhu/{{submission_id}}",
+            "description": "Get LHU for a submission."
           },
           "response": [
             {
@@ -1929,7 +2114,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/lhu/download/{{submission_id}}"
+            "url": "{{base_url}}/api/customer/lhu/download/{{submission_id}}",
+            "description": "Download the LHU file."
           },
           "response": [
             {
@@ -1987,7 +2173,8 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/feedback"
+            "url": "{{base_url}}/api/customer/feedback",
+            "description": "Submit customer feedback."
           },
           "response": [
             {
@@ -2032,7 +2219,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/feedback"
+            "url": "{{base_url}}/api/customer/feedback",
+            "description": "List the current customer feedback."
           },
           "response": [
             {
@@ -2077,7 +2265,8 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/complaints"
+            "url": "{{base_url}}/api/customer/complaints",
+            "description": "List the current customer complaints."
           },
           "response": [
             {
@@ -2142,7 +2331,8 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/customer/complaints"
+            "url": "{{base_url}}/api/customer/complaints",
+            "description": "Create a new complaint."
           },
           "response": [
             {
