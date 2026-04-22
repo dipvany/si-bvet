@@ -16,7 +16,7 @@ func CreateComplaint(userID uint, req dto.ComplaintRequest, filePath string) err
 		Description:  req.Description,
 		Status: "open",
 		AttachmentPath: filePath,
-		CreateAt: &now,
+		CreatedAt: &now,
 	}
 
 	return repositories.CreateComplaint(&complaint)

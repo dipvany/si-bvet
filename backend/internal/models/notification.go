@@ -10,8 +10,10 @@ type Notification struct {
 	Type      string     `json:"type" gorm:"column:type;type:varchar(100);not null"`
 	IsRead    bool       `json:"is_read" gorm:"column:is_read;default:false"`
 	ReadAt    *time.Time `json:"read_at" gorm:"column:read_at"`
-	CreatedAt *time.Time `json:"created_at" gorm:"column:created_at"`
-	UpdatedAt *time.Time `json:"updated_at" gorm:"column:updated_at"`
+	CreatedAt *time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt *time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
+
+	User User `json:"-" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (Notification) TableName() string {

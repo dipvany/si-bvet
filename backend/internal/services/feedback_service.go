@@ -14,7 +14,7 @@ func CreateFeedback(userID uint, req dto.FeedbackRequest) error {
 		UserID:    userID,
 		Rating:   req.Rating,
 		Comments: req.Comments,
-		CreateAt: &now,
+		CreatedAt: &now,
 	}
 
 	return repositories.CreateFeedback(&feedback)

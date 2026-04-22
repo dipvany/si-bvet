@@ -62,7 +62,7 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 			}
 
 			testReq := models.TestRequest{
-				SamplesID:     sample.ID,
+				SampleID:      sample.ID,
 				TestServiceID: t.TestServiceID,
 				PriceAtMoment: service.Price,
 				Discount:      0,
@@ -203,7 +203,7 @@ func UpdateSubmissionWithSamplesAndTests(
 			}
 
 			test := models.TestRequest{
-				SamplesID:     sample.ID,
+				SampleID:      sample.ID,
 				TestServiceID: testReq.TestServiceID,
 				PriceAtMoment: service.Price,
 			}
@@ -233,7 +233,7 @@ func GetSubmissionTracking(submissionID uint, userID uint) (dto.SubmissionTracki
 	resp := dto.SubmissionTrackingResponse{
 		SubmissionID:  submission.ID,
 		ProcessStatus: submission.ProcessStatus,
-		LHUAvailable:  submission.Lhu != nil,
+		LHUAvailable:  submission.LHU != nil,
 	}
 
 	if submission.Billing != nil {

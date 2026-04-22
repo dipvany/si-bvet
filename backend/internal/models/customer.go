@@ -1,7 +1,7 @@
 package models
 
 type Customer struct {
-	UserID       uint   `json:"user_id" gorm:"primaryKey;column:user_id"`
+	UserID       uint   `json:"user_id" gorm:"primaryKey;autoIncrement:false;column:user_id;not null"`
 	Group        string `json:"group" gorm:"column:group"`
 	IsMembership bool   `json:"is_membership" gorm:"column:is_membership"`
 	MembershipNo string `json:"membership_no" gorm:"column:membership_no"`
@@ -15,7 +15,7 @@ type Customer struct {
 	ZipCode      string `json:"zip_code" gorm:"column:zip_code"`
 	Occupation   string `json:"occupation" gorm:"column:occupation"`
 
-	User User `gorm:"foreignKey:UserID"`
+	User User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (Customer) TableName() string {
