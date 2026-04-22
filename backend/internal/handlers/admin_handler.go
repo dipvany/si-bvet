@@ -16,7 +16,6 @@ import (
 )
 
 func CreateAdmin(c *gin.Context) {
-
 	var req dto.AdminRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -40,105 +39,78 @@ func CreateAdmin(c *gin.Context) {
 		IsVerified:   true,
 	}
 
-	err := services.RegisterUser(&user)
-	if err != nil {
+	if err := services.RegisterUser(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-		if req.Role == "admin" {
-			admin := models.Admin{
-				UserID:     user.ID,
-				Position:   req.Position,
-				UnitLab:    req.UnitLab,
-				EmployeeNo: req.EmployeeNo,
-			}
-
-			if err := db.DB.Create(&admin).Error; err != nil {
-				db.DB.Delete(&user)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
-
-		if req.Role == "superadmin" {
-			superAdmin := models.SuperAdmin{UserID: user.ID}
-			if err := db.DB.Create(&superAdmin).Error; err != nil {
-				db.DB.Delete(&user)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"message": "Account created successfully"})
-}
-
-	// get all managed accounts (admin + superadmin)
-func GetAllAdminAccounts(c *gin.Context) {
-		roleFilter := c.Query("role")
-		if roleFilter != "" && roleFilter != "admin" && roleFilter != "superadmin" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "role filter must be admin or superadmin"})
-			return
-		}
-
-		var accountList []map[string]interface{}
-
-		if roleFilter == "" || roleFilter == "admin" {
-			var admins []models.Admin
-			if err := db.DB.Preload("User").Find(&admins).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve admin accounts"})
-				return
-			}
-
-			for _, admin := range admins {
-				accountData := map[string]interface{}{
-					"id":          admin.User.ID,
-					"fullname":    admin.User.FullName,
-					"email":       admin.User.Email,
-					"phone":       admin.User.Phone,
-					"position":    admin.Position,
-					"unit_lab":    admin.UnitLab,
-					"employee_no": admin.EmployeeNo,
-					"role":        admin.User.Role,
-				}
-				accountList = append(accountList, accountData)
-			}
-		}
-
-		if roleFilter == "" || roleFilter == "superadmin" {
-			var superAdmins []models.SuperAdmin
-			if err := db.DB.Preload("User").Find(&superAdmins).Error; err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve superadmin accounts"})
-				return
-			}
-
-			for _, superAdmin := range superAdmins {
-				accountData := map[string]interface{}{
-					"id":       superAdmin.User.ID,
-					"fullname": superAdmin.User.FullName,
-					"email":    superAdmin.User.Email,
-					"phone":    superAdmin.User.Phone,
-					"role":     superAdmin.User.Role,
-				}
-				accountList = append(accountList, accountData)
-			}
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"message":  "Managed accounts retrieved successfully",
-			"accounts": accountList,
-		})
+	admin := models.Admin{
+		UserID:     user.ID,
+		Position:   req.Position,
+		UnitLab:    req.UnitLab,
+		EmployeeNo: req.EmployeeNo,
 	}
 
-	func VerifyUser(c *gin.Context) {
+	if err := db.DB.Create(&admin).Error; err != nil {
+		db.DB.Delete(&user)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-		id := c.Param("id")
+	c.JSON(http.StatusCreated, gin.H{"message": "Account created successfully"})
+}
 
-		var user models.User
-		if err := db.DB.First(&user, id).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+// get all managed accounts (admin + superadmin) from a single profile table
+func GetAllAdminAccounts(c *gin.Context) {
+	roleFilter := c.Query("role")
+	if roleFilter != "" && roleFilter != "admin" && roleFilter != "superadmin" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "role filter must be admin or superadmin"})
+		return
+	}
+
+	var admins []models.Admin
+	if err := db.DB.Preload("User").Find(&admins).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve managed accounts"})
+		return
+	}
+
+	var accountList []map[string]interface{}
+	for _, admin := range admins {
+		if roleFilter != "" && admin.User.Role != roleFilter {
+			continue
+		}
+
+		if admin.User.Role != "admin" && admin.User.Role != "superadmin" {
+			continue
+		}
+
+		accountData := map[string]interface{}{
+			"id":          admin.User.ID,
+			"fullname":    admin.User.FullName,
+			"email":       admin.User.Email,
+			"phone":       admin.User.Phone,
+			"position":    admin.Position,
+			"unit_lab":    admin.UnitLab,
+			"employee_no": admin.EmployeeNo,
+			"role":        admin.User.Role,
+		}
+		accountList = append(accountList, accountData)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Managed accounts retrieved successfully",
+		"accounts": accountList,
+	})
+}
+
+func VerifyUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var user models.User
+	if err := db.DB.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
@@ -201,13 +173,7 @@ func DeleteAdminAccount(c *gin.Context) {
 		return
 	}
 
-	if user.Role == "admin" {
-		db.DB.Where("user_id = ?", user.ID).Delete(&models.Admin{})
-	}
-
-	if user.Role == "superadmin" {
-		db.DB.Where("user_id = ?", user.ID).Delete(&models.SuperAdmin{})
-	}
+	db.DB.Where("user_id = ?", user.ID).Delete(&models.Admin{})
 
 	db.DB.Delete(&user)
 
@@ -275,47 +241,27 @@ func UpdateAdminAccount(c *gin.Context) {
 			return err
 		}
 
-		if user.Role == "admin" {
-			tx.Where("user_id = ?", user.ID).Delete(&models.SuperAdmin{})
-
-			var admin models.Admin
-			err := tx.Where("user_id = ?", user.ID).First(&admin).Error
-			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				admin = models.Admin{UserID: user.ID}
-			}
-
-			if req.Position != nil {
-				admin.Position = *req.Position
-			}
-			if req.UnitLab != nil {
-				admin.UnitLab = *req.UnitLab
-			}
-			if req.EmployeeNo != nil {
-				admin.EmployeeNo = *req.EmployeeNo
-			}
-
-			if err := tx.Save(&admin).Error; err != nil {
-				return err
-			}
+		var admin models.Admin
+		err := tx.Where("user_id = ?", user.ID).First(&admin).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			admin = models.Admin{UserID: user.ID}
 		}
 
-		if user.Role == "superadmin" {
-			tx.Where("user_id = ?", user.ID).Delete(&models.Admin{})
+		if req.Position != nil {
+			admin.Position = *req.Position
+		}
+		if req.UnitLab != nil {
+			admin.UnitLab = *req.UnitLab
+		}
+		if req.EmployeeNo != nil {
+			admin.EmployeeNo = *req.EmployeeNo
+		}
 
-			var superAdmin models.SuperAdmin
-			err := tx.Where("user_id = ?", user.ID).First(&superAdmin).Error
-			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				superAdmin = models.SuperAdmin{UserID: user.ID}
-				if err := tx.Create(&superAdmin).Error; err != nil {
-					return err
-				}
-			}
+		if err := tx.Save(&admin).Error; err != nil {
+			return err
 		}
 
 		return nil

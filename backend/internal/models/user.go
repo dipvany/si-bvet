@@ -15,7 +15,6 @@ type User struct {
 
 	Customer *Customer `json:"customer,omitempty" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	Admin    *Admin    `json:"admin,omitempty" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	SuperAdmin *SuperAdmin `json:"superadmin,omitempty" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 
 	CreatedAt *time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt *time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
