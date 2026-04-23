@@ -352,7 +352,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/superadmin/manage-account",
+            "url": "{{base_url}}/api/superadmin/admin-accounts",
             "description": "Create a new admin account."
           },
           "response": [
@@ -411,7 +411,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}",
+            "url": "{{base_url}}/api/superadmin/admin-accounts/{{user_id}}",
             "description": "Update an admin account."
           },
           "response": [
@@ -457,7 +457,7 @@
                 "value": "Bearer {{token_superadmin}}"
               }
             ],
-            "url": "{{base_url}}/api/superadmin/manage-account/{{user_id}}",
+            "url": "{{base_url}}/api/superadmin/admin-accounts/{{user_id}}",
             "description": "Delete an admin account."
           },
           "response": [
@@ -503,7 +503,7 @@
                 "value": "Bearer {{token_superadmin}}"
               }
             ],
-            "url": "{{base_url}}/api/superadmin/manage-account",
+            "url": "{{base_url}}/api/superadmin/admin-accounts",
             "description": "List all admin accounts."
           },
           "response": [
@@ -554,7 +554,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/manage-customer/unverified",
+            "url": "{{base_url}}/api/admin/customers/unverified",
             "description": "List unverified customer accounts."
           },
           "response": [
@@ -600,7 +600,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/manage-customer/verify/{{user_id}}",
+            "url": "{{base_url}}/api/admin/customers/{{user_id}}/verify",
             "description": "Verify a customer account."
           },
           "response": [
@@ -646,7 +646,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/manage-customer/reject/{{user_id}}",
+            "url": "{{base_url}}/api/admin/customers/{{user_id}}/reject",
             "description": "Reject and delete a customer account."
           },
           "response": [
@@ -1309,7 +1309,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/verify/{{submission_id}}",
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}/verify",
             "description": "Mark billing as paid."
           },
           "response": [
@@ -1355,7 +1355,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/reject/{{submission_id}}",
+            "url": "{{base_url}}/api/admin/billings/{{submission_id}}/reject",
             "description": "Reject a payment submission."
           },
           "response": [
@@ -1416,7 +1416,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/admin/lhu/upload/{{submission_id}}",
+            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/lhu",
             "description": "Upload an LHU document."
           },
           "response": [
@@ -2022,7 +2022,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/customer/billings/upload-proof/{{submission_id}}",
+            "url": "{{base_url}}/api/customer/billings/{{submission_id}}/proof",
             "description": "Upload payment proof."
           },
           "response": [
@@ -2114,7 +2114,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/lhu/download/{{submission_id}}",
+            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}/lhu/download",
             "description": "Download the LHU file."
           },
           "response": [
@@ -2173,7 +2173,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/feedback",
+            "url": "{{base_url}}/api/customer/feedbacks",
             "description": "Submit customer feedback."
           },
           "response": [
@@ -2219,7 +2219,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/feedback",
+            "url": "{{base_url}}/api/customer/feedbacks",
             "description": "List the current customer feedback."
           },
           "response": [

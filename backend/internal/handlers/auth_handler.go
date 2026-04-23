@@ -13,10 +13,12 @@ import (
 
 func RegisterCustomer(c *gin.Context) {
 
-	fullname := c.PostForm("fullname")
-	email := c.PostForm("email")
-	phone := c.PostForm("phone")
-	password := c.PostForm("password")
+	var req dto.RegisterRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	file, err := c.FormFile("registration_doc")
 	if err != nil {
@@ -34,10 +36,10 @@ func RegisterCustomer(c *gin.Context) {
 	}
 
 	user := models.User{
-		FullName:        fullname,
-		Email:           email,
-		Phone:           phone,
-		PasswordHash:    password,
+		FullName:        req.FullName,
+		Email:           req.Email,
+		Phone:           req.Phone,
+		PasswordHash:    req.Password,
 		Role:            "customer",
 		IsVerified:      false,
 		RegistrationDoc: filePath,

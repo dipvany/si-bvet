@@ -20,11 +20,11 @@ func RegisterUser(user *models.User) error {
 func LoginUser(email, password string) (*models.User, error) {
 	user, err := repositories.GetUserByEmail(email)
 	if err != nil {
-		return nil, errors.New("email tidak terdaftar")
+		return nil, errors.New("email not found")
 	}
 
 	if !user.IsVerified {
-		return nil, errors.New("akun belum diverifikasi admin")
+		return nil, errors.New("account not verified by admin")
 	}
 
 	err = bcrypt.CompareHashAndPassword(
@@ -32,7 +32,7 @@ func LoginUser(email, password string) (*models.User, error) {
 		[]byte(password),
 	)
 	if err != nil {
-		return nil, errors.New("password salah")
+		return nil, errors.New("password incorrect")
 	}
 
 	return user, nil

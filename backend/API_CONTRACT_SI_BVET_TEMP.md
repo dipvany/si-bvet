@@ -33,11 +33,11 @@ Tujuan: acuan sementara komunikasi frontend-backend.
 
 - `application/json`: login, profile update, admin/account, test-services, submission create/update, feedback, complaint response, billing create/update.
 - `multipart/form-data`: register customer, upload billing proof, upload LHU, create complaint.
-- `GET` download file: `/customer/lhu/download/:submission_id`
+- `GET` download file: `/customer/submissions/:submission_id/lhu/download`
 
 ## Important Notes (Temporary)
 
-- Endpoint `DELETE /api/superadmin/manage-account/:id` sudah ada di route tetapi handler belum mengembalikan response final (implementasi backend belum lengkap).
+- Endpoint `DELETE /api/superadmin/admin-accounts/:id` sudah ada di route tetapi handler belum mengembalikan response final (implementasi backend belum lengkap).
 - Endpoint yang upload file memakai field name wajib:
   - register: `registration_doc`
   - upload proof pembayaran: `proof`

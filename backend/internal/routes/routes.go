@@ -31,10 +31,10 @@ func RegisterRoutes(r *gin.Engine) {
 			superAdminGroup := protected.Group("/superadmin")
 			superAdminGroup.Use(middleware.RequireRole("superadmin"))
 			{
-				superAdminGroup.POST("/manage-account", handlers.CreateAdmin)
-				superAdminGroup.PATCH("/manage-account/:id", handlers.UpdateAdminAccount)
-				superAdminGroup.DELETE("/manage-account/:id", handlers.DeleteAdminAccount)
-				superAdminGroup.GET("/manage-account", handlers.GetAllAdminAccounts)
+				superAdminGroup.POST("/admin-accounts", handlers.CreateAdmin)
+				superAdminGroup.GET("/admin-accounts", handlers.GetAllAdminAccounts)
+				superAdminGroup.PATCH("/admin-accounts/:id", handlers.UpdateAdminAccount)
+				superAdminGroup.DELETE("/admin-accounts/:id", handlers.DeleteAdminAccount)
 			}
 
 			// ADMIN
@@ -42,9 +42,9 @@ func RegisterRoutes(r *gin.Engine) {
 			adminGroup.Use(middleware.RequireRole("superadmin", "admin"))
 			{
 
-				adminGroup.GET("/manage-customer/unverified", handlers.GetUnverifiedCustomers)
-				adminGroup.PATCH("/manage-customer/verify/:id", handlers.VerifyUser)
-				adminGroup.PATCH("/manage-customer/reject/:id", handlers.RejectUser)
+				adminGroup.GET("/customers/unverified", handlers.GetUnverifiedCustomers)
+				adminGroup.PATCH("/customers/:id/verify", handlers.VerifyUser)
+				adminGroup.PATCH("/customers/:id/reject", handlers.RejectUser)
 
 				adminGroup.GET("/submissions", handlers.GetAllSubmissions)
 				adminGroup.PATCH("/submissions/:id/approve", handlers.ApproveSubmission)
@@ -60,16 +60,16 @@ func RegisterRoutes(r *gin.Engine) {
 				adminGroup.POST("/billings/:submission_id", handlers.CreateBilling)
 				adminGroup.GET("/billings/:submission_id", handlers.GetBillingBySubmissionID)
 				adminGroup.PATCH("/billings/:submission_id", handlers.UpdateBilling)
-				adminGroup.PATCH("/billings/verify/:submission_id", handlers.VerifyPayment)
-				adminGroup.PATCH("/billings/reject/:submission_id", handlers.RejectPayment)
+				adminGroup.PATCH("/billings/:submission_id/verify", handlers.VerifyPayment)
+				adminGroup.PATCH("/billings/:submission_id/reject", handlers.RejectPayment)
 
-				adminGroup.PATCH("/lhu/upload/:submission_id", handlers.UploadLHU)
-				adminGroup.GET("/lhu/:submission_id", handlers.GetLHU)
+				adminGroup.GET("/submissions/:id/lhu", handlers.GetLHU)
+				adminGroup.POST("/submissions/:id/lhu", handlers.UploadLHU)
 
 				adminGroup.GET("/feedbacks", handlers.GetAllFeedbacks)
 
 				adminGroup.GET("/complaints", handlers.GetAllComplaints)
-				adminGroup.PATCH("/complaints/respond/:id", handlers.UpdateComplaintResponse)
+				adminGroup.PATCH("/complaints/:id/respond", handlers.UpdateComplaintResponse)
 			}
 
 			// CUSTOMER
@@ -89,13 +89,13 @@ func RegisterRoutes(r *gin.Engine) {
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)
 
 				customerGroup.GET("/billings/:submission_id", handlers.GetBillingBySubmissionID)
-				customerGroup.POST("/billings/upload-proof/:submission_id", handlers.UploadBillingProof)
+				customerGroup.POST("/billings/:submission_id/proof", handlers.UploadBillingProof)
 
-				customerGroup.GET("/lhu/:submission_id", handlers.GetLHU)
-				customerGroup.GET("/lhu/download/:submission_id", handlers.DownloadLHU)
+				customerGroup.GET("/submissions/:id/lhu", handlers.GetLHU)
+				customerGroup.GET("/submissions/:id/lhu/download", handlers.DownloadLHU)
 
-				customerGroup.POST("/feedback", handlers.CreateFeedback)
-				customerGroup.GET("/feedback", handlers.GetMyFeedbacks)
+				customerGroup.POST("/feedbacks", handlers.CreateFeedback)
+				customerGroup.GET("/feedbacks", handlers.GetMyFeedbacks)
 
 				customerGroup.GET("/complaints", handlers.GetMyComplaints)
 				customerGroup.POST("/complaints", handlers.CreateComplaint)

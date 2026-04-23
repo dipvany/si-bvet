@@ -12,7 +12,7 @@ func CreateLHu(submissionID uint, noLhu string, filePath string, dateOfPub *time
 	// cek apakah LHu sudah ada untuk submission ini
 	existingLHu, err := repositories.GetLhuBySubmissionID(submissionID)
 	if err == nil && existingLHu.ID != 0 {
-		return errors.New("LHu sudah ada untuk submission ini")
+		return errors.New("LHu already exists for this submission")
 	}
 
 	lhu := models.LhuDocument{

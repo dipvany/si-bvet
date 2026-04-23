@@ -137,7 +137,7 @@ func UpdateSubmissionWithSamplesAndTests(
 	// hanya boleh edit sebelum diverifikasi
 	if submission.ProcessStatus != "pending_verification" {
 		tx.Rollback()
-		return errors.New("submission tidak dapat diedit")
+		return errors.New("submission cannot be edited after verification")
 	}
 
 	// update parent submission

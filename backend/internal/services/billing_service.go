@@ -18,7 +18,7 @@ func CreateBilling(submissionID uint, code string, amount float64, noRegistratio
 	// cek apakah billing sudah ada untuk submission ini
 	exists, _ := repositories.IsBillingExists(submissionID)
 	if exists {
-		return errors.New("billing sudah ada untuk submission ini")
+		return errors.New("billing already exists for this submission")
 	}
 
 	err := db.DB.Transaction(func(tx *gorm.DB) error {
