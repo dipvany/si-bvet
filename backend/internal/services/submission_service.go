@@ -272,23 +272,23 @@ func GetSubmissionTrackingTimeline(
 		currentStep = 1
 		steps[0].Status = "current"
 
-	case "menunggu_pembayaran":
+	case "awaiting_payment", "menunggu_pembayaran":
 		currentStep = 3
 		steps[1].Status = "completed"
 		steps[2].Status = "current"
 
-	case "menunggu_verifikasi_pembayaran":
+	case "awaiting_verification", "menunggu_verifikasi_pembayaran":
 		currentStep = 3
 		steps[1].Status = "completed"
 		steps[2].Status = "current"
 
-	case "diproses":
+	case "processed", "diproses":
 		currentStep = 4
 		steps[1].Status = "completed"
 		steps[2].Status = "completed"
 		steps[3].Status = "current"
 
-	case "selesai":
+	case "done", "selesai":
 		currentStep = 5
 		for i := range steps[:4] {
 			steps[i].Status = "completed"

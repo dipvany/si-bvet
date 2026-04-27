@@ -10,8 +10,14 @@ import (
 
 func UploadLHU(c *gin.Context) {
 
-	idParam := c.Param("submission_id")
-	idUint, _ := strconv.ParseUint(idParam, 10, 64)
+	idParam := c.Param("id")
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission ID",
+		})
+		return
+	}
 
 	noLHU := c.PostForm("no_lhu")
 
@@ -47,8 +53,14 @@ func UploadLHU(c *gin.Context) {
 
 func GetLHU(c *gin.Context) {
 
-	idParam := c.Param("submission_id")
-	idUint, _ := strconv.ParseUint(idParam, 10, 64)
+	idParam := c.Param("id")
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission ID",
+		})
+		return
+	}
 
 	lhu, err := services.GetLHU(uint(idUint))
 	if err != nil {
@@ -64,8 +76,14 @@ func GetLHU(c *gin.Context) {
 // download LHU
 func DownloadLHU(c *gin.Context) {
 
-	idParam := c.Param("submission_id")
-	idUint, _ := strconv.ParseUint(idParam, 10, 64)
+	idParam := c.Param("id")
+	idUint, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid submission ID",
+		})
+		return
+	}
 
 	lhu, err := services.GetLHU(uint(idUint))
 	if err != nil {
@@ -76,9 +94,6 @@ func DownloadLHU(c *gin.Context) {
 	}
 
 	c.FileAttachment(lhu.FilePath, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
-	
-	c.JSON(http.StatusOK, gin.H{
-		"message": "LHU downloaded successfully",
-	})
+	return
 }
 

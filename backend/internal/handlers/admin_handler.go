@@ -1,18 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
-	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
-	"si-bvet/internal/models"
 	"si-bvet/internal/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func CreateAdmin(c *gin.Context) {
@@ -30,31 +25,11 @@ func CreateAdmin(c *gin.Context) {
 		return
 	}
 
-	user := models.User{
-		FullName:     req.FullName,
-		Email:        req.Email,
-		Phone:        req.Phone,
-		PasswordHash: req.Password,
-		Role:         req.Role,
-		IsVerified:   true,
-	}
-
-	if err := services.RegisterUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	admin := models.Admin{
-		UserID:     user.ID,
-		Position:   req.Position,
-		UnitLab:    req.UnitLab,
-		EmployeeNo: req.EmployeeNo,
-	}
-
-	if err := db.DB.Create(&admin).Error; err != nil {
-		db.DB.Delete(&user)
+	if err := services.CreateAdminAccount(req); err != nil {
+		if err == services.ErrInvalidRole {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -70,22 +45,18 @@ func GetAllAdminAccounts(c *gin.Context) {
 		return
 	}
 
-	var admins []models.Admin
-	if err := db.DB.Preload("User").Find(&admins).Error; err != nil {
+	admins, err := services.GetManagedAccounts(roleFilter)
+	if err != nil {
+		if err == services.ErrInvalidRole {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve managed accounts"})
 		return
 	}
 
 	var accountList []map[string]interface{}
 	for _, admin := range admins {
-		if roleFilter != "" && admin.User.Role != roleFilter {
-			continue
-		}
-
-		if admin.User.Role != "admin" && admin.User.Role != "superadmin" {
-			continue
-		}
-
 		accountData := map[string]interface{}{
 			"id":          admin.User.ID,
 			"fullname":    admin.User.FullName,
@@ -107,19 +78,21 @@ func GetAllAdminAccounts(c *gin.Context) {
 
 func VerifyUser(c *gin.Context) {
 	id := c.Param("id")
-
-	var user models.User
-	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+	idUint, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
-	user.IsVerified = true
-	now := time.Now()
-	user.VerifiedAt = &now
-
-	db.DB.Save(&user)
-	services.SendVerificationApprovedEmail(user.FullName, user.Email)
+	_, err = services.VerifyUserByID(uint(idUint))
+	if err != nil {
+		if err == services.ErrUserNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User verification successful",
@@ -130,16 +103,21 @@ func VerifyUser(c *gin.Context) {
 func RejectUser(c *gin.Context) {
 
 	id := c.Param("id")
-
-	var user models.User
-	if err := db.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+	idUint, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
 		return
 	}
 
-	services.SendVerificationRejectedEmail(user.FullName, user.Email)
-
-	db.DB.Delete(&user)
+	err = services.RejectUserByID(uint(idUint))
+	if err != nil {
+		if err == services.ErrUserNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User verification rejected and deleted",
@@ -154,28 +132,30 @@ func DeleteAdminAccount(c *gin.Context) {
 		return
 	}
 
-	actorIDAny, exists := c.Get("user_id")
-	if exists {
-		if actorID, ok := actorIDAny.(uint); ok && actorID == uint(targetID) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "cannot delete your own account"})
-			return
+	var actorID uint
+	if actorIDAny, exists := c.Get("user_id"); exists {
+		if parsedActorID, ok := actorIDAny.(uint); ok {
+			actorID = parsedActorID
 		}
 	}
 
-	var user models.User
-	if err := db.DB.First(&user, uint(targetID)).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
-		return
+	err = services.DeleteManagedAccount(uint(targetID), actorID)
+	if err != nil {
+		switch err {
+		case services.ErrDeleteOwnAccount:
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		case services.ErrAccountNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case services.ErrNotManagedAccount:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
-
-	if user.Role != "admin" && user.Role != "superadmin" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "target user is not a managed account"})
-		return
-	}
-
-	db.DB.Where("user_id = ?", user.ID).Delete(&models.Admin{})
-
-	db.DB.Delete(&user)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Account successfully deleted",
@@ -188,17 +168,6 @@ func UpdateAdminAccount(c *gin.Context) {
 	userID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account id"})
-		return
-	}
-
-	var user models.User
-	if err := db.DB.Where("id = ?", uint(userID)).First(&user).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "account not found"})
-		return
-	}
-
-	if user.Role != "admin" && user.Role != "superadmin" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "target user is not a managed account"})
 		return
 	}
 
@@ -219,56 +188,27 @@ func UpdateAdminAccount(c *gin.Context) {
 		return
 	}
 
-	if req.FullName != nil {
-		user.FullName = *req.FullName
-	}
-	if req.Email != nil {
-		user.Email = *req.Email
-	}
-	if req.Phone != nil {
-		user.Phone = *req.Phone
-	}
-	if req.Role != nil {
-		if *req.Role != "admin" && *req.Role != "superadmin" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "role must be admin or superadmin"})
-			return
-		}
-		user.Role = *req.Role
-	}
-
-	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(&user).Error; err != nil {
-			return err
-		}
-
-		var admin models.Admin
-		err := tx.Where("user_id = ?", user.ID).First(&admin).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			admin = models.Admin{UserID: user.ID}
-		}
-
-		if req.Position != nil {
-			admin.Position = *req.Position
-		}
-		if req.UnitLab != nil {
-			admin.UnitLab = *req.UnitLab
-		}
-		if req.EmployeeNo != nil {
-			admin.EmployeeNo = *req.EmployeeNo
-		}
-
-		if err := tx.Save(&admin).Error; err != nil {
-			return err
-		}
-
-		return nil
+	err = services.UpdateManagedAccount(uint(userID), services.UpdateAdminAccountRequest{
+		FullName:   req.FullName,
+		Email:      req.Email,
+		Phone:      req.Phone,
+		Position:   req.Position,
+		UnitLab:    req.UnitLab,
+		EmployeeNo: req.EmployeeNo,
+		Role:       req.Role,
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		switch err {
+		case services.ErrAccountNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case services.ErrNotManagedAccount, services.ErrInvalidRole:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
