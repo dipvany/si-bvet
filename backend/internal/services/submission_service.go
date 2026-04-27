@@ -2,10 +2,11 @@ package services
 
 import (
 	"errors"
-	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
 func CreateSubmission(sub *models.Submission) error {
@@ -15,69 +16,20 @@ func CreateSubmission(sub *models.Submission) error {
 }
 
 func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest) error {
+	submission := buildSubmission(userID, req)
 
-	tx := db.DB.Begin()
-
-	submission := models.Submission{
-		UserID:        userID,
-		TypeService:   req.TypeService,
-		PurposeOfTest: req.PurposeOfTest,
-		SampleTaker:   req.SampleTaker,
-		SamplesCount:  len(req.Samples),
-		Notes:         req.Notes,
-		ProcessStatus: "pending_verification",
-	}
-
-	if err := repositories.CreateSubmissionWithTicket(tx, &submission); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	for _, s := range req.Samples {
-
-		sample := models.Sample{
-			SubmissionID:      submission.ID,
-			SampleCodeCust:    s.SampleCodeCust,
-			SampleType:        s.SampleType,
-			Species:           s.Species,
-			Age:               s.Age,
-			Volume:            s.Volume,
-			Condition:         s.Condition,
-			LocationSmplTaken: s.LocationSmplTaken,
-			TotalSample:       int64(s.TotalSample),
-		}
-
-		if err := tx.Create(&sample).Error; err != nil {
-			tx.Rollback()
+	err := repositories.InTransaction(func(tx *gorm.DB) error {
+		if err := repositories.CreateSubmissionWithTicket(tx, &submission); err != nil {
 			return err
 		}
 
-		for _, t := range s.Tests {
-
-			var service models.TestService
-
-			if err := tx.First(&service, t.TestServiceID).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-
-			testReq := models.TestRequest{
-				SampleID:      sample.ID,
-				TestServiceID: t.TestServiceID,
-				PriceAtMoment: service.Price,
-				Discount:      0,
-			}
-
-			if err := tx.Create(&testReq).Error; err != nil {
-				tx.Rollback()
-				return err
-			}
-
+		if err := createSamplesAndTestsTx(tx, submission.ID, req.Samples); err != nil {
+			return err
 		}
 
-	}
-
-	if err := tx.Commit().Error; err != nil {
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
@@ -119,67 +71,62 @@ func UpdateSubmissionWithSamplesAndTests(
 	userID uint,
 	req dto.UpdateSubmissionRequest,
 ) error {
+	return repositories.InTransaction(func(tx *gorm.DB) error {
+		submission, err := repositories.GetSubmissionByIDTx(tx, submissionID)
+		if err != nil {
+			return err
+		}
 
-	tx := db.DB.Begin()
+		if submission.UserID != userID {
+			return errors.New("unauthorized")
+		}
 
-	var submission models.Submission
-	if err := tx.First(&submission, submissionID).Error; err != nil {
-		tx.Rollback()
-		return err
+		if submission.ProcessStatus != "pending_verification" {
+			return errors.New("submission cannot be edited after verification")
+		}
+
+		submission.TypeService = req.TypeService
+		submission.PurposeOfTest = req.PurposeOfTest
+		submission.SampleTaker = req.SampleTaker
+		submission.Notes = req.Notes
+		submission.SamplesCount = len(req.Samples)
+
+		if err := repositories.SaveSubmissionTx(tx, &submission); err != nil {
+			return err
+		}
+
+		if err := repositories.DeleteTestRequestsBySubmissionIDTx(tx, submissionID); err != nil {
+			return err
+		}
+
+		if err := repositories.DeleteSamplesBySubmissionIDTx(tx, submissionID); err != nil {
+			return err
+		}
+
+		if err := createSamplesAndTestsTx(tx, submission.ID, req.Samples); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func buildSubmission(userID uint, req dto.SubmissionRequest) models.Submission {
+	return models.Submission{
+		UserID:        userID,
+		TypeService:   req.TypeService,
+		PurposeOfTest: req.PurposeOfTest,
+		SampleTaker:   req.SampleTaker,
+		SamplesCount:  len(req.Samples),
+		Notes:         req.Notes,
+		ProcessStatus: "pending_verification",
 	}
+}
 
-	// ownership check
-	if submission.UserID != userID {
-		tx.Rollback()
-		return errors.New("unauthorized")
-	}
-
-	// hanya boleh edit sebelum diverifikasi
-	if submission.ProcessStatus != "pending_verification" {
-		tx.Rollback()
-		return errors.New("submission cannot be edited after verification")
-	}
-
-	// update parent submission
-	submission.TypeService = req.TypeService
-	submission.PurposeOfTest = req.PurposeOfTest
-	submission.SampleTaker = req.SampleTaker
-	submission.Notes = req.Notes
-	submission.SamplesCount = len(req.Samples)
-
-	if err := tx.Save(&submission).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// hapus child lama
-	// if err := tx.Where("submission_id = ?", submissionID).
-	// 	Delete(&models.Sample{}).Error; err != nil {
-	// 	tx.Rollback()
-	// 	return err
-	// }
-
-	// hapus test request via join sample
-	if err := tx.Exec(`
-		DELETE FROM "TestRequest"
-		WHERE samples_id IN (
-			SELECT id FROM "Samples" WHERE submission_id = ?
-		)
-	`, submissionID).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Where("submission_id = ?", submissionID).
-		Delete(&models.Sample{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// insert ulang sample + test baru
-	for _, sampleReq := range req.Samples {
+func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.SampleInput) error {
+	for _, sampleReq := range samples {
 		sample := models.Sample{
-			SubmissionID:      submission.ID,
+			SubmissionID:      submissionID,
 			SampleCodeCust:    sampleReq.SampleCodeCust,
 			SampleType:        sampleReq.SampleType,
 			Species:           sampleReq.Species,
@@ -190,32 +137,30 @@ func UpdateSubmissionWithSamplesAndTests(
 			TotalSample:       int64(sampleReq.TotalSample),
 		}
 
-		if err := tx.Create(&sample).Error; err != nil {
-			tx.Rollback()
+		if err := repositories.CreateSampleTx(tx, &sample); err != nil {
 			return err
 		}
 
 		for _, testReq := range sampleReq.Tests {
-			var service models.TestService
-			if err := tx.First(&service, testReq.TestServiceID).Error; err != nil {
-				tx.Rollback()
+			service, err := repositories.GetTestServiceByIDTx(tx, testReq.TestServiceID)
+			if err != nil {
 				return err
 			}
 
-			test := models.TestRequest{
+			createReq := models.TestRequest{
 				SampleID:      sample.ID,
 				TestServiceID: testReq.TestServiceID,
 				PriceAtMoment: service.Price,
+				Discount:      0,
 			}
 
-			if err := tx.Create(&test).Error; err != nil {
-				tx.Rollback()
+			if err := repositories.CreateTestRequestTx(tx, &createReq); err != nil {
 				return err
 			}
 		}
 	}
 
-	return tx.Commit().Error
+	return nil
 }
 
 func GetSubmissionTracking(submissionID uint, userID uint) (dto.SubmissionTrackingResponse, error) {

@@ -9,6 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+func InTransaction(fn func(tx *gorm.DB) error) error {
+	return db.DB.Transaction(fn)
+}
+
 func CreateSubmission(sub *models.Submission) error {
 	return db.DB.Transaction(func(tx *gorm.DB) error {
 		return CreateSubmissionWithTicket(tx, sub)
@@ -29,6 +33,43 @@ func CreateSubmissionWithTicket(tx *gorm.DB, sub *models.Submission) error {
 	sub.NoTicket = ticket
 
 	return nil
+}
+
+func GetSubmissionByIDTx(tx *gorm.DB, id uint) (models.Submission, error) {
+	var submission models.Submission
+	err := tx.First(&submission, id).Error
+	return submission, err
+}
+
+func SaveSubmissionTx(tx *gorm.DB, submission *models.Submission) error {
+	return tx.Save(submission).Error
+}
+
+func CreateSampleTx(tx *gorm.DB, sample *models.Sample) error {
+	return tx.Create(sample).Error
+}
+
+func GetTestServiceByIDTx(tx *gorm.DB, id uint) (models.TestService, error) {
+	var service models.TestService
+	err := tx.First(&service, id).Error
+	return service, err
+}
+
+func CreateTestRequestTx(tx *gorm.DB, testReq *models.TestRequest) error {
+	return tx.Create(testReq).Error
+}
+
+func DeleteTestRequestsBySubmissionIDTx(tx *gorm.DB, submissionID uint) error {
+	return tx.Exec(`
+		DELETE FROM "TestRequest"
+		WHERE samples_id IN (
+			SELECT id FROM "Samples" WHERE submission_id = ?
+		)
+	`, submissionID).Error
+}
+
+func DeleteSamplesBySubmissionIDTx(tx *gorm.DB, submissionID uint) error {
+	return tx.Where("submission_id = ?", submissionID).Delete(&models.Sample{}).Error
 }
 
 func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {

@@ -4,68 +4,42 @@ import (
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
-	"strconv"
+	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateSubmission(c *gin.Context) {
-	
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "user_id not found",
-		})
+	userID, ok := currentUserID(c)
+	if !ok {
 		return
 	}
 
-	userID, ok := userIDInterface.(uint)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "invalid user_id type",
-		})
-		return
-	}
-		
 	var req dto.SubmissionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err := services.CreateSubmissionWithSamplesAndTests(userID, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Submission created successfully",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Submission created successfully")
 }
 
 func GetMySubmissions(c *gin.Context) {
-
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "user_id not found",
-		})
+	userID, ok := currentUserID(c)
+	if !ok {
 		return
 	}
 
-	userID := userIDInterface.(uint)
-
 	submissions, err := services.GetSubmissionsByUser(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -76,133 +50,93 @@ func GetAllSubmissions(c *gin.Context) {
 
 	submissions, err := services.GetAllSubmissions()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Submissions retrieved successfully",
-		"data": submissions,
-	})
+	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", submissions)
 }
 
 func ApproveSubmission(c *gin.Context) {
-	
-	idParam := c.Param("id")
-
-	idUint, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid submission ID",
-		})
+	id, ok := parseUintParam(c, "id", "invalid submission ID")
+	if !ok {
 		return
 	}
 
-	err = services.ApproveSubmission(uint(idUint))
+	err := services.ApproveSubmission(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Submission approved",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Submission approved")
 
 }
 
 func RejectSubmission(c *gin.Context) {
-	
-	idParam := c.Param("id")
-
-	idUint, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid submission ID",
-		})
+	id, ok := parseUintParam(c, "id", "invalid submission ID")
+	if !ok {
 		return
 	}
 
-	err = services.RejectSubmission(uint(idUint))
+	err := services.RejectSubmission(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Submission rejected",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Submission rejected")
 }
 
 func UpdateSubmission(c *gin.Context) {
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
 
-	userID := c.MustGet("user_id").(uint)
-
-	idParam := c.Param("id")
-	idUint, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid submission id",
-		})
+	id, ok := parseUintParam(c, "id", "invalid submission id")
+	if !ok {
 		return
 	}
 
 	var req dto.UpdateSubmissionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = services.UpdateSubmissionWithSamplesAndTests(
-		uint(idUint),
+	err := services.UpdateSubmissionWithSamplesAndTests(
+		id,
 		userID,
 		req,
 	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Submission updated successfully",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Submission updated successfully")
 }
 
 func GetSubmissionTrackingTimeline(c *gin.Context) {
+	userID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
 
-	userID := c.MustGet("user_id").(uint)
-
-	idParam := c.Param("id")
-	idUint, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid submission id",
-		})
+	id, ok := parseUintParam(c, "id", "invalid submission id")
+	if !ok {
 		return
 	}
 
 	resp, err := services.GetSubmissionTrackingTimeline(
-		uint(idUint),
+		id,
 		userID,
 	)
 	if err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusForbidden, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Tracking timeline retrieved successfully",
-		"data":    resp,
-	})
+	utils.DataResponse(c, http.StatusOK, "Tracking timeline retrieved successfully", resp)
 }
