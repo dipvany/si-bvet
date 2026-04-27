@@ -6,6 +6,7 @@ import (
 
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,23 +15,21 @@ func CreateAdmin(c *gin.Context) {
 	var req dto.AdminRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if req.Role != "admin" && req.Role != "superadmin" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "role must be admin or superadmin"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "role must be admin or superadmin")
 		return
 	}
 
 	if err := services.CreateAdminAccount(req); err != nil {
 		if err == services.ErrInvalidRole {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -41,17 +40,17 @@ func CreateAdmin(c *gin.Context) {
 func GetAllAdminAccounts(c *gin.Context) {
 	roleFilter := c.Query("role")
 	if roleFilter != "" && roleFilter != "admin" && roleFilter != "superadmin" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "role filter must be admin or superadmin"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "role filter must be admin or superadmin")
 		return
 	}
 
 	admins, err := services.GetManagedAccounts(roleFilter)
 	if err != nil {
 		if err == services.ErrInvalidRole {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve managed accounts"})
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to retrieve managed accounts")
 		return
 	}
 
@@ -80,17 +79,17 @@ func VerifyUser(c *gin.Context) {
 	id := c.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid user id")
 		return
 	}
 
 	_, err = services.VerifyUserByID(uint(idUint))
 	if err != nil {
 		if err == services.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -105,17 +104,17 @@ func RejectUser(c *gin.Context) {
 	id := c.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid user id")
 		return
 	}
 
 	err = services.RejectUserByID(uint(idUint))
 	if err != nil {
 		if err == services.ErrUserNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -128,7 +127,7 @@ func DeleteAdminAccount(c *gin.Context) {
 	idParam := c.Param("id")
 	targetID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account id"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
@@ -143,16 +142,16 @@ func DeleteAdminAccount(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case services.ErrDeleteOwnAccount:
-			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusForbidden, err.Error())
 			return
 		case services.ErrAccountNotFound:
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
 			return
 		case services.ErrNotManagedAccount:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -167,7 +166,7 @@ func UpdateAdminAccount(c *gin.Context) {
 	idParam := c.Param("id")
 	userID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid account id"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid account id")
 		return
 	}
 
@@ -182,9 +181,7 @@ func UpdateAdminAccount(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -200,13 +197,13 @@ func UpdateAdminAccount(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case services.ErrAccountNotFound:
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
 			return
 		case services.ErrNotManagedAccount, services.ErrInvalidRole:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -220,9 +217,7 @@ func UpdateAdminAccount(c *gin.Context) {
 func GetUnverifiedCustomers(c *gin.Context) {
 	customers, err := services.GetUnverifiedCustomers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

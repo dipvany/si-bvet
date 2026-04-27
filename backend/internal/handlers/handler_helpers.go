@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"si-bvet/internal/utils"
 	"strconv"
@@ -8,29 +9,53 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func currentUserID(c *gin.Context) (uint, bool) {
+func GetUserID(c *gin.Context) (uint, error) {
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "user_id not found")
-		return 0, false
+		return 0, errors.New("user_id not found")
 	}
 
 	userID, ok := userIDInterface.(uint)
 	if !ok {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "invalid user_id type")
-		return 0, false
+		return 0, errors.New("invalid user_id type")
 	}
 
-	return userID, true
+	return userID, nil
 }
 
-func parseUintParam(c *gin.Context, paramKey string, invalidMessage string) (uint, bool) {
+func GetRole(c *gin.Context) (string, error) {
+	roleInterface, exists := c.Get("role")
+	if !exists {
+		return "", errors.New("role not found")
+	}
+
+	role, ok := roleInterface.(string)
+	if !ok {
+		return "", errors.New("invalid role type")
+	}
+
+	return role, nil
+}
+
+func GetUintParam(c *gin.Context, paramKey string) (uint, error) {
 	idParam := c.Param(paramKey)
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, invalidMessage)
-		return 0, false
+		return 0, errors.New("invalid id parameter")
 	}
 
-	return uint(idUint), true
+	return uint(idUint), nil
+}
+
+func RespondUserIDError(c *gin.Context, err error) {
+	if err == nil {
+		return
+	}
+
+	if err.Error() == "user_id not found" {
+		utils.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 }

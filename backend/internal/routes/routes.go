@@ -5,9 +5,11 @@ import (
 
 	"si-bvet/internal/handlers"
 	"si-bvet/internal/middleware"
+	"si-bvet/internal/services"
 )
 
 func RegisterRoutes(r *gin.Engine) {
+	submissionHandler := handlers.NewSubmissionHandler(services.NewSubmissionService())
 
 	api := r.Group("/api")
 	{
@@ -46,9 +48,9 @@ func RegisterRoutes(r *gin.Engine) {
 				adminGroup.PATCH("/customers/:id/verify", handlers.VerifyUser)
 				adminGroup.PATCH("/customers/:id/reject", handlers.RejectUser)
 
-				adminGroup.GET("/submissions", handlers.GetAllSubmissions)
-				adminGroup.PATCH("/submissions/:id/approve", handlers.ApproveSubmission)
-				adminGroup.PATCH("/submissions/:id/reject", handlers.RejectSubmission)
+				adminGroup.GET("/submissions", submissionHandler.GetAllSubmissions)
+				adminGroup.PATCH("/submissions/:id/approve", submissionHandler.ApproveSubmission)
+				adminGroup.PATCH("/submissions/:id/reject", submissionHandler.RejectSubmission)
 				adminGroup.POST("/submissions/export", handlers.ExportSubmissionsExcel)
 
 				adminGroup.POST("/test-services", handlers.CreateTestService)
@@ -80,10 +82,10 @@ func RegisterRoutes(r *gin.Engine) {
 				customerGroup.PATCH("/notifications/:id/read", handlers.MarkNotificationAsRead)
 				customerGroup.PATCH("/notifications/read-all", handlers.MarkAllNotificationsAsRead)
 
-				customerGroup.POST("/submissions", handlers.CreateSubmission)
-				customerGroup.GET("/submissions/my", handlers.GetMySubmissions)
-				customerGroup.PATCH("/submissions/:id", handlers.UpdateSubmission)
-				customerGroup.GET("/submissions/:id/tracking", handlers.GetSubmissionTrackingTimeline)
+				customerGroup.POST("/submissions", submissionHandler.CreateSubmission)
+				customerGroup.GET("/submissions/my", submissionHandler.GetMySubmissions)
+				customerGroup.PATCH("/submissions/:id", submissionHandler.UpdateSubmission)
+				customerGroup.GET("/submissions/:id/tracking", submissionHandler.GetSubmissionTrackingTimeline)
 
 				customerGroup.GET("/test-services", handlers.GetAllTestServices)
 				customerGroup.GET("/test-services/:id", handlers.GetTestServiceByID)

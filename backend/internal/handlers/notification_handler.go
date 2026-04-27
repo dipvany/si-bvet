@@ -2,19 +2,23 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetMyNotifications(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
 
 	notifications, err := services.GetMyNotifications(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -25,30 +29,37 @@ func GetMyNotifications(c *gin.Context) {
 }
 
 func MarkNotificationAsRead(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
-
-	idParam := c.Param("id")
-	notificationID, err := strconv.ParseUint(idParam, 10, 64)
+	userID, err := GetUserID(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid notification id"})
+		RespondUserIDError(c, err)
 		return
 	}
 
-	if err := services.MarkMyNotificationAsRead(userID, uint(notificationID)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	notificationID, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid notification id")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Notification marked as read"})
+	if err := services.MarkMyNotificationAsRead(userID, notificationID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.MessageResponse(c, http.StatusOK, "Notification marked as read")
 }
 
 func MarkAllNotificationsAsRead(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
-
-	if err := services.MarkAllMyNotificationsAsRead(userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "All notifications marked as read"})
+	if err := services.MarkAllMyNotificationsAsRead(userID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.MessageResponse(c, http.StatusOK, "All notifications marked as read")
 }

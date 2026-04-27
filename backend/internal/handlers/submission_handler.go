@@ -9,9 +9,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateSubmission(c *gin.Context) {
-	userID, ok := currentUserID(c)
-	if !ok {
+type SubmissionHandler struct {
+	Service services.SubmissionServiceInterface
+}
+
+func NewSubmissionHandler(service services.SubmissionServiceInterface) *SubmissionHandler {
+	return &SubmissionHandler{Service: service}
+}
+
+func (h *SubmissionHandler) CreateSubmission(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
 		return
 	}
 
@@ -22,7 +31,7 @@ func CreateSubmission(c *gin.Context) {
 		return
 	}
 
-	err := services.CreateSubmissionWithSamplesAndTests(userID, req)
+	err = h.Service.Create(userID, req)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -31,13 +40,14 @@ func CreateSubmission(c *gin.Context) {
 	utils.MessageResponse(c, http.StatusOK, "Submission created successfully")
 }
 
-func GetMySubmissions(c *gin.Context) {
-	userID, ok := currentUserID(c)
-	if !ok {
+func (h *SubmissionHandler) GetMySubmissions(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
 		return
 	}
 
-	submissions, err := services.GetSubmissionsByUser(userID)
+	submissions, err := h.Service.GetByUser(userID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -46,9 +56,9 @@ func GetMySubmissions(c *gin.Context) {
 	c.JSON(http.StatusOK, submissions)
 }
 
-func GetAllSubmissions(c *gin.Context) {
+func (h *SubmissionHandler) GetAllSubmissions(c *gin.Context) {
 
-	submissions, err := services.GetAllSubmissions()
+	submissions, err := h.Service.GetAll()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -57,13 +67,14 @@ func GetAllSubmissions(c *gin.Context) {
 	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", submissions)
 }
 
-func ApproveSubmission(c *gin.Context) {
-	id, ok := parseUintParam(c, "id", "invalid submission ID")
-	if !ok {
+func (h *SubmissionHandler) ApproveSubmission(c *gin.Context) {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid submission ID")
 		return
 	}
 
-	err := services.ApproveSubmission(id)
+	err = h.Service.Approve(id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -73,13 +84,14 @@ func ApproveSubmission(c *gin.Context) {
 
 }
 
-func RejectSubmission(c *gin.Context) {
-	id, ok := parseUintParam(c, "id", "invalid submission ID")
-	if !ok {
+func (h *SubmissionHandler) RejectSubmission(c *gin.Context) {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid submission ID")
 		return
 	}
 
-	err := services.RejectSubmission(id)
+	err = h.Service.Reject(id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -88,14 +100,16 @@ func RejectSubmission(c *gin.Context) {
 	utils.MessageResponse(c, http.StatusOK, "Submission rejected")
 }
 
-func UpdateSubmission(c *gin.Context) {
-	userID, ok := currentUserID(c)
-	if !ok {
+func (h *SubmissionHandler) UpdateSubmission(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
 		return
 	}
 
-	id, ok := parseUintParam(c, "id", "invalid submission id")
-	if !ok {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid submission id")
 		return
 	}
 
@@ -105,7 +119,7 @@ func UpdateSubmission(c *gin.Context) {
 		return
 	}
 
-	err := services.UpdateSubmissionWithSamplesAndTests(
+	err = h.Service.Update(
 		id,
 		userID,
 		req,
@@ -118,18 +132,20 @@ func UpdateSubmission(c *gin.Context) {
 	utils.MessageResponse(c, http.StatusOK, "Submission updated successfully")
 }
 
-func GetSubmissionTrackingTimeline(c *gin.Context) {
-	userID, ok := currentUserID(c)
-	if !ok {
+func (h *SubmissionHandler) GetSubmissionTrackingTimeline(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
 		return
 	}
 
-	id, ok := parseUintParam(c, "id", "invalid submission id")
-	if !ok {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid submission id")
 		return
 	}
 
-	resp, err := services.GetSubmissionTrackingTimeline(
+	resp, err := h.Service.GetTrackingTimeline(
 		id,
 		userID,
 	)

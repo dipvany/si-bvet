@@ -4,13 +4,18 @@ import (
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateComplaint(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
 
 	subjects := c.PostForm("subjects")
 	description := c.PostForm("description")
@@ -18,7 +23,7 @@ func CreateComplaint(c *gin.Context) {
 	filePath := ""
 	file, err := c.FormFile("attachment")
 	if err == nil {
-		filePath := "uploads/complaints/" + file.Filename
+		filePath = "uploads/complaints/" + file.Filename
 		_ = c.SaveUploadedFile(file, filePath)
 	}
 
@@ -29,24 +34,18 @@ func CreateComplaint(c *gin.Context) {
 
 	err = services.CreateComplaint(userID, req, filePath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Complaint submitted successfully",
-	})
-	
+	utils.MessageResponse(c, http.StatusOK, "Complaint submitted successfully")
+
 }
 
 func GetAllComplaints(c *gin.Context) {
 	complaints, err := services.GetAllComplaints()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -60,41 +59,35 @@ func UpdateComplaintResponse(c *gin.Context) {
 
 	idUint, err := strconv.ParseUint(complaintID, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid complaint ID",
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid complaint ID")
 		return
 	}
 
 	var req dto.ComplaintResponseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = services.UpdateComplaintResponse(uint(idUint), req.AdminResponse)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Complaint response updated successfully",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Complaint response updated successfully")
 }
 
 func GetMyComplaints(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
 
 	complaints, err := services.GetComplaintsByUserID(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -102,4 +95,3 @@ func GetMyComplaints(c *gin.Context) {
 		"complaints": complaints,
 	})
 }
-

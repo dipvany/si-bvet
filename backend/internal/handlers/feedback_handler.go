@@ -4,41 +4,38 @@ import (
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateFeedback(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
 
 	var req dto.FeedbackRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err := services.CreateFeedback(userID, req)
+	err = services.CreateFeedback(userID, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Feedback submitted successfully",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Feedback submitted successfully")
 }
 
 func GetAllFeedbacks(c *gin.Context) {
 	feedbacks, err := services.GetAllFeedbacks()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -47,13 +44,15 @@ func GetAllFeedbacks(c *gin.Context) {
 }
 
 func GetMyFeedbacks(c *gin.Context) {
-	userID := c.MustGet("user_id").(uint)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
 
 	feedbacks, err := services.GetFeedbackByUserID(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

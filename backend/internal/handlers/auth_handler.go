@@ -16,22 +16,20 @@ func RegisterCustomer(c *gin.Context) {
 	var req dto.RegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	file, err := c.FormFile("registration_doc")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "document registration is required"})
+		utils.ErrorResponse(c, http.StatusBadRequest, "document registration is required")
 		return
 	}
 
 	// Simpan file
 	filePath := "uploads/" + file.Filename
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to save file",
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save file")
 		return
 	}
 
@@ -46,9 +44,7 @@ func RegisterCustomer(c *gin.Context) {
 	}
 
 	if err := services.RegisterUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -63,19 +59,19 @@ func Login(c *gin.Context) {
 	var req dto.LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	user, err := services.LoginUser(req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
 

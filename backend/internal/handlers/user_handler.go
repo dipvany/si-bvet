@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,13 +12,15 @@ import (
 // get semua data profile berdasarkan userID dan role
 func Profile(c *gin.Context) {
 
-	userID := c.MustGet("user_id").(uint)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
 
 	profile, err := services.GetUserProfile(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -29,36 +32,42 @@ func Profile(c *gin.Context) {
 
 func UpdateProfile(c *gin.Context) {
 
-	userID := c.MustGet("user_id").(uint)
-	role := c.MustGet("role").(string)
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
+
+	role, err := GetRole(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	var req dto.ProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err := services.UpdateProfile(userID, role, req)
+	err = services.UpdateProfile(userID, role, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Profile updated successfully",
-	})
+	utils.MessageResponse(c, http.StatusOK, "Profile updated successfully")
 }
 
 // dashboard user berdasarkan role
 func UserDashboard(c *gin.Context) {
 
-	role := c.MustGet("role").(string)
+	role, err := GetRole(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Welcome to the " + role + " dashboard",
 	})
 }
-
