@@ -36,6 +36,10 @@
     {
       "key": "complaint_id",
       "value": "1"
+    },
+    {
+      "key": "notification_id",
+      "value": "1"
     }
   ],
   "item": [
@@ -1394,7 +1398,7 @@
         {
           "name": "Upload LHU",
           "request": {
-            "method": "PATCH",
+            "method": "POST",
             "header": [
               {
                 "key": "Authorization",
@@ -1462,7 +1466,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/lhu/{{submission_id}}",
+            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/lhu",
             "description": "Get an LHU by submission ID."
           },
           "response": [
@@ -1613,7 +1617,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/complaints/respond/{{complaint_id}}",
+            "url": "{{base_url}}/api/admin/complaints/{{complaint_id}}/respond",
             "description": "Update a complaint response."
           },
           "response": [
@@ -1654,6 +1658,144 @@
     {
       "name": "5. Customer",
       "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/notifications",
+            "description": "List customer notifications."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"notifications\": [\n    {\n      \"id\": 1,\n      \"title\": \"Status Submission\",\n      \"message\": \"Submission Anda telah diverifikasi\",\n      \"is_read\": false\n    }\n  ]\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark Notification As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/notifications/{{notification_id}}/read",
+            "description": "Mark one notification as read."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Notification marked as read\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark All Notifications As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/api/customer/notifications/read-all",
+            "description": "Mark all notifications as read."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"All notifications marked as read\"\n}"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
         {
           "name": "Create Submission",
           "request": {
@@ -2068,7 +2210,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/lhu/{{submission_id}}",
+            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}/lhu",
             "description": "Get LHU for a submission."
           },
           "response": [

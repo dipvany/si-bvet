@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -14,17 +15,13 @@ func CreateTestService(c *gin.Context) {
 	var req dto.TestServiceRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err := services.CreateTestService(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -35,9 +32,7 @@ func CreateTestService(c *gin.Context) {
 func GetAllTestServices(c *gin.Context) {
 	services, err := services.GetAllTestServices()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -49,17 +44,13 @@ func GetTestServiceByID(c *gin.Context) {
 
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid ID",
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID")
 		return
 	}
 
 	service, err := services.GetTestServiceByID(uint(idUint))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Test service not found",
-		})
+		utils.ErrorResponse(c, http.StatusNotFound, "Test service not found")
 		return
 	}
 
@@ -71,26 +62,20 @@ func UpdateTestService(c *gin.Context) {
 
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid ID",
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID")
 		return
 	}
 
 	var req dto.TestServiceRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = services.UpdateTestService(uint(idUint), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -104,17 +89,13 @@ func DeleteTestService(c *gin.Context) {
 
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid ID",
-		})
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid ID")
 		return
 	}
 
 	err = services.DeleteTestService(uint(idUint))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

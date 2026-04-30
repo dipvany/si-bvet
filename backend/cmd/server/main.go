@@ -5,6 +5,7 @@ import (
 
 	"si-bvet/internal/db"
 	"si-bvet/internal/routes"
+	"si-bvet/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -19,6 +20,10 @@ func main() {
 	// Initialize Database
 	if err := db.InitDB(); err != nil {
 		log.Fatalf("Could not connect to the database: %v", err)
+	}
+
+	if err := services.BootstrapInitialSuperAdmin(); err != nil {
+		log.Fatalf("Could not bootstrap initial superadmin: %v", err)
 	}
 
 	// Initialize Gin

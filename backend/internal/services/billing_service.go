@@ -86,10 +86,6 @@ func UploadBillingProof(submissionID uint, proofPath string) error {
 	return repositories.UploadBillingProof(submissionID, proofPath)
 }
 
-func IsBillingExists(submissionID uint) (bool, error) {
-	return repositories.IsBillingExists(submissionID)
-}
-
 // function untuk memverifikasi pembayaran
 func VerifyPayment(submissionID uint) error {
 

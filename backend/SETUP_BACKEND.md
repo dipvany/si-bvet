@@ -101,7 +101,23 @@ DB_NAME=sibvet_lampung
 # JWT Configuration
 JWT_SECRET=secret_token123
 JWT_EXPIRED_HOURS=24
+
+# Optional: one-time initial superadmin bootstrap
+BOOTSTRAP_SUPERADMIN_EMAIL=
+BOOTSTRAP_SUPERADMIN_PASSWORD=
+BOOTSTRAP_SUPERADMIN_FULLNAME=Initial Superadmin
+BOOTSTRAP_SUPERADMIN_PHONE=080000000000
+BOOTSTRAP_SUPERADMIN_POSITION=
+BOOTSTRAP_SUPERADMIN_UNIT_LAB=
+BOOTSTRAP_SUPERADMIN_EMPLOYEE_NO=
 ```
+
+Catatan bootstrap superadmin:
+
+- Bootstrap hanya berjalan jika `BOOTSTRAP_SUPERADMIN_EMAIL` dan `BOOTSTRAP_SUPERADMIN_PASSWORD` diisi.
+- Bootstrap hanya akan membuat akun ketika belum ada user dengan role `superadmin`.
+- Jika superadmin sudah ada, bootstrap akan otomatis skip.
+- Jika email bootstrap sudah dipakai user lain, startup akan gagal agar tidak membuat akun ganda/konflik.
 
 ### 2. Konfigurasi Per Environment
 
