@@ -11,11 +11,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterCustomer(c *gin.Context) {
+// AuthHandler menyimpan dependency untuk auth operations
+type AuthHandler struct {
+	authService services.AuthServiceInterface
+}
+
+// NewAuthHandler membuat instance baru AuthHandler dengan injected service
+func NewAuthHandler(authService services.AuthServiceInterface) *AuthHandler {
+	return &AuthHandler{
+		authService: authService,
+	}
+}
+
+// RegisterCustomer menangani registrasi customer baru
+func (h *AuthHandler) RegisterCustomer(c *gin.Context) {
 
 	var req dto.RegisterRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -43,7 +56,7 @@ func RegisterCustomer(c *gin.Context) {
 		RegistrationDoc: filePath,
 	}
 
-	if err := services.RegisterUser(&user); err != nil {
+	if err := h.authService.RegisterUser(&user); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -55,7 +68,8 @@ func RegisterCustomer(c *gin.Context) {
 	})
 }
 
-func Login(c *gin.Context) {
+// Login menangani login user
+func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,7 +77,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	user, err := services.LoginUser(req.Email, req.Password)
+	user, err := h.authService.LoginUser(req.Email, req.Password)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
@@ -85,5 +99,4 @@ func Login(c *gin.Context) {
 			"role":     user.Role,
 		},
 	})
-
 }

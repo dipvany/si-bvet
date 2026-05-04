@@ -9,6 +9,11 @@ import (
 )
 
 func RegisterRoutes(r *gin.Engine) {
+	// Initialize services with repositories
+	userRepo := &services.DefaultUserRepository{}
+	authService := services.NewAuthService(userRepo)
+	authHandler := handlers.NewAuthHandler(authService)
+	
 	submissionHandler := handlers.NewSubmissionHandler(services.NewSubmissionService())
 
 	api := r.Group("/api")
@@ -17,8 +22,8 @@ func RegisterRoutes(r *gin.Engine) {
 		// PUBLIC
 		auth := api.Group("/auth")
 		{
-			auth.POST("/register", handlers.RegisterCustomer)
-			auth.POST("/login", handlers.Login)
+			auth.POST("/register", authHandler.RegisterCustomer)
+			auth.POST("/login", authHandler.Login)
 		}
 
 		// PROTECTED

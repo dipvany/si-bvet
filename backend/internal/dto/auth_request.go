@@ -6,9 +6,9 @@ type LoginRequest struct {
 }
 
 type RegisterRequest struct {
-	FullName        string `json:"fullname" binding:"required"`
-	Email           string `json:"email" binding:"required,email"`
-	Phone           string `json:"phone" binding:"required"`
-	Password        string `json:"password" binding:"required"`
-	RegistrationDoc string `json:"registration_doc" binding:"required"`
+	FullName        string `json:"fullname" form:"fullName" binding:"required"`
+	Email           string `json:"email" form:"email" binding:"required,email"`
+	Phone           string `json:"phone" form:"phone" binding:"required"`
+	Password        string `json:"password" form:"password" binding:"required"`
+	RegistrationDoc string `json:"registration_doc" form:"-"`
 }

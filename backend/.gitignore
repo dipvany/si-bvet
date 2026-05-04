@@ -1,2 +1,5 @@
 .env
 /migrations/
+
+# Ignore API documentation files
+/docs/

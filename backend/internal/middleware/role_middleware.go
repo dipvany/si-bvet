@@ -8,6 +8,11 @@ import (
 
 func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if len(roles) == 0 {
+			c.Next()
+			return
+		}
+
 		roleInterface, exists := c.Get("role")
 		if !exists {
 			c.JSON(http.StatusForbidden, gin.H{"error": "role not found"})
