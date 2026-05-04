@@ -1,0 +1,8 @@
+# Custom PostgreSQL image dengan timezone data
+FROM postgres:16-bookworm
+
+# Install timezone data package
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+
+# Set timezone
+ENV TZ=Asia/Jakarta
