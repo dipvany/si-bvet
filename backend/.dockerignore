@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.github
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build outputs
+bin/
+dist/
+*.o
+*.a
+
+# Dependencies
+vendor/
+
+# Test files
+*_test.go
+coverage.out
+*.test
+
+# Temporary files
+tmp/
+temp/
+.tmp
+
+# Documentation (optional, comment if needed)
+*.md
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# OS
+Thumbs.db

@@ -1,0 +1,85 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: sibvet-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password_change_me
+      POSTGRES_DB: sibvet_lampung
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sibvet-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # SI-BVET Backend (Go)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sibvet-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres_password_change_me
+      - DB_NAME=sibvet_lampung
+      - JWT_SECRET=your_secure_jwt_secret_key_change_me
+      - JWT_EXPIRED_HOURS=24
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=your_email@gmail.com
+      - SMTP_PASSWORD=your_app_password_change_me
+      - SMTP_FROM=your_email@gmail.com
+      - SMTP_TIMEOUT_SECONDS=10
+      - SMTP_MAX_RETRIES=3
+      - BOOTSTRAP_SUPERADMIN_EMAIL=superadmin@example.com
+      - BOOTSTRAP_SUPERADMIN_PASSWORD=$superadmin123$
+      - BOOTSTRAP_SUPERADMIN_FULLNAME=Initial Superadmin
+      - BOOTSTRAP_SUPERADMIN_PHONE=080000000000
+      - BOOTSTRAP_SUPERADMIN_POSITION=
+      - BOOTSTRAP_SUPERADMIN_UNIT_LAB=
+      - BOOTSTRAP_SUPERADMIN_EMPLOYEE_NO=
+      - APP_LOGIN_URL=http://localhost:3000/login
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - sibvet-network
+    restart: unless-stopped
+
+  # Optional: Frontend (jika sudah ada)
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: sibvet-frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - sibvet-network
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  sibvet-network:
+    driver: bridge
