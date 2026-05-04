@@ -14,6 +14,39 @@ import (
 var DB *gorm.DB
 
 func InitDB() error {
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Info),
+		})
+		if err != nil {
+			return err
+		}
+
+		DB = db
+
+		// Auto migrate models
+		err = DB.AutoMigrate(
+			&models.User{},
+			&models.Admin{},
+			&models.Customer{},
+			&models.Notification{},
+			&models.Submission{},
+			&models.Sample{},
+			&models.Billing{},
+			&models.LhuDocument{},
+			&models.Feedback{},
+			&models.Complaint{},
+			&models.TestService{},
+			&models.TestRequest{},
+		)
+		if err != nil {
+			return err
+		}
+
+		log.Println("Database connected & automigrate success")
+		return nil
+	}
+
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("DB_PASSWORD")

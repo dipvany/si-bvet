@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"si-bvet/internal/db"
 	"si-bvet/internal/routes"
@@ -12,10 +14,7 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("No .env file found")
-	}
+	_ = godotenv.Load()
 
 	// Initialize Database
 	if err := db.InitDB(); err != nil {
@@ -32,7 +31,15 @@ func main() {
 	// Setup Routes
 	routes.RegisterRoutes(r)
 
-	log.Println("Starting server on :8080")
-	r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	addr := fmt.Sprintf(":%s", port)
+	log.Printf("Starting server on %s", addr)
+	if err := r.Run(addr); err != nil {
+		log.Fatalf("Could not start server: %v", err)
+	}
 
 }
