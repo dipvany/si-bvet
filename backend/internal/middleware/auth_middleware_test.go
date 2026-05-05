@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"testing"
 
 	"si-bvet/internal/middleware"
 	"si-bvet/internal/utils"
@@ -19,11 +18,6 @@ type MockTokenValidator struct {
 	validateTokenCalled bool
 	validateTokenError  error
 	validateTokenClaims *utils.JWTClaims
-}
-
-func TestAuthMiddleware(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "AuthMiddleware Suite")
 }
 
 var _ = ginkgo.Describe("AuthMiddleware", func() {

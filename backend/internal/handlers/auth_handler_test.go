@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"testing"
 
 	"si-bvet/internal/dto"
 	"si-bvet/internal/handlers"
@@ -54,11 +53,6 @@ func (m *MockUserRepository) CreateUser(user *models.User) error {
 
 func (m *MockUserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return nil, nil
-}
-
-func TestAuthHandler(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "AuthHandler Suite")
 }
 
 var _ = ginkgo.Describe("AuthHandler", func() {

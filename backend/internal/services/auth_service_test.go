@@ -2,7 +2,6 @@ package services_test
 
 import (
 	"errors"
-	"testing"
 
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
@@ -34,11 +33,6 @@ func (m *MockUserRepository) GetUserByEmail(email string) (*models.User, error) 
 	m.getUserByEmailCalled = true
 	m.getUserByEmailEmail = email
 	return m.getUserByEmailUser, m.getUserByEmailError
-}
-
-func TestAuthService(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "AuthService Suite")
 }
 
 var _ = ginkgo.Describe("AuthService", func() {
