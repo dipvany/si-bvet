@@ -29,7 +29,7 @@ func UploadLHU(c *gin.Context) {
 		return
 	}
 
-	filePath := "uploads/lhu/" + file.Filename
+	filePath := "internal/uploads/lhu/" + file.Filename
 
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

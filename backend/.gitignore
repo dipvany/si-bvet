@@ -3,3 +3,7 @@
 
 # Ignore API documentation files
 /docs/
+ 
+# Ignore upload storage
+uploads/
+internal/uploads/

@@ -40,7 +40,7 @@ func (h *AuthHandler) RegisterCustomer(c *gin.Context) {
 	}
 
 	// Simpan file
-	filePath := "uploads/" + file.Filename
+	filePath := "internal/uploads/" + file.Filename
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save file")
 		return

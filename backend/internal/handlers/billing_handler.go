@@ -103,7 +103,7 @@ func UploadBillingProof(c *gin.Context) {
 		return
 	}
 
-	proofPath := "uploads/" + proofFile.Filename
+	proofPath := "internal/uploads/" + proofFile.Filename
 
 	if err := c.SaveUploadedFile(proofFile, proofPath); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to save proof file")

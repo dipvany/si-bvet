@@ -23,7 +23,7 @@ func CreateComplaint(c *gin.Context) {
 	filePath := ""
 	file, err := c.FormFile("attachment")
 	if err == nil {
-		filePath = "uploads/complaints/" + file.Filename
+		filePath = "internal/uploads/complaints/" + file.Filename
 		_ = c.SaveUploadedFile(file, filePath)
 	}
 
