@@ -194,6 +194,29 @@ var _ = ginkgo.Describe("BillingService", func() {
 			gomega.Expect(db.DB.First(&updatedSub, sub.ID).Error).ToNot(gomega.HaveOccurred())
 			gomega.Expect(updatedSub.ProcessStatus).To(gomega.Equal("processed"))
 		})
+
+		ginkgo.It("returns error when billing is missing", func() {
+			// Arrange
+			sub := models.Submission{
+				UserID:        54,
+				NoTicket:      "TCK-bill-5b",
+				TypeService:   "svc",
+				PurposeOfTest: "purpose",
+				ProcessStatus: "awaiting_payment",
+			}
+			gomega.Expect(db.DB.Create(&sub).Error).ToNot(gomega.HaveOccurred())
+
+			// Act
+			err := VerifyPayment(sub.ID)
+
+			// Assert
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("record not found"))
+
+			var updatedSub models.Submission
+			gomega.Expect(db.DB.First(&updatedSub, sub.ID).Error).ToNot(gomega.HaveOccurred())
+			gomega.Expect(updatedSub.ProcessStatus).To(gomega.Equal("awaiting_payment"))
+		})
 	})
 
 	ginkgo.Describe("RejectPayment", func() {
@@ -225,6 +248,29 @@ var _ = ginkgo.Describe("BillingService", func() {
 			var updatedSub models.Submission
 			gomega.Expect(db.DB.First(&updatedSub, sub.ID).Error).ToNot(gomega.HaveOccurred())
 			gomega.Expect(updatedSub.ProcessStatus).To(gomega.Equal("payment_rejected"))
+		})
+
+		ginkgo.It("returns error when billing is missing", func() {
+			// Arrange
+			sub := models.Submission{
+				UserID:        55,
+				NoTicket:      "TCK-bill-6b",
+				TypeService:   "svc",
+				PurposeOfTest: "purpose",
+				ProcessStatus: "awaiting_payment",
+			}
+			gomega.Expect(db.DB.Create(&sub).Error).ToNot(gomega.HaveOccurred())
+
+			// Act
+			err := RejectPayment(sub.ID)
+
+			// Assert
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("record not found"))
+
+			var updatedSub models.Submission
+			gomega.Expect(db.DB.First(&updatedSub, sub.ID).Error).ToNot(gomega.HaveOccurred())
+			gomega.Expect(updatedSub.ProcessStatus).To(gomega.Equal("awaiting_payment"))
 		})
 	})
 

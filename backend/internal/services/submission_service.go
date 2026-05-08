@@ -50,10 +50,36 @@ func UpdateSubmission(id uint, data map[string]interface{}) error {
 }
 
 func ApproveSubmission(id uint) error {
+	// Verify submission exists and is in correct status for approval
+	submission, err := repositories.GetSubmissionByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("submission not found")
+		}
+		return err
+	}
+
+	if submission.ProcessStatus != "pending_verification" {
+		return errors.New("submission can only be approved when status is pending_verification")
+	}
+
 	return UpdateSubmissionStatusWithNotification(id, "approved")
 }
 
 func RejectSubmission(id uint) error {
+	// Verify submission exists and is in correct status for rejection
+	submission, err := repositories.GetSubmissionByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("submission not found")
+		}
+		return err
+	}
+
+	if submission.ProcessStatus != "pending_verification" {
+		return errors.New("submission can only be rejected when status is pending_verification")
+	}
+
 	return UpdateSubmissionStatusWithNotification(id, "rejected")
 }
 

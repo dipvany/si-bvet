@@ -4,6 +4,8 @@ import (
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 func CreateBilling(billing *models.Billing) error {
@@ -22,33 +24,51 @@ func GetBillingBySubmissionID(submissionID uint) (*models.Billing, error) {
 }
 
 func UpdateBilling(submissionID uint, code string, amount float64) error {
-
-	return db.DB.
+	result := db.DB.
 		Model(&models.Billing{}).
 		Where("submission_id = ?", submissionID).
 		Updates(map[string]interface{}{
 			"ebilling_code": code,
 			"total_amount":  amount,
-		}).Error
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func UploadBillingProof(submissionID uint, proofPath string) error {
-
-	return db.DB.
+	result := db.DB.
 		Model(&models.Billing{}).
 		Where("submission_id = ?", submissionID).
-		Update("proof_payment", proofPath).Error
+		Update("proof_payment", proofPath)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func MarkAsPaid(submissionID uint, paidAt time.Time) error {
-
-	return db.DB.
+	result := db.DB.
 		Model(&models.Billing{}).
 		Where("submission_id = ?", submissionID).
 		Updates(map[string]interface{}{
 			"payment_status": "paid",
 			"paid_at":       paidAt,
-		}).Error
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 func IsBillingExists(submissionID uint) (bool, error) {

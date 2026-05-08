@@ -2,13 +2,43 @@ package handlers
 
 import (
 	"net/http"
+	"si-bvet/internal/models"
 	"si-bvet/internal/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
+type LHUServiceInterface interface {
+	UploadLHU(submissionID uint, noLHU string, filePath string) error
+	GetLHU(submissionID uint) (models.LhuDocument, error)
+}
+
+type defaultLHUService struct{}
+
+func (defaultLHUService) UploadLHU(submissionID uint, noLHU string, filePath string) error {
+	return services.UploadLHU(submissionID, noLHU, filePath)
+}
+
+func (defaultLHUService) GetLHU(submissionID uint) (models.LhuDocument, error) {
+	return services.GetLHU(submissionID)
+}
+
+type LHUHandler struct {
+	Service LHUServiceInterface
+}
+
+func NewLHUHandler(service LHUServiceInterface) *LHUHandler {
+	return &LHUHandler{Service: service}
+}
+
+var defaultLHUHandler = NewLHUHandler(defaultLHUService{})
+
 func UploadLHU(c *gin.Context) {
+	defaultLHUHandler.UploadLHU(c)
+}
+
+func (h *LHUHandler) UploadLHU(c *gin.Context) {
 
 	idParam := c.Param("id")
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
@@ -38,7 +68,7 @@ func UploadLHU(c *gin.Context) {
 		return
 	}
 
-	err = services.UploadLHU(uint(idUint), noLHU, filePath)
+	err = h.Service.UploadLHU(uint(idUint), noLHU, filePath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -52,6 +82,10 @@ func UploadLHU(c *gin.Context) {
 }
 
 func GetLHU(c *gin.Context) {
+	defaultLHUHandler.GetLHU(c)
+}
+
+func (h *LHUHandler) GetLHU(c *gin.Context) {
 
 	idParam := c.Param("id")
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
@@ -62,7 +96,7 @@ func GetLHU(c *gin.Context) {
 		return
 	}
 
-	lhu, err := services.GetLHU(uint(idUint))
+	lhu, err := h.Service.GetLHU(uint(idUint))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "LHU not available yet",
@@ -75,6 +109,10 @@ func GetLHU(c *gin.Context) {
 
 // download LHU
 func DownloadLHU(c *gin.Context) {
+	defaultLHUHandler.DownloadLHU(c)
+}
+
+func (h *LHUHandler) DownloadLHU(c *gin.Context) {
 
 	idParam := c.Param("id")
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
@@ -85,7 +123,7 @@ func DownloadLHU(c *gin.Context) {
 		return
 	}
 
-	lhu, err := services.GetLHU(uint(idUint))
+	lhu, err := h.Service.GetLHU(uint(idUint))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "LHU not available yet",

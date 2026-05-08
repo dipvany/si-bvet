@@ -10,8 +10,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateTestService(c *gin.Context) {
-	
+// TestServiceServiceInterface defines the interface for test service operations
+type TestServiceServiceInterface interface {
+	CreateTestService(req dto.TestServiceRequest) error
+	GetAllTestServices() ([]any, error)
+	GetTestServiceByID(id uint) (any, error)
+	UpdateTestService(id uint, req dto.TestServiceRequest) error
+	DeleteTestService(id uint) error
+}
+
+// TestServiceHandler handles HTTP requests for test service operations
+type TestServiceHandler struct {
+	Service TestServiceServiceInterface
+}
+
+// NewTestServiceHandler creates a new test service handler
+func NewTestServiceHandler(service TestServiceServiceInterface) *TestServiceHandler {
+	return &TestServiceHandler{Service: service}
+}
+
+// CreateTestService handles POST /test-services
+func (h *TestServiceHandler) CreateTestService(c *gin.Context) {
 	var req dto.TestServiceRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -19,7 +38,7 @@ func CreateTestService(c *gin.Context) {
 		return
 	}
 
-	err := services.CreateTestService(req)
+	err := h.Service.CreateTestService(req)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -29,8 +48,9 @@ func CreateTestService(c *gin.Context) {
 	})
 }
 
-func GetAllTestServices(c *gin.Context) {
-	services, err := services.GetAllTestServices()
+// GetAllTestServices handles GET /test-services
+func (h *TestServiceHandler) GetAllTestServices(c *gin.Context) {
+	services, err := h.Service.GetAllTestServices()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -39,7 +59,8 @@ func GetAllTestServices(c *gin.Context) {
 	c.JSON(http.StatusOK, services)
 }
 
-func GetTestServiceByID(c *gin.Context) {
+// GetTestServiceByID handles GET /test-services/:id
+func (h *TestServiceHandler) GetTestServiceByID(c *gin.Context) {
 	idParam := c.Param("id")
 
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
@@ -48,7 +69,7 @@ func GetTestServiceByID(c *gin.Context) {
 		return
 	}
 
-	service, err := services.GetTestServiceByID(uint(idUint))
+	service, err := h.Service.GetTestServiceByID(uint(idUint))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Test service not found")
 		return
@@ -57,7 +78,8 @@ func GetTestServiceByID(c *gin.Context) {
 	c.JSON(http.StatusOK, service)
 }
 
-func UpdateTestService(c *gin.Context) {
+// UpdateTestService handles PUT /test-services/:id
+func (h *TestServiceHandler) UpdateTestService(c *gin.Context) {
 	idParam := c.Param("id")
 
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
@@ -73,7 +95,7 @@ func UpdateTestService(c *gin.Context) {
 		return
 	}
 
-	err = services.UpdateTestService(uint(idUint), req)
+	err = h.Service.UpdateTestService(uint(idUint), req)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -84,7 +106,8 @@ func UpdateTestService(c *gin.Context) {
 	})
 }
 
-func DeleteTestService(c *gin.Context) {
+// DeleteTestService handles DELETE /test-services/:id
+func (h *TestServiceHandler) DeleteTestService(c *gin.Context) {
 	idParam := c.Param("id")
 
 	idUint, err := strconv.ParseUint(idParam, 10, 64)
@@ -93,7 +116,7 @@ func DeleteTestService(c *gin.Context) {
 		return
 	}
 
-	err = services.DeleteTestService(uint(idUint))
+	err = h.Service.DeleteTestService(uint(idUint))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -102,4 +125,58 @@ func DeleteTestService(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Test service deleted successfully",
 	})
+}
+
+// Adapter for default service (backward compatibility)
+type defaultTestServiceAdapter struct{}
+
+func (d defaultTestServiceAdapter) CreateTestService(req dto.TestServiceRequest) error {
+	return services.CreateTestService(req)
+}
+
+func (d defaultTestServiceAdapter) GetAllTestServices() ([]any, error) {
+	services, err := services.GetAllTestServices()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]any, len(services))
+	for i, v := range services {
+		result[i] = v
+	}
+	return result, nil
+}
+
+func (d defaultTestServiceAdapter) GetTestServiceByID(id uint) (any, error) {
+	return services.GetTestServiceByID(id)
+}
+
+func (d defaultTestServiceAdapter) UpdateTestService(id uint, req dto.TestServiceRequest) error {
+	return services.UpdateTestService(id, req)
+}
+
+func (d defaultTestServiceAdapter) DeleteTestService(id uint) error {
+	return services.DeleteTestService(id)
+}
+
+var defaultTestServiceHandler = NewTestServiceHandler(defaultTestServiceAdapter{})
+
+// Package-level forwarding functions for backward compatibility
+func CreateTestService(c *gin.Context) {
+	defaultTestServiceHandler.CreateTestService(c)
+}
+
+func GetAllTestServices(c *gin.Context) {
+	defaultTestServiceHandler.GetAllTestServices(c)
+}
+
+func GetTestServiceByID(c *gin.Context) {
+	defaultTestServiceHandler.GetTestServiceByID(c)
+}
+
+func UpdateTestService(c *gin.Context) {
+	defaultTestServiceHandler.UpdateTestService(c)
+}
+
+func DeleteTestService(c *gin.Context) {
+	defaultTestServiceHandler.DeleteTestService(c)
 }

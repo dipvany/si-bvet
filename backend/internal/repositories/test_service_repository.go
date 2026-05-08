@@ -3,6 +3,8 @@ package repositories
 import (
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
+
+	"gorm.io/gorm"
 )
 
 func CreateTestService(service *models.TestService) error {
@@ -34,5 +36,12 @@ func UpdateTestService(service *models.TestService) error {
 }
 
 func DeleteTestService(id uint) error {
-	return db.DB.Delete(&models.TestService{}, id).Error
+	result := db.DB.Delete(&models.TestService{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

@@ -3,6 +3,8 @@ package repositories
 import (
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
+
+	"gorm.io/gorm"
 )
 
 func CreateComplaint(complaint *models.Complaint) error {
@@ -16,12 +18,19 @@ func GetAllComplaint() ([]models.Complaint, error) {
 }
 
 func UpdateComplaintResponse(id uint, response string) error {
-	return db.DB.Model(&models.Complaint{}).
+	result := db.DB.Model(&models.Complaint{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"admin_response": response,
 			"status":         "responded",
-		}).Error
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // get complaint by my user id
