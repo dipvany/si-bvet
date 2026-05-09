@@ -38,6 +38,11 @@ func UpdateLHu(submissionID uint, noLhu string, filePath string, dateOfPub strin
 }
 
 func UploadLHU(submissionID uint, noLHU string, filePath string) error {
+	// Validate submission exists first
+	_, err := repositories.GetSubmissionByID(submissionID)
+	if err != nil {
+		return err
+	}
 
 	now := time.Now()
 
@@ -48,7 +53,7 @@ func UploadLHU(submissionID uint, noLHU string, filePath string) error {
 		DateOfPub:    &now,
 	}
 
-	err := repositories.CreateLhu(&lhu)
+	err = repositories.CreateLhu(&lhu)
 	if err != nil {
 		return err
 	}
