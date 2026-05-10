@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
 	"si-bvet/internal/db"
@@ -14,11 +13,6 @@ import (
 	"github.com/onsi/gomega"
 	"gorm.io/gorm"
 )
-
-func TestFeedbackService(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Feedback Service Suite")
-}
 
 var _ = ginkgo.Describe("Feedback Service", func() {
 	var gdb *gorm.DB

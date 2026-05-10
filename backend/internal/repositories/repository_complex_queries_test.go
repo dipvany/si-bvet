@@ -535,8 +535,8 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 			// Query submissions for user1 via joined filter
 			var submissions []models.Submission
 			err = db.DB.
-				Joins("JOIN User ON User.id = Submission.user_id").
-				Where("User.id = ?", user1.ID).
+				Joins("JOIN Users ON Users.id = Submission.user_id").
+				Where("Users.id = ?", user1.ID).
 				Find(&submissions).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 

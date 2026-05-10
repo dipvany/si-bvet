@@ -14,9 +14,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestNotificationService(t *testing.T) {
+func TestInternalServices(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Notification Service Suite")
+	ginkgo.RunSpecs(t, "Services Suite")
 }
 
 var _ = ginkgo.Describe("Notification Service", func() {
