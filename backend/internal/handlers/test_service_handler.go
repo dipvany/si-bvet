@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
@@ -16,6 +17,7 @@ type TestServiceServiceInterface interface {
 	GetAllTestServices() ([]any, error)
 	GetTestServiceByID(id uint) (any, error)
 	UpdateTestService(id uint, req dto.TestServiceRequest) error
+	ImportTestServicesFromExcel(file io.Reader) (int, error)
 	DeleteTestService(id uint) error
 }
 
@@ -45,6 +47,35 @@ func (h *TestServiceHandler) CreateTestService(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Test service created successfully",
+	})
+}
+
+// ImportTestServicesExcel handles POST /test-services/import
+func (h *TestServiceHandler) ImportTestServicesExcel(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "file is required")
+		return
+	}
+
+	openedFile, err := file.Open()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to open uploaded file")
+		return
+	}
+	defer func() {
+		_ = openedFile.Close()
+	}()
+
+	importedCount, err := h.Service.ImportTestServicesFromExcel(openedFile)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "Test services imported successfully",
+		"imported_count": importedCount,
 	})
 }
 
@@ -154,6 +185,10 @@ func (d defaultTestServiceAdapter) UpdateTestService(id uint, req dto.TestServic
 	return services.UpdateTestService(id, req)
 }
 
+func (d defaultTestServiceAdapter) ImportTestServicesFromExcel(file io.Reader) (int, error) {
+	return services.ImportTestServicesFromExcel(file)
+}
+
 func (d defaultTestServiceAdapter) DeleteTestService(id uint) error {
 	return services.DeleteTestService(id)
 }
@@ -175,6 +210,10 @@ func GetTestServiceByID(c *gin.Context) {
 
 func UpdateTestService(c *gin.Context) {
 	defaultTestServiceHandler.UpdateTestService(c)
+}
+
+func ImportTestServicesExcel(c *gin.Context) {
+	defaultTestServiceHandler.ImportTestServicesExcel(c)
 }
 
 func DeleteTestService(c *gin.Context) {

@@ -3,11 +3,14 @@ package handlers_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/handlers"
 	"si-bvet/internal/models"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/onsi/ginkgo/v2"
@@ -80,6 +83,68 @@ var _ = ginkgo.Describe("TestServiceHandler", func() {
 
 			gomega.Expect(w.Code).To(gomega.Equal(http.StatusInternalServerError))
 			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("database error"))
+		})
+	})
+
+	ginkgo.Describe("ImportTestServicesExcel", func() {
+		ginkgo.It("should return 400 when file is missing", func() {
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/test-services/import", nil)
+
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+
+			handler.ImportTestServicesExcel(c)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusBadRequest))
+		})
+
+		ginkgo.It("should import uploaded excel file", func() {
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			part, err := writer.CreateFormFile("file", "test-services.xlsx")
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			_, err = part.Write([]byte("dummy workbook content"))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/test-services/import", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+
+			handler.ImportTestServicesExcel(c)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(mockService.ImportTestServicesFromExcelCalled).To(gomega.BeTrue())
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("imported_count"))
+		})
+
+		ginkgo.It("should return 500 on service error", func() {
+			mockService.ShouldReturnError = true
+			mockService.ErrorMessage = "invalid workbook"
+
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			part, err := writer.CreateFormFile("file", "test-services.xlsx")
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			_, err = part.Write([]byte("dummy workbook content"))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/test-services/import", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+
+			c, _ := gin.CreateTestContext(w)
+			c.Request = req
+
+			handler.ImportTestServicesExcel(c)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusInternalServerError))
+			gomega.Expect(strings.Contains(w.Body.String(), "invalid workbook")).To(gomega.BeTrue())
 		})
 	})
 
@@ -302,6 +367,7 @@ type MockTestServiceService struct {
 	GetAllTestServicesCalled   bool
 	GetTestServiceByIDCalled   bool
 	UpdateTestServiceCalled    bool
+	ImportTestServicesFromExcelCalled bool
 	DeleteTestServiceCalled    bool
 	ShouldReturnError          bool
 	ErrorMessage               string
@@ -342,6 +408,14 @@ func (m *MockTestServiceService) UpdateTestService(id uint, req dto.TestServiceR
 		return &mockError{msg: m.ErrorMessage}
 	}
 	return nil
+}
+
+func (m *MockTestServiceService) ImportTestServicesFromExcel(file io.Reader) (int, error) {
+	m.ImportTestServicesFromExcelCalled = true
+	if m.ShouldReturnError {
+		return 0, &mockError{msg: m.ErrorMessage}
+	}
+	return 2, nil
 }
 
 func (m *MockTestServiceService) DeleteTestService(id uint) error {

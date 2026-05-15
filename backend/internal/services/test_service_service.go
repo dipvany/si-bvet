@@ -7,14 +7,16 @@ import (
 )
 
 func CreateTestService(req dto.TestServiceRequest) error {
-	
 	service := models.TestService{
-		TestName:    req.TestName,
-		UnitLab:     req.UnitLab,
-		Target:      req.Target,	
-		Price:       req.Price,
-		Description: req.Description,
-		SampleReqmt: req.SampleReqmt,
+		TestName:      req.TestName,
+		UnitLab:       req.UnitLab,
+		Target:        req.Target,
+		Method:        req.Method,
+		ResultType:    req.ResultType,
+		TestReference: req.TestReference,
+		Price:         req.Price,
+		Duration:      req.Duration,
+		Description:   req.Description,
 	}
 
 	return repositories.CreateTestService(&service)
@@ -29,7 +31,6 @@ func GetTestServiceByID(id uint) (models.TestService, error) {
 }
 
 func UpdateTestService(id uint, req dto.TestServiceRequest) error {
-	
 	service, err := repositories.GetTestServiceByID(id)
 	if err != nil {
 		return err
@@ -38,9 +39,12 @@ func UpdateTestService(id uint, req dto.TestServiceRequest) error {
 	service.TestName = req.TestName
 	service.UnitLab = req.UnitLab
 	service.Target = req.Target
+	service.Method = req.Method
+	service.ResultType = req.ResultType
+	service.TestReference = req.TestReference
 	service.Price = req.Price
+	service.Duration = req.Duration
 	service.Description = req.Description
-	service.SampleReqmt = req.SampleReqmt
 
 	return repositories.UpdateTestService(&service)
 }

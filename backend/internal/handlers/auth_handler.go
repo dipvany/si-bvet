@@ -53,6 +53,7 @@ func (h *AuthHandler) RegisterCustomer(c *gin.Context) {
 		PasswordHash:    req.Password,
 		Role:            "customer",
 		IsVerified:      false,
+		Institution:    req.Institution,
 		RegistrationDoc: filePath,
 	}
 

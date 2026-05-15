@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"bytes"
 	"fmt"
 	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
@@ -11,6 +12,7 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -38,12 +40,15 @@ var _ = ginkgo.Describe("TestService Service", func() {
 	ginkgo.Describe("CreateTestService", func() {
 		ginkgo.It("should create test service with valid data", func() {
 			req := dto.TestServiceRequest{
-				TestName:    "COVID-19 PCR Test",
-				UnitLab:     "Pathology Lab",
-				Target:      "Respiratory",
-				Price:       150000.00,
-				Description: "PCR test for COVID-19",
-				SampleReqmt: "Nasopharyngeal swab",
+				TestName:      "COVID-19 PCR Test",
+				UnitLab:       "Pathology Lab",
+				Target:        "Respiratory",
+				Method:        "PCR",
+				ResultType:    "Qualitative",
+				TestReference: "WHO-2026",
+				Price:         150000.00,
+				Duration:      "2 days",
+				Description:   "PCR test for COVID-19",
 			}
 
 			err := services.CreateTestService(req)
@@ -55,6 +60,10 @@ var _ = ginkgo.Describe("TestService Service", func() {
 			gomega.Expect(created.TestName).To(gomega.Equal("COVID-19 PCR Test"))
 			gomega.Expect(created.Price).To(gomega.Equal(150000.00))
 			gomega.Expect(created.UnitLab).To(gomega.Equal("Pathology Lab"))
+			gomega.Expect(created.Method).To(gomega.Equal("PCR"))
+			gomega.Expect(created.ResultType).To(gomega.Equal("Qualitative"))
+			gomega.Expect(created.TestReference).To(gomega.Equal("WHO-2026"))
+			gomega.Expect(created.Duration).To(gomega.Equal("2 days"))
 		})
 
 		ginkgo.It("should create test service with minimal required fields", func() {
@@ -185,10 +194,14 @@ var _ = ginkgo.Describe("TestService Service", func() {
 			gdb.Where("test_name = ?", "Original Name").First(&original)
 
 			updateReq := dto.TestServiceRequest{
-				TestName:    "Updated Name",
-				Price:       150000.00,
-				Description: "Updated description",
-				UnitLab:     "Lab Updated",
+				TestName:      "Updated Name",
+				Price:         150000.00,
+				Description:   "Updated description",
+				UnitLab:       "Lab Updated",
+				Method:        "Immunoassay",
+				ResultType:    "Quantitative",
+				TestReference: "REF-UPDATED",
+				Duration:      "1 day",
 			}
 
 			err = services.UpdateTestService(original.ID, updateReq)
@@ -200,6 +213,10 @@ var _ = ginkgo.Describe("TestService Service", func() {
 			gomega.Expect(updated.Price).To(gomega.Equal(150000.00))
 			gomega.Expect(updated.Description).To(gomega.Equal("Updated description"))
 			gomega.Expect(updated.UnitLab).To(gomega.Equal("Lab Updated"))
+			gomega.Expect(updated.Method).To(gomega.Equal("Immunoassay"))
+			gomega.Expect(updated.ResultType).To(gomega.Equal("Quantitative"))
+			gomega.Expect(updated.TestReference).To(gomega.Equal("REF-UPDATED"))
+			gomega.Expect(updated.Duration).To(gomega.Equal("1 day"))
 		})
 
 		ginkgo.It("should update only changed fields", func() {
@@ -240,6 +257,59 @@ var _ = ginkgo.Describe("TestService Service", func() {
 
 			err := services.UpdateTestService(999999, req)
 			gomega.Expect(err).To(gomega.HaveOccurred())
+		})
+	})
+
+	ginkgo.Describe("ImportTestServicesFromExcel", func() {
+		ginkgo.It("should import test services from an excel workbook", func() {
+			file := excelize.NewFile()
+			sheet := file.GetSheetName(file.GetActiveSheetIndex())
+
+			headers := []string{"Test Name", "Unit Lab", "Target", "Method", "Result Type", "Test Reference", "Price", "Duration", "Description"}
+			for index, header := range headers {
+				cell, _ := excelize.CoordinatesToCellName(index+1, 1)
+				file.SetCellValue(sheet, cell, header)
+			}
+
+			rows := [][]interface{}{
+				{"Rapid Antigen", "Molecular Lab", "Respiratory", "Immunochromatography", "Qualitative", "REF-001", 125000, "1 day", "Antigen screening"},
+				{"CBC", "Hematology Lab", "Blood", "Automated analyzer", "Quantitative", "REF-002", 75000, "Same day", "Complete blood count"},
+			}
+
+			for rowIndex, row := range rows {
+				for columnIndex, value := range row {
+					cell, _ := excelize.CoordinatesToCellName(columnIndex+1, rowIndex+2)
+					file.SetCellValue(sheet, cell, value)
+				}
+			}
+
+			buffer := &bytes.Buffer{}
+			gomega.Expect(file.Write(buffer)).To(gomega.Succeed())
+
+			created, err := services.ImportTestServicesFromExcel(bytes.NewReader(buffer.Bytes()))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(created).To(gomega.Equal(2))
+
+			var servicesList []models.TestService
+			err = gdb.Order("test_name asc").Find(&servicesList).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(servicesList).To(gomega.HaveLen(2))
+			gomega.Expect(servicesList[0].Method).To(gomega.Equal("Automated analyzer"))
+			gomega.Expect(servicesList[1].ResultType).To(gomega.Equal("Qualitative"))
+		})
+
+		ginkgo.It("should reject workbooks without a test name column", func() {
+			file := excelize.NewFile()
+			sheet := file.GetSheetName(file.GetActiveSheetIndex())
+			file.SetCellValue(sheet, "A1", "Price")
+			file.SetCellValue(sheet, "A2", 1000)
+
+			buffer := &bytes.Buffer{}
+			gomega.Expect(file.Write(buffer)).To(gomega.Succeed())
+
+			created, err := services.ImportTestServicesFromExcel(bytes.NewReader(buffer.Bytes()))
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(created).To(gomega.Equal(0))
 		})
 	})
 

@@ -10,5 +10,6 @@ type RegisterRequest struct {
 	Email           string `json:"email" form:"email" binding:"required,email"`
 	Phone           string `json:"phone" form:"phone" binding:"required"`
 	Password        string `json:"password" form:"password" binding:"required"`
+	Institution     string `json:"institution" form:"institution" binding:"required"`
 	RegistrationDoc string `json:"registration_doc" form:"-"`
 }
