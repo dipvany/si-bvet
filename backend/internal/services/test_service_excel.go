@@ -48,25 +48,40 @@ func ImportTestServicesFromExcel(reader io.Reader) (int, error) {
 		return 0, nil
 	}
 
-	columns := resolveTestServiceColumns(rows[0])
+	// Find the first non-empty row as header (skip empty rows at the beginning)
+	headerRowIndex := 0
+	for i, row := range rows {
+		if !isEmptyRow(row) {
+			headerRowIndex = i
+			break
+		}
+	}
+
+	if headerRowIndex >= len(rows)-1 {
+		return 0, fmt.Errorf("no header row found or no data rows")
+	}
+
+	columns := resolveTestServiceColumns(rows[headerRowIndex])
 	if columns.testName < 0 {
 		return 0, fmt.Errorf("test name column is required")
 	}
 
 	createdCount := 0
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		for rowIndex, row := range rows[1:] {
+		for rowIndex := headerRowIndex + 1; rowIndex < len(rows); rowIndex++ {
+			row := rows[rowIndex]
 			if isEmptyRow(row) {
 				continue
 			}
 
 			service, err := buildTestServiceFromRow(row, columns)
 			if err != nil {
-				return fmt.Errorf("row %d: %w", rowIndex+2, err)
+				// rowIndex is 0-based, so add 1 to get actual Excel row number
+				return fmt.Errorf("row %d: %w", rowIndex+1, err)
 			}
 
 			if err := tx.Create(&service).Error; err != nil {
-				return fmt.Errorf("row %d: %w", rowIndex+2, err)
+				return fmt.Errorf("row %d: %w", rowIndex+1, err)
 			}
 			createdCount++
 		}
@@ -119,7 +134,7 @@ func resolveTestServiceColumns(headers []string) testServiceExcelColumns {
 
 	for index, header := range headers {
 		switch normalizeExcelHeader(header) {
-		case "testname", "namapengujian", "namatest", "layananpengujian", "jenispengujian":
+		case "testname", "namapengujian", "namatest", "layananpengujian", "jenispengujian", "namauji":
 			if columns.testName < 0 {
 				columns.testName = index
 			}
@@ -135,19 +150,19 @@ func resolveTestServiceColumns(headers []string) testServiceExcelColumns {
 			if columns.method < 0 {
 				columns.method = index
 			}
-		case "resulttype", "jenishasil", "hasil":
+		case "resulttype", "jenishasil", "hasil", "tipehasil":
 			if columns.resultType < 0 {
 				columns.resultType = index
 			}
-		case "testreference", "referensiuji", "referensi", "rujukan":
+		case "testreference", "referensiuji", "referensi", "rujukan", "acuanpengujian":
 			if columns.testReference < 0 {
 				columns.testReference = index
 			}
-		case "price", "harga", "tarif", "biaya":
+		case "price", "harga", "tarif", "biaya", "hargaujirp":
 			if columns.price < 0 {
 				columns.price = index
 			}
-		case "duration", "durasi", "lama", "waktupengerjaan":
+		case "duration", "durasi", "lama", "waktupengerjaan", "durasiujihari":
 			if columns.duration < 0 {
 				columns.duration = index
 			}
@@ -178,16 +193,52 @@ func isEmptyRow(row []string) bool {
 }
 
 func parseExcelFloat(value string) (float64, error) {
-	cleaned := strings.TrimSpace(value)
+	s := strings.TrimSpace(value)
+	if s == "" {
+		return 0, nil
+	}
+
+	// remove spaces
+	s = strings.ReplaceAll(s, " ", "")
+
+	// keep only digits, dot, comma, plus and minus
+	var b strings.Builder
+	for _, r := range s {
+		if (r >= '0' && r <= '9') || r == '.' || r == ',' || r == '-' || r == '+' {
+			b.WriteRune(r)
+		}
+	}
+	cleaned := b.String()
 	if cleaned == "" {
 		return 0, nil
 	}
 
-	cleaned = strings.ReplaceAll(cleaned, " ", "")
-	if strings.Contains(cleaned, ",") && !strings.Contains(cleaned, ".") {
+	hasDot := strings.Contains(cleaned, ".")
+	hasComma := strings.Contains(cleaned, ",")
+
+	switch {
+	case hasDot && hasComma:
+		// determine which is decimal by position of last separator
+		lastDot := strings.LastIndex(cleaned, ".")
+		lastComma := strings.LastIndex(cleaned, ",")
+		if lastComma > lastDot {
+			// comma is decimal separator, remove dots (thousands) and replace comma with dot
+			cleaned = strings.ReplaceAll(cleaned, ".", "")
+			cleaned = strings.ReplaceAll(cleaned, ",", ".")
+		} else {
+			// dot is decimal separator, remove commas
+			cleaned = strings.ReplaceAll(cleaned, ",", "")
+		}
+	case hasComma && !hasDot:
+		// treat comma as decimal
 		cleaned = strings.ReplaceAll(cleaned, ",", ".")
-	} else {
-		cleaned = strings.ReplaceAll(cleaned, ",", "")
+	case hasDot && !hasComma:
+		// ambiguous: if the last dot is followed by exactly 3 digits, treat dots as thousand separators
+		lastDot := strings.LastIndex(cleaned, ".")
+		if len(cleaned)-lastDot-1 == 3 && lastDot > 0 {
+			cleaned = strings.ReplaceAll(cleaned, ".", "")
+		}
+		// otherwise leave dot as decimal
 	}
 
 	return strconv.ParseFloat(cleaned, 64)

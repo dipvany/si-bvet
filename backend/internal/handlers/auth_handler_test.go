@@ -104,6 +104,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 				writer.WriteField("email", "john@example.com")
 				writer.WriteField("phone", "081234567890")
 				writer.WriteField("password", "password123")
+				writer.WriteField("institution", "Test Institution")
 
 				// Add file
 				part, _ := writer.CreateFormFile("registration_doc", "document.pdf")
@@ -152,6 +153,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 				writer.WriteField("email", "john@example.com")
 				writer.WriteField("phone", "081234567890")
 				writer.WriteField("password", "password123")
+				writer.WriteField("institution", "Test Institution")
 				// Tidak add file
 				writer.Close()
 
@@ -181,6 +183,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 				writer.WriteField("email", "jane@example.com")
 				writer.WriteField("phone", "081234567890")
 				writer.WriteField("password", "password123")
+				writer.WriteField("institution", "Test Institution")
 
 				part, _ := writer.CreateFormFile("registration_doc", "doc.pdf")
 				io.WriteString(part, "content")
@@ -211,6 +214,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 				writer.WriteField("email", "alice@example.com")
 				writer.WriteField("phone", "089999999")
 				writer.WriteField("password", "pass123")
+				writer.WriteField("institution", "Test Institution")
 
 				part, _ := writer.CreateFormFile("registration_doc", "doc.pdf")
 				io.WriteString(part, "content")
