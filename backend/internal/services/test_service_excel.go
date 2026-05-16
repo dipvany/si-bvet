@@ -40,50 +40,52 @@ func ImportTestServicesFromExcel(reader io.Reader) (int, error) {
 		return 0, fmt.Errorf("excel file does not contain any sheets")
 	}
 
-	rows, err := file.GetRows(sheets[0])
-	if err != nil {
-		return 0, err
-	}
-	if len(rows) < 2 {
-		return 0, nil
-	}
-
-	// Find the first non-empty row as header (skip empty rows at the beginning)
-	headerRowIndex := 0
-	for i, row := range rows {
-		if !isEmptyRow(row) {
-			headerRowIndex = i
-			break
-		}
-	}
-
-	if headerRowIndex >= len(rows)-1 {
-		return 0, fmt.Errorf("no header row found or no data rows")
-	}
-
-	columns := resolveTestServiceColumns(rows[headerRowIndex])
-	if columns.testName < 0 {
-		return 0, fmt.Errorf("test name column is required")
-	}
-
 	createdCount := 0
 	err = db.DB.Transaction(func(tx *gorm.DB) error {
-		for rowIndex := headerRowIndex + 1; rowIndex < len(rows); rowIndex++ {
-			row := rows[rowIndex]
-			if isEmptyRow(row) {
+		for _, sheet := range sheets {
+			rows, err := file.GetRows(sheet)
+			if err != nil {
+				return fmt.Errorf("failed to read sheet %s: %w", sheet, err)
+			}
+			if len(rows) < 2 {
 				continue
 			}
 
-			service, err := buildTestServiceFromRow(row, columns)
-			if err != nil {
-				// rowIndex is 0-based, so add 1 to get actual Excel row number
-				return fmt.Errorf("row %d: %w", rowIndex+1, err)
+			// Find the first non-empty row as header (skip empty rows at the beginning)
+			headerRowIndex := -1
+			for i, row := range rows {
+				if !isEmptyRow(row) {
+					headerRowIndex = i
+					break
+				}
 			}
 
-			if err := tx.Create(&service).Error; err != nil {
-				return fmt.Errorf("row %d: %w", rowIndex+1, err)
+			if headerRowIndex < 0 || headerRowIndex >= len(rows)-1 {
+				// no header or no data rows in this sheet
+				continue
 			}
-			createdCount++
+
+			columns := resolveTestServiceColumns(rows[headerRowIndex])
+			if columns.testName < 0 {
+				return fmt.Errorf("sheet %s: test name column is required", sheet)
+			}
+
+			for rowIndex := headerRowIndex + 1; rowIndex < len(rows); rowIndex++ {
+				row := rows[rowIndex]
+				if isEmptyRow(row) {
+					continue
+				}
+
+				service, err := buildTestServiceFromRow(row, columns)
+				if err != nil {
+					return fmt.Errorf("sheet %s row %d: %w", sheet, rowIndex+1, err)
+				}
+
+				if err := tx.Create(&service).Error; err != nil {
+					return fmt.Errorf("sheet %s row %d: %w", sheet, rowIndex+1, err)
+				}
+				createdCount++
+			}
 		}
 
 		return nil
