@@ -11,6 +11,9 @@ type User struct {
 	Role            string     `json:"role" gorm:"column:role;type:varchar(32);not null;check:role IN ('superadmin','admin','customer')"`
 	IsVerified      bool       `json:"is_verified" gorm:"column:is_verified;not null;default:false"`
 	VerifiedAt      *time.Time `json:"verified_at" gorm:"column:verified_at"`
+	LoginLinkTokenHash string   `json:"-" gorm:"column:login_link_token_hash;type:varchar(255)"`
+	LoginLinkExpiresAt *time.Time `json:"login_link_expires_at,omitempty" gorm:"column:login_link_expires_at"`
+	LoginLinkUsedAt    *time.Time `json:"login_link_used_at,omitempty" gorm:"column:login_link_used_at"`
 	Institution    string     `json:"institution" gorm:"column:institution;type:varchar(255)"`
 	RegistrationDoc string     `json:"-" gorm:"column:registration_doc;type:text"`
 

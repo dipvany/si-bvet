@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"fmt"
+	"os"
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
@@ -34,6 +35,17 @@ var _ = ginkgo.Describe("Admin Action Flows", func() {
 			&models.Complaint{},
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+		previousSecret, hadSecret := os.LookupEnv("ONE_TIME_LOGIN_SECRET")
+		_ = os.Setenv("ONE_TIME_LOGIN_SECRET", "test-one-time-login-secret")
+
+		ginkgo.DeferCleanup(func() {
+			if hadSecret {
+				_ = os.Setenv("ONE_TIME_LOGIN_SECRET", previousSecret)
+				return
+			}
+			_ = os.Unsetenv("ONE_TIME_LOGIN_SECRET")
+		})
 	})
 	ginkgo.Describe("VerifyUserByID", func() {
 		ginkgo.It("should verify unverified customer successfully", func() {

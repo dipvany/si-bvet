@@ -24,6 +24,7 @@ func RegisterRoutes(r *gin.Engine) {
 		{
 			auth.POST("/register", authHandler.RegisterCustomer)
 			auth.POST("/login", authHandler.Login)
+			auth.GET("/verify-email/:id/:token", authHandler.VerifyEmailLogin)
 		}
 
 		// PROTECTED

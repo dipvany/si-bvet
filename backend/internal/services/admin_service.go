@@ -2,11 +2,13 @@ package services
 
 import (
 	"errors"
+	"os"
 	"si-bvet/internal/constants"
 	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
+	"si-bvet/internal/utils"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -107,14 +109,29 @@ func VerifyUserByID(userID uint) (models.User, error) {
 	}
 
 	now := time.Now()
+	token, err := utils.GenerateRandomToken(32)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	expiresAt := now.Add(24 * time.Hour)
 	user.IsVerified = true
 	user.VerifiedAt = &now
+	user.LoginLinkTokenHash = utils.HashOneTimeLoginToken(token)
+	user.LoginLinkExpiresAt = &expiresAt
+	user.LoginLinkUsedAt = nil
 
 	if err := repositories.SaveUser(&user); err != nil {
 		return models.User{}, err
 	}
 
-	SendVerificationApprovedEmail(user.FullName, user.Email)
+	loginBaseURL := os.Getenv("APP_LOGIN_URL")
+	loginURL, err := utils.BuildOneTimeLoginURL(loginBaseURL, user.ID, token, expiresAt)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	SendVerificationApprovedEmail(user.FullName, user.Email, loginURL)
 	return user, nil
 }
 

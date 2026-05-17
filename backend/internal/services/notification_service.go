@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"si-bvet/internal/models"
@@ -97,13 +96,8 @@ func SendRegistrationPendingEmail(fullName, email string) {
 	}
 }
 
-func SendVerificationApprovedEmail(fullName, email string) {
-	loginURL := os.Getenv("APP_LOGIN_URL")
-	if loginURL == "" {
-		loginURL = "http://localhost:3000/login"
-	}
-
-	body := fmt.Sprintf("Halo %s,\n\nAkun SI-BVET Anda telah diverifikasi admin.\nSilakan login melalui tautan berikut:\n%s\n\nTerima kasih.", fullName, loginURL)
+func SendVerificationApprovedEmail(fullName, email, loginURL string) {
+	body := fmt.Sprintf("Halo %s,\n\nAkun SI-BVET Anda telah diverifikasi admin.\nSilakan gunakan tautan login sekali pakai berikut sebelum masa berlakunya habis:\n%s\n\nTerima kasih.", fullName, loginURL)
 	if err := utils.SendEmail(email, "Verifikasi Akun Berhasil - SI-BVET", body); err != nil {
 		log.Printf("failed to send verification approved email to %s: %v", email, err)
 	}
