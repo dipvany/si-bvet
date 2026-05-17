@@ -56,7 +56,7 @@ func RegisterRoutes(r *gin.Engine) {
 				adminGroup.GET("/submissions", submissionHandler.GetAllSubmissions)
 				adminGroup.PATCH("/submissions/:id/approve", submissionHandler.ApproveSubmission)
 				adminGroup.PATCH("/submissions/:id/reject", submissionHandler.RejectSubmission)
-				adminGroup.POST("/submissions/export", handlers.ExportSubmissionsExcel)
+				adminGroup.POST("/submissions/export", submissionHandler.ExportSubmissionsExcel)
 
 				adminGroup.POST("/test-services", handlers.CreateTestService)
 				adminGroup.POST("/test-services/import", handlers.ImportTestServicesExcel)
