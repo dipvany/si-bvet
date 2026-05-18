@@ -1926,7 +1926,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type_service\": \"Reguler\",\n  \"purpose_of_test\": \"Surveilans\",\n  \"sample_taker\": \"Petugas Lapangan\",\n  \"notes\": \"Mohon diproses cepat\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"SMPL-001\",\n      \"sample_type\": \"Swab\",\n      \"species\": \"Ayam\",\n      \"age\": \"12 minggu\",\n      \"volume\": \"1 ml\",\n      \"condition\": \"Baik\",\n      \"location_smpl\": \"Lampung Selatan\",\n      \"total_sample\": 10,\n      \"tests\": [\n        { \"test_service_id\": 1 },\n        { \"test_service_id\": 2 }\n      ]\n    }\n  ]\n}",
+              "raw": "{\n  \"type_service\": \"Reguler\",\n  \"purpose_of_test\": \"Surveilans\",\n  \"sample_taker\": \"Petugas Lapangan\",\n  \"notes\": \"Mohon diproses cepat\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"SMPL-001\",\n      \"sample_model\": \"Swab\",\n      \"specimen_type\": \"Oropharyngeal\",\n      \"species\": \"Ayam\",\n      \"age\": \"12 minggu\",\n      \"volume\": \"1 ml\",\n      \"condition\": \"Baik\",\n      \"location_smpl\": \"Lampung Selatan\",\n      \"total_sample\": 10,\n      \"tests\": [\n        { \"test_service_id\": 1 },\n        { \"test_service_id\": 2 }\n      ]\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"

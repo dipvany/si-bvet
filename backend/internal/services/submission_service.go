@@ -201,15 +201,16 @@ func buildSubmission(userID uint, req dto.SubmissionRequest) models.Submission {
 func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.SampleInput) error {
 	for _, sampleReq := range samples {
 		sample := models.Sample{
-			SubmissionID:      submissionID,
-			SampleCodeCust:    sampleReq.SampleCodeCust,
-			SampleModel:        sampleReq.SampleModel,
-			Species:           sampleReq.Species,
-			Age:               sampleReq.Age,
-			Volume:            sampleReq.Volume,
-			Condition:         sampleReq.Condition,
-			LocationSmpl: sampleReq.LocationSmpl,
-			TotalSample:       int64(sampleReq.TotalSample),
+			SubmissionID:   submissionID,
+			SampleCodeCust: sampleReq.SampleCodeCust,
+			SampleModel:    sampleReq.SampleModel,
+			SpecimenType:   sampleReq.SpecimenType,
+			Species:        sampleReq.Species,
+			Age:            sampleReq.Age,
+			Volume:         sampleReq.Volume,
+			Condition:      sampleReq.Condition,
+			LocationSmpl:   sampleReq.LocationSmpl,
+			TotalSample:    int64(sampleReq.TotalSample),
 		}
 
 		if err := repositories.CreateSampleTx(tx, &sample); err != nil {
@@ -400,8 +401,9 @@ func ExportSubmissionsExcel(
 	f.NewSheet("Samples")
 	f.SetCellValue("Samples", "A1", "Submission ID")
 	f.SetCellValue("Samples", "B1", "Sample Code")
-	f.SetCellValue("Samples", "C1", "Sample Type")
-	f.SetCellValue("Samples", "D1", "Species")
+	f.SetCellValue("Samples", "C1", "Sample Model")
+	f.SetCellValue("Samples", "D1", "Specimen Type")
+	f.SetCellValue("Samples", "E1", "Species")
 
 	row = 2
 	for _, s := range submissions {
@@ -409,7 +411,8 @@ func ExportSubmissionsExcel(
 			f.SetCellValue("Samples", fmt.Sprintf("A%d", row), s.ID)
 			f.SetCellValue("Samples", fmt.Sprintf("B%d", row), sample.SampleCodeCust)
 			f.SetCellValue("Samples", fmt.Sprintf("C%d", row), sample.SampleModel)
-			f.SetCellValue("Samples", fmt.Sprintf("D%d", row), sample.Species)
+			f.SetCellValue("Samples", fmt.Sprintf("D%d", row), sample.SpecimenType)
+			f.SetCellValue("Samples", fmt.Sprintf("E%d", row), sample.Species)
 			row++
 		}
 	}

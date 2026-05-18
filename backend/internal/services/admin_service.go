@@ -54,7 +54,7 @@ func CreateAdminAccount(req dto.AdminRequest) error {
 			Phone:        req.Phone,
 			PasswordHash: string(hash),
 			Role:         req.Role,
-			IsVerified:   true,
+			IsVerified:   false,
 		}
 
 		if err := repositories.CreateUserTx(tx, &user); err != nil {

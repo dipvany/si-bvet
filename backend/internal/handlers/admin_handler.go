@@ -128,6 +128,7 @@ func (h *AdminHandler) GetAllAdminAccounts(c *gin.Context) {
 			"unit_lab":    admin.UnitLab,
 			"employee_no": admin.EmployeeNo,
 			"role":        admin.User.Role,
+			"is_verified": admin.User.IsVerified,
 		}
 		accountList = append(accountList, accountData)
 	}
