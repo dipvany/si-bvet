@@ -61,6 +61,10 @@ func NewBillingHandler(service BillingServiceInterface) *BillingHandler {
 
 var defaultBillingHandler = NewBillingHandler(defaultBillingService{})
 
+func NewBillingHandlerWithDefault() *BillingHandler {
+	return defaultBillingHandler
+}
+
 func CreateBilling(c *gin.Context) {
 	defaultBillingHandler.CreateBilling(c)
 }

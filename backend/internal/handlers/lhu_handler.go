@@ -34,6 +34,10 @@ func NewLHUHandler(service LHUServiceInterface) *LHUHandler {
 
 var defaultLHUHandler = NewLHUHandler(defaultLHUService{})
 
+func NewLHUHandlerWithDefault() *LHUHandler {
+	return defaultLHUHandler
+}
+
 func UploadLHU(c *gin.Context) {
 	defaultLHUHandler.UploadLHU(c)
 }

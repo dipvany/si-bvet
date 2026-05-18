@@ -5,12 +5,10 @@ import (
 	"log"
 	"os"
 
+	"si-bvet/internal/bootstrap"
 	"si-bvet/internal/db"
-	"si-bvet/internal/routes"
 	"si-bvet/internal/services"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -26,21 +24,7 @@ func main() {
 		log.Fatalf("Could not bootstrap initial superadmin: %v", err)
 	}
 
-	// Initialize Gin
-	r := gin.Default()
-	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:3000",
-			"http://127.0.0.1:3000",
-		},
-		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders: []string{"Content-Length"},
-		AllowCredentials: true,
-	}))
-
-	// Setup Routes
-	routes.RegisterRoutes(r)
+	r := bootstrap.NewRouter()
 
 	port := os.Getenv("PORT")
 	if port == "" {

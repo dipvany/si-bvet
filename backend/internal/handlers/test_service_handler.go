@@ -195,6 +195,10 @@ func (d defaultTestServiceAdapter) DeleteTestService(id uint) error {
 
 var defaultTestServiceHandler = NewTestServiceHandler(defaultTestServiceAdapter{})
 
+func NewTestServiceHandlerWithDefault() *TestServiceHandler {
+	return defaultTestServiceHandler
+}
+
 // Package-level forwarding functions for backward compatibility
 func CreateTestService(c *gin.Context) {
 	defaultTestServiceHandler.CreateTestService(c)

@@ -75,19 +75,3 @@ func (d *DefaultUserRepository) CreateUser(user *models.User) error {
 func (d *DefaultUserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return repositories.GetUserByEmail(email)
 }
-
-// Global variable untuk service, akan diinisialisasi di main atau routes
-var authService *AuthService
-
-// InitAuthService menginisialisasi global auth service (untuk backward compatibility)
-func InitAuthService(userRepo UserRepository) {
-	authService = NewAuthService(userRepo)
-}
-
-// GetAuthService mengembalikan global auth service instance
-func GetAuthService() *AuthService {
-	if authService == nil {
-		authService = NewAuthService(&DefaultUserRepository{})
-	}
-	return authService
-}

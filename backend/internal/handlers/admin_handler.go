@@ -5,13 +5,72 @@ import (
 	"strconv"
 
 	"si-bvet/internal/dto"
+	"si-bvet/internal/models"
 	"si-bvet/internal/services"
 	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
+type AdminServiceInterface interface {
+	CreateAdminAccount(req dto.AdminRequest) error
+	GetManagedAccounts(roleFilter string) ([]models.Admin, error)
+	VerifyUserByID(userID uint) (models.User, error)
+	RejectUserByID(userID uint) error
+	DeleteManagedAccount(targetID, actorID uint) error
+	UpdateManagedAccount(userID uint, req services.UpdateAdminAccountRequest) error
+	GetUnverifiedCustomers() ([]models.User, error)
+}
+
+type defaultAdminService struct{}
+
+func (defaultAdminService) CreateAdminAccount(req dto.AdminRequest) error {
+	return services.CreateAdminAccount(req)
+}
+
+func (defaultAdminService) GetManagedAccounts(roleFilter string) ([]models.Admin, error) {
+	return services.GetManagedAccounts(roleFilter)
+}
+
+func (defaultAdminService) VerifyUserByID(userID uint) (models.User, error) {
+	return services.VerifyUserByID(userID)
+}
+
+func (defaultAdminService) RejectUserByID(userID uint) error {
+	return services.RejectUserByID(userID)
+}
+
+func (defaultAdminService) DeleteManagedAccount(targetID, actorID uint) error {
+	return services.DeleteManagedAccount(targetID, actorID)
+}
+
+func (defaultAdminService) UpdateManagedAccount(userID uint, req services.UpdateAdminAccountRequest) error {
+	return services.UpdateManagedAccount(userID, req)
+}
+
+func (defaultAdminService) GetUnverifiedCustomers() ([]models.User, error) {
+	return services.GetUnverifiedCustomers()
+}
+
+type AdminHandler struct {
+	Service AdminServiceInterface
+}
+
+func NewAdminHandler(service AdminServiceInterface) *AdminHandler {
+	return &AdminHandler{Service: service}
+}
+
+var defaultAdminHandler = NewAdminHandler(defaultAdminService{})
+
+func NewAdminHandlerWithDefault() *AdminHandler {
+	return defaultAdminHandler
+}
+
 func CreateAdmin(c *gin.Context) {
+	defaultAdminHandler.CreateAdmin(c)
+}
+
+func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 	var req dto.AdminRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -24,7 +83,7 @@ func CreateAdmin(c *gin.Context) {
 		return
 	}
 
-	if err := services.CreateAdminAccount(req); err != nil {
+	if err := h.Service.CreateAdminAccount(req); err != nil {
 		if err == services.ErrInvalidRole {
 			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
@@ -38,13 +97,17 @@ func CreateAdmin(c *gin.Context) {
 
 // get all managed accounts (admin + superadmin) from a single profile table
 func GetAllAdminAccounts(c *gin.Context) {
+	defaultAdminHandler.GetAllAdminAccounts(c)
+}
+
+func (h *AdminHandler) GetAllAdminAccounts(c *gin.Context) {
 	roleFilter := c.Query("role")
 	if roleFilter != "" && roleFilter != "admin" && roleFilter != "superadmin" {
 		utils.ErrorResponse(c, http.StatusBadRequest, "role filter must be admin or superadmin")
 		return
 	}
 
-	admins, err := services.GetManagedAccounts(roleFilter)
+	admins, err := h.Service.GetManagedAccounts(roleFilter)
 	if err != nil {
 		if err == services.ErrInvalidRole {
 			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
@@ -76,6 +139,10 @@ func GetAllAdminAccounts(c *gin.Context) {
 }
 
 func VerifyUser(c *gin.Context) {
+	defaultAdminHandler.VerifyUser(c)
+}
+
+func (h *AdminHandler) VerifyUser(c *gin.Context) {
 	id := c.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -83,7 +150,7 @@ func VerifyUser(c *gin.Context) {
 		return
 	}
 
-	_, err = services.VerifyUserByID(uint(idUint))
+	_, err = h.Service.VerifyUserByID(uint(idUint))
 	if err != nil {
 		if err == services.ErrUserNotFound {
 			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
@@ -100,6 +167,10 @@ func VerifyUser(c *gin.Context) {
 
 // reject user verification and delete from database
 func RejectUser(c *gin.Context) {
+	defaultAdminHandler.RejectUser(c)
+}
+
+func (h *AdminHandler) RejectUser(c *gin.Context) {
 
 	id := c.Param("id")
 	idUint, err := strconv.ParseUint(id, 10, 64)
@@ -108,7 +179,7 @@ func RejectUser(c *gin.Context) {
 		return
 	}
 
-	err = services.RejectUserByID(uint(idUint))
+	err = h.Service.RejectUserByID(uint(idUint))
 	if err != nil {
 		if err == services.ErrUserNotFound {
 			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
@@ -124,6 +195,10 @@ func RejectUser(c *gin.Context) {
 }
 
 func DeleteAdminAccount(c *gin.Context) {
+	defaultAdminHandler.DeleteAdminAccount(c)
+}
+
+func (h *AdminHandler) DeleteAdminAccount(c *gin.Context) {
 	idParam := c.Param("id")
 	targetID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
@@ -138,7 +213,7 @@ func DeleteAdminAccount(c *gin.Context) {
 		}
 	}
 
-	err = services.DeleteManagedAccount(uint(targetID), actorID)
+	err = h.Service.DeleteManagedAccount(uint(targetID), actorID)
 	if err != nil {
 		switch err {
 		case services.ErrDeleteOwnAccount:
@@ -163,6 +238,10 @@ func DeleteAdminAccount(c *gin.Context) {
 
 // update managed account details (except password)
 func UpdateAdminAccount(c *gin.Context) {
+	defaultAdminHandler.UpdateAdminAccount(c)
+}
+
+func (h *AdminHandler) UpdateAdminAccount(c *gin.Context) {
 	idParam := c.Param("id")
 	userID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
@@ -185,7 +264,7 @@ func UpdateAdminAccount(c *gin.Context) {
 		return
 	}
 
-	err = services.UpdateManagedAccount(uint(userID), services.UpdateAdminAccountRequest{
+	err = h.Service.UpdateManagedAccount(uint(userID), services.UpdateAdminAccountRequest{
 		FullName:   req.FullName,
 		Email:      req.Email,
 		Phone:      req.Phone,
@@ -215,7 +294,11 @@ func UpdateAdminAccount(c *gin.Context) {
 
 // get customer unverified list for admin to verify
 func GetUnverifiedCustomers(c *gin.Context) {
-	customers, err := services.GetUnverifiedCustomers()
+	defaultAdminHandler.GetUnverifiedCustomers(c)
+}
+
+func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
+	customers, err := h.Service.GetUnverifiedCustomers()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
