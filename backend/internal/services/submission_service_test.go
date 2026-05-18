@@ -42,9 +42,9 @@ var _ = ginkgo.Describe("SubmissionService", func() {
                 Samples: []dto.SampleInput{
                     {
                         SampleCodeCust: "S1",
-                        SampleType:     "blood",
+                        SampleModel:     "unggas",
                         Species:        "dog",
-                        Age:            "2",
+                        Age:            2,
                         Volume:         "5ml",
                         Condition:      "fresh",
                         LocationSmpl: "clinic",
@@ -84,9 +84,9 @@ var _ = ginkgo.Describe("SubmissionService", func() {
                 Samples: []dto.SampleInput{
                     {
                         SampleCodeCust: "S2",
-                        SampleType:     "swab",
+                        SampleModel:     "swab",
                         Species:        "cat",
-                        Age:            "1",
+                        Age:            1,
                         Volume:         "2ml",
                         Condition:      "fresh",
                         LocationSmpl: "clinic",
@@ -134,7 +134,7 @@ var _ = ginkgo.Describe("SubmissionService", func() {
             oldSample := models.Sample{
                 SubmissionID:      sub.ID,
                 SampleCodeCust:    "OLD-1",
-                SampleType:        "blood",
+                SampleModel:        "blood",
                 Species:           "cat",
                 LocationSmpl: "farm",
                 TotalSample:       1,
@@ -156,7 +156,7 @@ var _ = ginkgo.Describe("SubmissionService", func() {
                 Samples: []dto.SampleInput{
                     {
                         SampleCodeCust:    "NEW-1",
-                        SampleType:        "swab",
+                        SampleModel:        "mamalia",
                         Species:           "dog",
                         LocationSmpl: "lab",
                         TotalSample:       2,
@@ -211,7 +211,7 @@ var _ = ginkgo.Describe("SubmissionService", func() {
             sample := models.Sample{
                 SubmissionID:      sub.ID,
                 SampleCodeCust:    "KEEP-1",
-                SampleType:        "blood",
+                SampleModel:        "mamalia",
                 Species:           "goat",
                 LocationSmpl: "field",
                 TotalSample:       1,
@@ -233,7 +233,7 @@ var _ = ginkgo.Describe("SubmissionService", func() {
                 Samples: []dto.SampleInput{
                     {
                         SampleCodeCust:    "BROKEN-1",
-                        SampleType:        "swab",
+                        SampleModel:        "swab",
                         Species:           "dog",
                         LocationSmpl: "lab",
                         TotalSample:       1,

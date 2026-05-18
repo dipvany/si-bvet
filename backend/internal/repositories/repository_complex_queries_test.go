@@ -105,7 +105,7 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 				sample := &models.Sample{
 					SubmissionID:  submission.ID,
 					SampleCodeCust: fmt.Sprintf("SAMPLE%d", i),
-					SampleType:    "Blood",
+					SampleModel:    "Blood",
 					TotalSample:   1,
 				}
 				err := db.DB.Create(sample).Error
@@ -171,7 +171,7 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 			sample := &models.Sample{
 				SubmissionID:  submission.ID,
 				SampleCodeCust: "SAMPLE1",
-				SampleType:    "Blood",
+				SampleModel:    "Blood",
 				TotalSample:   1,
 			}
 			err = db.DB.Create(sample).Error
@@ -465,7 +465,7 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 				sample := &models.Sample{
 					SubmissionID:  submission.ID,
 					SampleCodeCust: fmt.Sprintf("SAMPLE%d", i),
-					SampleType:    "Blood",
+					SampleModel:    "Blood",
 					TotalSample:   1,
 				}
 				err := db.DB.Create(sample).Error

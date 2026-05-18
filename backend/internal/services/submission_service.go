@@ -203,7 +203,7 @@ func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.Sampl
 		sample := models.Sample{
 			SubmissionID:      submissionID,
 			SampleCodeCust:    sampleReq.SampleCodeCust,
-			SampleType:        sampleReq.SampleType,
+			SampleModel:        sampleReq.SampleModel,
 			Species:           sampleReq.Species,
 			Age:               sampleReq.Age,
 			Volume:            sampleReq.Volume,
@@ -408,7 +408,7 @@ func ExportSubmissionsExcel(
 		for _, sample := range s.Samples {
 			f.SetCellValue("Samples", fmt.Sprintf("A%d", row), s.ID)
 			f.SetCellValue("Samples", fmt.Sprintf("B%d", row), sample.SampleCodeCust)
-			f.SetCellValue("Samples", fmt.Sprintf("C%d", row), sample.SampleType)
+			f.SetCellValue("Samples", fmt.Sprintf("C%d", row), sample.SampleModel)
 			f.SetCellValue("Samples", fmt.Sprintf("D%d", row), sample.Species)
 			row++
 		}

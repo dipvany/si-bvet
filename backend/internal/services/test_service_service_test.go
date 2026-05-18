@@ -360,7 +360,7 @@ var _ = ginkgo.Describe("TestService Service", func() {
 			// Create sample
 			sample := models.Sample{
 				SubmissionID: submission.ID,
-				SampleType:   "Type A",
+				SampleModel:   "Type A",
 			}
 			gdb.Create(&sample)
 
