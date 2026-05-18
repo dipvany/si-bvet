@@ -131,6 +131,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 					Subjects:    fmt.Sprintf("Subject %d", i),
 					Description: fmt.Sprintf("Description %d", i),
 					Status:      "open",
+					DateOfComplaint: now,
 					CreatedAt:   &now,
 				}
 				err := db.DB.Create(complaint).Error
@@ -156,6 +157,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue 1",
 				Description: "Description 1",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err := db.DB.Create(complaint1).Error
@@ -166,6 +168,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue 2",
 				Description: "Description 2",
 				Status:      "responded",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err = db.DB.Create(complaint2).Error
@@ -187,6 +190,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue",
 				Description: "Description",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err := db.DB.Create(complaint).Error
@@ -219,6 +223,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Description:    "Description",
 				Status:         "responded",
 				AdminResponse:  "Old response",
+				DateOfComplaint: now,
 				CreatedAt:      &now,
 			}
 			err := db.DB.Create(complaint).Error
@@ -242,6 +247,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue",
 				Description: "Description",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err := db.DB.Create(complaint).Error
@@ -278,6 +284,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue",
 				Description: "Description",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err := db.DB.Create(complaint).Error
@@ -298,6 +305,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue 1",
 				Description: "Description 1",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err := db.DB.Create(complaint1).Error
@@ -308,6 +316,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Issue 2",
 				Description: "Description 2",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err = db.DB.Create(complaint2).Error
@@ -329,6 +338,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 					Subjects:    fmt.Sprintf("Issue %d", i),
 					Description: fmt.Sprintf("Description %d", i),
 					Status:      "open",
+					DateOfComplaint: now,
 					CreatedAt:   &now,
 				}
 				err := db.DB.Create(complaint).Error
@@ -354,6 +364,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Open issue",
 				Description: "Description",
 				Status:      "open",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err := db.DB.Create(complaint1).Error
@@ -364,6 +375,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 				Subjects:    "Responded issue",
 				Description: "Description",
 				Status:      "responded",
+				DateOfComplaint: now,
 				CreatedAt:   &now,
 			}
 			err = db.DB.Create(complaint2).Error

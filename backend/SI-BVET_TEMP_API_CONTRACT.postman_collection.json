@@ -1689,7 +1689,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"complaints\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"subjects\": \"Keterlambatan hasil\",\n      \"description\": \"Hasil belum keluar lebih dari SLA\",\n      \"status\": \"open\",\n      \"admin_response\": \"\",\n      \"attachment_path\": \"\"\n    }\n  ]\n}"
+              "body": "{\n  \"complaints\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"subjects\": \"Keterlambatan hasil\",\n      \"description\": \"Hasil belum keluar lebih dari SLA\",\n      \"date_of_complaint\": \"2026-05-18T00:00:00Z\",\n      \"status\": \"open\",\n      \"admin_response\": \"\",\n      \"attachment_path\": \"\"\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -2538,7 +2538,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"complaints\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"subjects\": \"Keterlambatan hasil\",\n      \"description\": \"Hasil belum keluar lebih dari SLA\",\n      \"status\": \"open\",\n      \"admin_response\": \"\",\n      \"attachment_path\": \"\"\n    }\n  ]\n}"
+              "body": "{\n  \"complaints\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"subjects\": \"Keterlambatan hasil\",\n      \"description\": \"Hasil belum keluar lebih dari SLA\",\n      \"date_of_complaint\": \"2026-05-18T00:00:00Z\",\n      \"status\": \"open\",\n      \"admin_response\": \"\",\n      \"attachment_path\": \"\"\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -2578,6 +2578,11 @@
                 {
                   "key": "description",
                   "value": "Hasil belum keluar lebih dari SLA",
+                  "type": "text"
+                },
+                {
+                  "key": "date_of_complaint",
+                  "value": "2026-05-18T00:00:00Z",
                   "type": "text"
                 },
                 {

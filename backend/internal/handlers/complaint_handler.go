@@ -7,6 +7,7 @@ import (
 	"si-bvet/internal/services"
 	"si-bvet/internal/utils"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -63,6 +64,7 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 
 	subjects := c.PostForm("subjects")
 	description := c.PostForm("description")
+		dateOfComplaint := c.PostForm("date_of_complaint")
 
 	filePath := ""
 	file, err := c.FormFile("attachment")
@@ -71,9 +73,20 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 		_ = c.SaveUploadedFile(file, filePath)
 	}
 
+	// validate date_of_complaint when provided (accept RFC3339 or YYYY-MM-DD)
+	if dateOfComplaint != "" {
+		if _, err := time.Parse(time.RFC3339, dateOfComplaint); err != nil {
+			if _, err2 := time.Parse("2006-01-02", dateOfComplaint); err2 != nil {
+				utils.ErrorResponse(c, http.StatusBadRequest, "invalid date_of_complaint format; expected RFC3339 or YYYY-MM-DD")
+				return
+			}
+		}
+	}
+
 	req := dto.ComplaintRequest{
-		Subjects:    subjects,
-		Description: description,
+		Subjects:        subjects,
+		Description:     description,
+		DateOfComplaint: dateOfComplaint,
 	}
 
 	err = h.Service.CreateComplaint(userID, req, filePath)

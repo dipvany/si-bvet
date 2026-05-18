@@ -260,11 +260,13 @@ var _ = ginkgo.Describe("Admin Action Flows", func() {
 			}
 			db.DB.Create(&user)
 
+			now := time.Now()
 			complaint := models.Complaint{
 				UserID:      user.ID,
 				Subjects:    "Late test result",
 				Description: "I submitted my sample 3 days ago",
 				Status:      "open",
+				DateOfComplaint: now,
 			}
 			db.DB.Create(&complaint)
 
