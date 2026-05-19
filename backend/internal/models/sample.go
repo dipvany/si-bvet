@@ -22,7 +22,7 @@ type Sample struct {
 	TestType       string     `json:"test_type" gorm:"column:test_type"`
 	LocationType   string     `json:"location_type" gorm:"column:location_type"`
 	LocationSmpl   string     `json:"location_smpl" gorm:"column:location_smpl"`
-	IsVactinated   string     `json:"is_vaccinated" gorm:"column:is_vaccinated"`
+	IsVaccinated   string     `json:"is_vaccinated" gorm:"column:is_vaccinated"`
 
 	Volume      string `json:"volume" gorm:"column:volume"`
 	Condition   string `json:"condition" gorm:"column:condition"`
