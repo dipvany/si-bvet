@@ -3,6 +3,8 @@ package handlers_test
 import (
 	"bytes"
 	"errors"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 
@@ -73,6 +75,14 @@ func (m *MockSubmissionService) GetTrackingTimeline(submissionID uint, userID ui
 	m.trackingID = submissionID
 	m.trackingUserID = userID
 	return m.trackingResp, m.trackingErr
+}
+
+func (m *MockSubmissionService) GetSampleTemplate() (*bytes.Buffer, error) {
+	return bytes.NewBufferString("template"), nil
+}
+
+func (m *MockSubmissionService) ImportSamplesFromTemplate(file io.Reader) (dto.SampleTemplateImportResponse, error) {
+	return dto.SampleTemplateImportResponse{}, nil
 }
 
 func withUserID(userID uint) gin.HandlerFunc {
@@ -242,6 +252,64 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Tracking timeline retrieved successfully"))
 			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("awaiting_payment"))
 			gomega.Expect(mockService.trackingCalled).To(gomega.BeTrue())
+		})
+	})
+
+	ginkgo.Describe("SampleTemplateEndpoints", func() {
+		var (
+			router      *gin.Engine
+			mockService *MockSubmissionService
+			handler     *handlers.SubmissionHandler
+			w           *httptest.ResponseRecorder
+		)
+
+		ginkgo.BeforeEach(func() {
+			gin.SetMode(gin.TestMode)
+			router = gin.New()
+			mockService = &MockSubmissionService{}
+			handler = handlers.NewSubmissionHandler(mockService)
+		})
+
+		ginkgo.It("downloads sample template excel", func() {
+			router.GET("/submissions/samples/template", handler.DownloadSampleTemplate)
+			req := httptest.NewRequest(http.MethodGet, "/submissions/samples/template", nil)
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(w.Header().Get("Content-Disposition")).To(gomega.ContainSubstring("sample_template.xlsx"))
+		})
+
+		ginkgo.It("returns bad request when import file is missing", func() {
+			router.POST("/submissions/samples/import", handler.ImportSampleTemplate)
+			req := httptest.NewRequest(http.MethodPost, "/submissions/samples/import", nil)
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusBadRequest))
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("file is required"))
+		})
+
+		ginkgo.It("imports sample template successfully", func() {
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			part, err := writer.CreateFormFile("file", "samples.xlsx")
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			_, err = part.Write([]byte("dummy"))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			router.POST("/submissions/samples/import", handler.ImportSampleTemplate)
+			req := httptest.NewRequest(http.MethodPost, "/submissions/samples/import", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Successfully parsed"))
 		})
 	})
 })

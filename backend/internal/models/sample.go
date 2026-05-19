@@ -5,7 +5,7 @@ import "time"
 type Sample struct {
 	ID             uint       `json:"id" gorm:"primaryKey;column:id"`
 	SubmissionID   uint       `json:"submission_id" gorm:"column:submission_id;not null;index:idx_samples_submission_id"`
-	SampleModel     string     `json:"sample_model" gorm:"column:sample_model;not null"`
+	SampleModel    string     `json:"sample_model" gorm:"column:sample_model;not null;default:''"`
 	SampleCodeCust string     `json:"sample_code_cust" gorm:"column:sample_code_cust;not null"`
 	SpecimenGroup  string     `json:"specimen_group" gorm:"column:specimen_group"`
 	SpecimenType   string     `json:"specimen_type" gorm:"column:specimen_type"`

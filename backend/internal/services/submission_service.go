@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
 	"time"
 
 	"si-bvet/internal/dto"
@@ -22,6 +25,8 @@ type SubmissionServiceInterface interface {
 	Reject(id uint) error
 	Update(submissionID uint, userID uint, req dto.UpdateSubmissionRequest) error
 	GetTrackingTimeline(submissionID uint, userID uint) (dto.SubmissionTrackingTimelineResponse, error)
+	GetSampleTemplate() (*bytes.Buffer, error)
+	ImportSamplesFromTemplate(file io.Reader) (dto.SampleTemplateImportResponse, error)
 }
 
 type SubmissionService struct{}
@@ -56,6 +61,22 @@ func (s *SubmissionService) Update(submissionID uint, userID uint, req dto.Updat
 
 func (s *SubmissionService) GetTrackingTimeline(submissionID uint, userID uint) (dto.SubmissionTrackingTimelineResponse, error) {
 	return GetSubmissionTrackingTimeline(submissionID, userID)
+}
+
+func (s *SubmissionService) GetSampleTemplate() (*bytes.Buffer, error) {
+	return GenerateSampleTemplateExcel()
+}
+
+func (s *SubmissionService) ImportSamplesFromTemplate(file io.Reader) (dto.SampleTemplateImportResponse, error) {
+	samples, err := ParseSamplesFromTemplateExcel(file)
+	if err != nil {
+		return dto.SampleTemplateImportResponse{}, err
+	}
+
+	return dto.SampleTemplateImportResponse{
+		Samples:      samples,
+		TotalSamples: len(samples),
+	}, nil
 }
 
 func CreateSubmission(sub *models.Submission) error {
@@ -200,16 +221,38 @@ func buildSubmission(userID uint, req dto.SubmissionRequest) models.Submission {
 
 func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.SampleInput) error {
 	for _, sampleReq := range samples {
+		productionDate, err := parseDate(sampleReq.ProductionDate)
+		if err != nil {
+			return fmt.Errorf("invalid production_date for sample %s: %w", sampleReq.SampleCodeCust, err)
+		}
+
+		expiredDate, err := parseDate(sampleReq.ExpiredDate)
+		if err != nil {
+			return fmt.Errorf("invalid expired_date for sample %s: %w", sampleReq.SampleCodeCust, err)
+		}
+
 		sample := models.Sample{
 			SubmissionID:   submissionID,
 			SampleCodeCust: sampleReq.SampleCodeCust,
 			SampleModel:    sampleReq.SampleModel,
+			SpecimenGroup:  sampleReq.SpecimenGroup,
 			SpecimenType:   sampleReq.SpecimenType,
 			Species:        sampleReq.Species,
+			Batch:          sampleReq.Batch,
+			Preservative:   sampleReq.Preservative,
+			Packaging:      sampleReq.Packaging,
+			ProductionDate: productionDate,
+			ExpiredDate:    expiredDate,
+			Sex:            sampleReq.Sex,
 			Age:            sampleReq.Age,
+			UnitAge:        sampleReq.UnitAge,
+			Owner:          sampleReq.Owner,
+			TestType:       sampleReq.TestType,
+			LocationType:   sampleReq.LocationType,
 			Volume:         sampleReq.Volume,
 			Condition:      sampleReq.Condition,
 			LocationSmpl:   sampleReq.LocationSmpl,
+			IsVaccinated:   sampleReq.IsVaccinated,
 			TotalSample:    int64(sampleReq.TotalSample),
 		}
 
@@ -402,8 +445,25 @@ func ExportSubmissionsExcel(
 	f.SetCellValue("Samples", "A1", "Submission ID")
 	f.SetCellValue("Samples", "B1", "Sample Code")
 	f.SetCellValue("Samples", "C1", "Sample Model")
-	f.SetCellValue("Samples", "D1", "Specimen Type")
-	f.SetCellValue("Samples", "E1", "Species")
+	f.SetCellValue("Samples", "D1", "Specimen Group")
+	f.SetCellValue("Samples", "E1", "Specimen Type")
+	f.SetCellValue("Samples", "F1", "Species")
+	f.SetCellValue("Samples", "G1", "Batch")
+	f.SetCellValue("Samples", "H1", "Preservative")
+	f.SetCellValue("Samples", "I1", "Packaging")
+	f.SetCellValue("Samples", "J1", "Production Date")
+	f.SetCellValue("Samples", "K1", "Expired Date")
+	f.SetCellValue("Samples", "L1", "Sex")
+	f.SetCellValue("Samples", "M1", "Age")
+	f.SetCellValue("Samples", "N1", "Unit Age")
+	f.SetCellValue("Samples", "O1", "Owner")
+	f.SetCellValue("Samples", "P1", "Test Type")
+	f.SetCellValue("Samples", "Q1", "Location Type")
+	f.SetCellValue("Samples", "R1", "Location Sample")
+	f.SetCellValue("Samples", "S1", "Vaccinated")
+	f.SetCellValue("Samples", "T1", "Volume")
+	f.SetCellValue("Samples", "U1", "Condition")
+	f.SetCellValue("Samples", "V1", "Total Sample")
 
 	row = 2
 	for _, s := range submissions {
@@ -411,8 +471,29 @@ func ExportSubmissionsExcel(
 			f.SetCellValue("Samples", fmt.Sprintf("A%d", row), s.ID)
 			f.SetCellValue("Samples", fmt.Sprintf("B%d", row), sample.SampleCodeCust)
 			f.SetCellValue("Samples", fmt.Sprintf("C%d", row), sample.SampleModel)
-			f.SetCellValue("Samples", fmt.Sprintf("D%d", row), sample.SpecimenType)
-			f.SetCellValue("Samples", fmt.Sprintf("E%d", row), sample.Species)
+			f.SetCellValue("Samples", fmt.Sprintf("D%d", row), sample.SpecimenGroup)
+			f.SetCellValue("Samples", fmt.Sprintf("E%d", row), sample.SpecimenType)
+			f.SetCellValue("Samples", fmt.Sprintf("F%d", row), sample.Species)
+			f.SetCellValue("Samples", fmt.Sprintf("G%d", row), sample.Batch)
+			f.SetCellValue("Samples", fmt.Sprintf("H%d", row), sample.Preservative)
+			f.SetCellValue("Samples", fmt.Sprintf("I%d", row), sample.Packaging)
+			if sample.ProductionDate != nil {
+				f.SetCellValue("Samples", fmt.Sprintf("J%d", row), sample.ProductionDate.Format("2006-01-02"))
+			}
+			if sample.ExpiredDate != nil {
+				f.SetCellValue("Samples", fmt.Sprintf("K%d", row), sample.ExpiredDate.Format("2006-01-02"))
+			}
+			f.SetCellValue("Samples", fmt.Sprintf("L%d", row), sample.Sex)
+			f.SetCellValue("Samples", fmt.Sprintf("M%d", row), sample.Age)
+			f.SetCellValue("Samples", fmt.Sprintf("N%d", row), sample.UnitAge)
+			f.SetCellValue("Samples", fmt.Sprintf("O%d", row), sample.Owner)
+			f.SetCellValue("Samples", fmt.Sprintf("P%d", row), sample.TestType)
+			f.SetCellValue("Samples", fmt.Sprintf("Q%d", row), sample.LocationType)
+			f.SetCellValue("Samples", fmt.Sprintf("R%d", row), sample.LocationSmpl)
+			f.SetCellValue("Samples", fmt.Sprintf("S%d", row), sample.IsVaccinated)
+			f.SetCellValue("Samples", fmt.Sprintf("T%d", row), sample.Volume)
+			f.SetCellValue("Samples", fmt.Sprintf("U%d", row), sample.Condition)
+			f.SetCellValue("Samples", fmt.Sprintf("V%d", row), sample.TotalSample)
 			row++
 		}
 	}
@@ -465,4 +546,266 @@ func ExportSubmissionsExcel(
 	}
 
 	return buf, nil
+}
+
+func GenerateSampleTemplateExcel() (*bytes.Buffer, error) {
+	f := excelize.NewFile()
+	sheet := "SampleTemplate"
+	f.SetSheetName("Sheet1", sheet)
+
+	headers := []string{
+		"sample_code_cust",
+		"sample_model",
+		"specimen_group",
+		"specimen_type",
+		"species",
+		"batch",
+		"preservative",
+		"packaging",
+		"production_date",
+		"expired_date",
+		"sex",
+		"age",
+		"unit_age",
+		"owner",
+		"test_type",
+		"location_type",
+		"location_smpl",
+		"is_vaccinated",
+		"volume",
+		"condition",
+		"total_sample",
+		"test_service_ids",
+	}
+
+	for idx, h := range headers {
+		col, _ := excelize.ColumnNumberToName(idx + 1)
+		f.SetCellValue(sheet, col+"1", h)
+	}
+
+	// Example row for quicker onboarding in customer side.
+	example := []interface{}{
+		"SAMPLE-001",
+		"Serum",
+		"Darah",
+		"Serum",
+		"Ayam",
+		"BATCH-2026-01",
+		"None",
+		"Tube",
+		"2026-05-01",
+		"2026-05-03",
+		"N/A",
+		1,
+		"hari",
+		"PT Maju Ternak",
+		"Diagnostik",
+		"Kandang",
+		"Bandung",
+		"ya",
+		"5 ml",
+		"baik",
+		1,
+		"1,3",
+	}
+
+	for idx, value := range example {
+		col, _ := excelize.ColumnNumberToName(idx + 1)
+		f.SetCellValue(sheet, col+"2", value)
+	}
+
+	buf := new(bytes.Buffer)
+	if err := f.Write(buf); err != nil {
+		return nil, err
+	}
+
+	return buf, nil
+}
+
+func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return nil, errors.New("failed to read excel file")
+	}
+
+	sheetName := f.GetSheetName(0)
+	if sheetName == "" {
+		return nil, errors.New("excel sheet is empty")
+	}
+
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows) < 2 {
+		return nil, errors.New("template must contain header and at least one data row")
+	}
+
+	headerMap := map[string]int{}
+	for idx, cell := range rows[0] {
+		normalized := normalizeHeader(cell)
+		if normalized != "" {
+			headerMap[normalized] = idx
+		}
+	}
+
+	requiredHeaders := []string{"samplecodecust", "samplemodel", "totalsample", "testserviceids"}
+	for _, required := range requiredHeaders {
+		if _, ok := headerMap[required]; !ok {
+			return nil, fmt.Errorf("missing required column: %s", required)
+		}
+	}
+
+	samples := make([]dto.SampleInput, 0)
+	for rowIdx := 1; rowIdx < len(rows); rowIdx++ {
+		row := rows[rowIdx]
+
+		if isRowEmpty(row) {
+			continue
+		}
+
+		sample := dto.SampleInput{
+			SampleCodeCust: getCellValueByHeader(row, headerMap, []string{"samplecodecust", "samplecode", "kodesampel"}),
+			SampleModel:    getCellValueByHeader(row, headerMap, []string{"samplemodel", "modelsampel"}),
+			SpecimenGroup:  getCellValueByHeader(row, headerMap, []string{"specimengroup", "kelompokspesimen"}),
+			SpecimenType:   getCellValueByHeader(row, headerMap, []string{"specimentype", "jenisspesimen"}),
+			Species:        getCellValueByHeader(row, headerMap, []string{"species", "spesies"}),
+			Batch:          getCellValueByHeader(row, headerMap, []string{"batch"}),
+			Preservative:   getCellValueByHeader(row, headerMap, []string{"preservative", "pengawet"}),
+			Packaging:      getCellValueByHeader(row, headerMap, []string{"packaging", "kemasan"}),
+			ProductionDate: getCellValueByHeader(row, headerMap, []string{"productiondate", "tanggalproduksi"}),
+			ExpiredDate:    getCellValueByHeader(row, headerMap, []string{"expireddate", "tanggalkedaluwarsa", "tanggalkadaluarsa"}),
+			Sex:            getCellValueByHeader(row, headerMap, []string{"sex", "jeniskelamin"}),
+			UnitAge:        getCellValueByHeader(row, headerMap, []string{"unitage", "satuanumur"}),
+			Owner:          getCellValueByHeader(row, headerMap, []string{"owner", "pemilik"}),
+			TestType:       getCellValueByHeader(row, headerMap, []string{"testtype", "tipepengujian"}),
+			LocationType:   getCellValueByHeader(row, headerMap, []string{"locationtype", "tipelokasi"}),
+			LocationSmpl:   getCellValueByHeader(row, headerMap, []string{"locationsmpl", "lokasisampel"}),
+			IsVaccinated:   getCellValueByHeader(row, headerMap, []string{"isvaccinated", "vaksinasi"}),
+			Volume:         getCellValueByHeader(row, headerMap, []string{"volume"}),
+			Condition:      getCellValueByHeader(row, headerMap, []string{"condition", "kondisi"}),
+		}
+
+		if sample.SampleCodeCust == "" {
+			return nil, fmt.Errorf("row %d: sample_code_cust is required", rowIdx+1)
+		}
+		if sample.SampleModel == "" {
+			return nil, fmt.Errorf("row %d: sample_model is required", rowIdx+1)
+		}
+
+		if sample.ProductionDate != "" {
+			if _, err := parseDate(sample.ProductionDate); err != nil {
+				return nil, fmt.Errorf("row %d: invalid production_date format, expected YYYY-MM-DD", rowIdx+1)
+			}
+		}
+		if sample.ExpiredDate != "" {
+			if _, err := parseDate(sample.ExpiredDate); err != nil {
+				return nil, fmt.Errorf("row %d: invalid expired_date format, expected YYYY-MM-DD", rowIdx+1)
+			}
+		}
+
+		ageStr := getCellValueByHeader(row, headerMap, []string{"age", "umur"})
+		if ageStr != "" {
+			age, err := strconv.ParseFloat(strings.TrimSpace(ageStr), 64)
+			if err != nil {
+				return nil, fmt.Errorf("row %d: age must be a number", rowIdx+1)
+			}
+			sample.Age = age
+		}
+
+		totalSampleStr := getCellValueByHeader(row, headerMap, []string{"totalsample", "jumlahsampel"})
+		if totalSampleStr == "" {
+			return nil, fmt.Errorf("row %d: total_sample is required", rowIdx+1)
+		}
+		totalSample, err := strconv.ParseInt(strings.TrimSpace(totalSampleStr), 10, 64)
+		if err != nil || totalSample <= 0 {
+			return nil, fmt.Errorf("row %d: total_sample must be a positive integer", rowIdx+1)
+		}
+		sample.TotalSample = totalSample
+
+		testsRaw := getCellValueByHeader(row, headerMap, []string{"testserviceids", "testids", "idpengujian"})
+		tests, err := parseTestServiceIDs(testsRaw)
+		if err != nil {
+			return nil, fmt.Errorf("row %d: %w", rowIdx+1, err)
+		}
+		sample.Tests = tests
+
+		samples = append(samples, sample)
+	}
+
+	if len(samples) == 0 {
+		return nil, errors.New("no valid sample data found")
+	}
+
+	return samples, nil
+}
+
+func parseTestServiceIDs(raw string) ([]dto.TestInput, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, errors.New("test_service_ids is required")
+	}
+
+	tokens := strings.Split(raw, ",")
+	tests := make([]dto.TestInput, 0, len(tokens))
+
+	for _, token := range tokens {
+		trimmed := strings.TrimSpace(token)
+		if trimmed == "" {
+			continue
+		}
+
+		id, err := strconv.ParseUint(trimmed, 10, 64)
+		if err != nil || id == 0 {
+			return nil, fmt.Errorf("invalid test_service_ids value: %s", trimmed)
+		}
+
+		tests = append(tests, dto.TestInput{TestServiceID: uint(id)})
+	}
+
+	if len(tests) == 0 {
+		return nil, errors.New("test_service_ids must contain at least one valid ID")
+	}
+
+	return tests, nil
+}
+
+func normalizeHeader(header string) string {
+	header = strings.ToLower(strings.TrimSpace(header))
+	replacer := strings.NewReplacer("_", "", " ", "", "-", "", "(", "", ")", "")
+	return replacer.Replace(header)
+}
+
+func getCellValueByHeader(row []string, headerMap map[string]int, keys []string) string {
+	for _, key := range keys {
+		if idx, ok := headerMap[key]; ok {
+			if idx >= 0 && idx < len(row) {
+				return strings.TrimSpace(row[idx])
+			}
+		}
+	}
+	return ""
+}
+
+func isRowEmpty(row []string) bool {
+	for _, cell := range row {
+		if strings.TrimSpace(cell) != "" {
+			return false
+		}
+	}
+	return true
+}
+
+func parseDate(value string) (*time.Time, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil, nil
+	}
+
+	t, err := time.Parse("2006-01-02", trimmed)
+	if err != nil {
+		return nil, err
+	}
+
+	return &t, nil
 }

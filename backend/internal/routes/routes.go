@@ -120,6 +120,8 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				customerGroup.PATCH("/notifications/read-all", notificationHandler.MarkAllNotificationsAsRead)
 
 				customerGroup.POST("/submissions", submissionHandler.CreateSubmission)
+				customerGroup.GET("/submissions/samples/template", submissionHandler.DownloadSampleTemplate)
+				customerGroup.POST("/submissions/samples/import", submissionHandler.ImportSampleTemplate)
 				customerGroup.GET("/submissions/my", submissionHandler.GetMySubmissions)
 				customerGroup.PATCH("/submissions/:id", submissionHandler.UpdateSubmission)
 				customerGroup.GET("/submissions/:id/tracking", submissionHandler.GetSubmissionTrackingTimeline)

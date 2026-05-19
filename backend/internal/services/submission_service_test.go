@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"bytes"
 	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
@@ -9,6 +10,7 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -408,6 +410,65 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 			// Assert
 			gomega.Expect(err).To(gomega.HaveOccurred())
 			gomega.Expect(err.Error()).To(gomega.ContainSubstring("unauthorized"))
+		})
+	})
+
+	ginkgo.Describe("SampleTemplateExcel", func() {
+		ginkgo.It("generates sample template excel successfully", func() {
+			buf, err := GenerateSampleTemplateExcel()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(buf).ToNot(gomega.BeNil())
+			gomega.Expect(buf.Len()).To(gomega.BeNumerically(">", 0))
+		})
+
+		ginkgo.It("parses valid sample template rows", func() {
+			f := excelize.NewFile()
+			sheet := f.GetSheetName(0)
+			f.SetCellValue(sheet, "A1", "sample_code_cust")
+			f.SetCellValue(sheet, "B1", "sample_model")
+			f.SetCellValue(sheet, "C1", "total_sample")
+			f.SetCellValue(sheet, "D1", "test_service_ids")
+			f.SetCellValue(sheet, "E1", "age")
+			f.SetCellValue(sheet, "F1", "production_date")
+
+			f.SetCellValue(sheet, "A2", "S-001")
+			f.SetCellValue(sheet, "B2", "Serum")
+			f.SetCellValue(sheet, "C2", "2")
+			f.SetCellValue(sheet, "D2", "1,2")
+			f.SetCellValue(sheet, "E2", "1.5")
+			f.SetCellValue(sheet, "F2", "2026-05-19")
+
+			buf := new(bytes.Buffer)
+			err := f.Write(buf)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			samples, err := ParseSamplesFromTemplateExcel(bytes.NewReader(buf.Bytes()))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(samples).To(gomega.HaveLen(1))
+			gomega.Expect(samples[0].SampleCodeCust).To(gomega.Equal("S-001"))
+			gomega.Expect(samples[0].SampleModel).To(gomega.Equal("Serum"))
+			gomega.Expect(samples[0].TotalSample).To(gomega.Equal(int64(2)))
+			gomega.Expect(samples[0].Age).To(gomega.Equal(1.5))
+			gomega.Expect(samples[0].Tests).To(gomega.HaveLen(2))
+			gomega.Expect(samples[0].Tests[0].TestServiceID).To(gomega.Equal(uint(1)))
+			gomega.Expect(samples[0].Tests[1].TestServiceID).To(gomega.Equal(uint(2)))
+		})
+
+		ginkgo.It("returns error when required headers are missing", func() {
+			f := excelize.NewFile()
+			sheet := f.GetSheetName(0)
+			f.SetCellValue(sheet, "A1", "sample_code_cust")
+			f.SetCellValue(sheet, "B1", "sample_model")
+			f.SetCellValue(sheet, "A2", "S-001")
+			f.SetCellValue(sheet, "B2", "Serum")
+
+			buf := new(bytes.Buffer)
+			err := f.Write(buf)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			_, err = ParseSamplesFromTemplateExcel(bytes.NewReader(buf.Bytes()))
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("missing required column"))
 		})
 	})
 

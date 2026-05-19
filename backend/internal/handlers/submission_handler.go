@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
@@ -191,3 +192,48 @@ func (h *SubmissionHandler) ExportSubmissionsExcel(c *gin.Context) {
 	)
 }
 
+func (h *SubmissionHandler) DownloadSampleTemplate(c *gin.Context) {
+	fileBuffer, err := h.Service.GetSampleTemplate()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Header(
+		"Content-Disposition",
+		"attachment; filename=sample_template.xlsx",
+	)
+	c.Data(
+		http.StatusOK,
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		fileBuffer.Bytes(),
+	)
+}
+
+func (h *SubmissionHandler) ImportSampleTemplate(c *gin.Context) {
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "file is required")
+		return
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "failed to open uploaded file")
+		return
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	result, err := h.Service.ImportSamplesFromTemplate(file)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("Successfully parsed %d sample rows", result.TotalSamples),
+		"data":    result,
+	})
+}
