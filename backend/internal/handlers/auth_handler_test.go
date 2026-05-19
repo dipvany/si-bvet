@@ -29,6 +29,24 @@ type MockAuthService struct {
 	loginUserPassword string
 	loginUserResult   *models.User
 	loginUserError    error
+
+	changePasswordCalled   bool
+	changePasswordUserID   uint
+	changePasswordCurrent  string
+	changePasswordNew      string
+	changePasswordError    error
+
+	forgotPasswordCalled bool
+	forgotPasswordEmail  string
+	forgotPasswordError  error
+
+	resetPasswordCalled   bool
+	resetPasswordUserID   uint
+	resetPasswordToken    string
+	resetPasswordExpires  int64
+	resetPasswordSignature string
+	resetPasswordNew      string
+	resetPasswordError    error
 }
 
 func (m *MockAuthService) RegisterUser(user *models.User) error {
@@ -42,6 +60,30 @@ func (m *MockAuthService) LoginUser(email, password string) (*models.User, error
 	m.loginUserEmail = email
 	m.loginUserPassword = password
 	return m.loginUserResult, m.loginUserError
+}
+
+func (m *MockAuthService) ChangePassword(userID uint, currentPassword, newPassword string) error {
+	m.changePasswordCalled = true
+	m.changePasswordUserID = userID
+	m.changePasswordCurrent = currentPassword
+	m.changePasswordNew = newPassword
+	return m.changePasswordError
+}
+
+func (m *MockAuthService) RequestPasswordReset(email string) error {
+	m.forgotPasswordCalled = true
+	m.forgotPasswordEmail = email
+	return m.forgotPasswordError
+}
+
+func (m *MockAuthService) ResetPassword(userID uint, token string, expiresUnix int64, signature, newPassword string) error {
+	m.resetPasswordCalled = true
+	m.resetPasswordUserID = userID
+	m.resetPasswordToken = token
+	m.resetPasswordExpires = expiresUnix
+	m.resetPasswordSignature = signature
+	m.resetPasswordNew = newPassword
+	return m.resetPasswordError
 }
 
 // MockUserRepository untuk dummy implementation
@@ -478,6 +520,127 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 				gomega.Expect(response).To(gomega.HaveKey("token"))
 				gomega.Expect(response["token"]).NotTo(gomega.BeEmpty())
 			})
+		})
+	})
+
+	// ============================================================================
+	// CHANGE PASSWORD HANDLER TESTS
+	// ============================================================================
+
+	ginkgo.Describe("ChangePassword", func() {
+		var (
+			router      *gin.Engine
+			mockService *MockAuthService
+			authHandler *handlers.AuthHandler
+			w           *httptest.ResponseRecorder
+		)
+
+		ginkgo.BeforeEach(func() {
+			gin.SetMode(gin.TestMode)
+			router = gin.New()
+			mockService = &MockAuthService{}
+			authHandler = handlers.NewAuthHandler(mockService)
+		})
+
+		ginkgo.It("should update password for authenticated user", func() {
+			router.Use(func(c *gin.Context) {
+				c.Set("user_id", uint(7))
+				c.Set("role", "customer")
+				c.Next()
+			})
+			router.PATCH("/change-password", authHandler.ChangePassword)
+
+			body, _ := json.Marshal(dto.ChangePasswordRequest{
+				CurrentPassword: "oldpass123",
+				NewPassword:     "newpass123",
+			})
+
+			req := httptest.NewRequest("PATCH", "/change-password", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", "Bearer test-token")
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(mockService.changePasswordCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.changePasswordUserID).To(gomega.Equal(uint(7)))
+			gomega.Expect(mockService.changePasswordCurrent).To(gomega.Equal("oldpass123"))
+			gomega.Expect(mockService.changePasswordNew).To(gomega.Equal("newpass123"))
+		})
+	})
+
+	// ============================================================================
+	// FORGOT PASSWORD HANDLER TESTS
+	// ============================================================================
+
+	ginkgo.Describe("ForgotPassword", func() {
+		var (
+			router      *gin.Engine
+			mockService *MockAuthService
+			authHandler *handlers.AuthHandler
+			w           *httptest.ResponseRecorder
+		)
+
+		ginkgo.BeforeEach(func() {
+			gin.SetMode(gin.TestMode)
+			router = gin.New()
+			mockService = &MockAuthService{}
+			authHandler = handlers.NewAuthHandler(mockService)
+		})
+
+		ginkgo.It("should accept forgot password request", func() {
+			router.POST("/forgot-password", authHandler.ForgotPassword)
+
+			body, _ := json.Marshal(dto.ForgotPasswordRequest{Email: "john@example.com"})
+			req := httptest.NewRequest("POST", "/forgot-password", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(mockService.forgotPasswordCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.forgotPasswordEmail).To(gomega.Equal("john@example.com"))
+		})
+	})
+
+	// ============================================================================
+	// RESET PASSWORD HANDLER TESTS
+	// ============================================================================
+
+	ginkgo.Describe("ResetPassword", func() {
+		var (
+			router      *gin.Engine
+			mockService *MockAuthService
+			authHandler *handlers.AuthHandler
+			w           *httptest.ResponseRecorder
+		)
+
+		ginkgo.BeforeEach(func() {
+			gin.SetMode(gin.TestMode)
+			router = gin.New()
+			mockService = &MockAuthService{}
+			authHandler = handlers.NewAuthHandler(mockService)
+		})
+
+		ginkgo.It("should pass reset payload to service", func() {
+			router.POST("/reset-password/:id/:token", authHandler.ResetPassword)
+
+			body, _ := json.Marshal(dto.ResetPasswordRequest{Password: "newpass123"})
+			req := httptest.NewRequest("POST", "/reset-password/9/token123?expires=1234567890&signature=sig", bytes.NewBuffer(body))
+			req.Header.Set("Content-Type", "application/json")
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(mockService.resetPasswordCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.resetPasswordUserID).To(gomega.Equal(uint(9)))
+			gomega.Expect(mockService.resetPasswordToken).To(gomega.Equal("token123"))
+			gomega.Expect(mockService.resetPasswordExpires).To(gomega.Equal(int64(1234567890)))
+			gomega.Expect(mockService.resetPasswordSignature).To(gomega.Equal("sig"))
+			gomega.Expect(mockService.resetPasswordNew).To(gomega.Equal("newpass123"))
 		})
 	})
 })

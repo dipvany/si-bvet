@@ -5,6 +5,19 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
 type RegisterRequest struct {
 	FullName        string `json:"fullname" form:"fullName" binding:"required"`
 	Email           string `json:"email" form:"email" binding:"required,email"`

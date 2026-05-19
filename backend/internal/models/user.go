@@ -14,6 +14,9 @@ type User struct {
 	LoginLinkTokenHash string   `json:"-" gorm:"column:login_link_token_hash;type:varchar(255)"`
 	LoginLinkExpiresAt *time.Time `json:"login_link_expires_at,omitempty" gorm:"column:login_link_expires_at"`
 	LoginLinkUsedAt    *time.Time `json:"login_link_used_at,omitempty" gorm:"column:login_link_used_at"`
+	ResetPasswordTokenHash string   `json:"-" gorm:"column:reset_password_token_hash;type:varchar(255)"`
+	ResetPasswordExpiresAt *time.Time `json:"reset_password_expires_at,omitempty" gorm:"column:reset_password_expires_at"`
+	ResetPasswordUsedAt    *time.Time `json:"reset_password_used_at,omitempty" gorm:"column:reset_password_used_at"`
 	Institution    string     `json:"institution" gorm:"column:institution;type:varchar(255)"`
 	RegistrationDoc string     `json:"-" gorm:"column:registration_doc;type:text"`
 

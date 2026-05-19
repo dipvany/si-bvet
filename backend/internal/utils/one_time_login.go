@@ -70,7 +70,7 @@ func ValidateOneTimeLoginSignature(userID uint, token string, expiresUnix int64,
 	return nil
 }
 
-func BuildOneTimeLoginURL(baseURL string, userID uint, token string, expiresAt time.Time) (string, error) {
+func buildSignedTokenURL(baseURL, pathFormat string, userID uint, token string, expiresAt time.Time) (string, error) {
 	trimmedBaseURL := strings.TrimSpace(baseURL)
 	if trimmedBaseURL == "" {
 		trimmedBaseURL = "http://localhost:3000"
@@ -89,7 +89,7 @@ func BuildOneTimeLoginURL(baseURL string, userID uint, token string, expiresAt t
 		return "", errors.New("invalid login base url")
 	}
 
-	parsedURL.Path = strings.TrimRight(parsedURL.Path, "/") + fmt.Sprintf("/verify-email/%d/%s", userID, token)
+	parsedURL.Path = strings.TrimRight(parsedURL.Path, "/") + fmt.Sprintf(pathFormat, userID, token)
 
 	expiresUnix := expiresAt.Unix()
 	signature, err := SignOneTimeLoginLink(userID, token, expiresUnix)
@@ -103,4 +103,12 @@ func BuildOneTimeLoginURL(baseURL string, userID uint, token string, expiresAt t
 	parsedURL.RawQuery = query.Encode()
 
 	return parsedURL.String(), nil
+}
+
+func BuildOneTimeLoginURL(baseURL string, userID uint, token string, expiresAt time.Time) (string, error) {
+	return buildSignedTokenURL(baseURL, "/verify-email/%d/%s", userID, token, expiresAt)
+}
+
+func BuildPasswordResetURL(baseURL string, userID uint, token string, expiresAt time.Time) (string, error) {
+	return buildSignedTokenURL(baseURL, "/reset-password/%d/%s", userID, token, expiresAt)
 }

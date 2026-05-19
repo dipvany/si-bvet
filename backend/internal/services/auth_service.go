@@ -2,23 +2,41 @@ package services
 
 import (
 	"errors"
+	"os"
+	"time"
+
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
+	"si-bvet/internal/utils"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // UserRepository interface untuk dependency injection
 type UserRepository interface {
 	CreateUser(user *models.User) error
 	GetUserByEmail(email string) (*models.User, error)
+	GetUserByID(id uint) (*models.User, error)
+	SaveUser(user *models.User) error
 }
 
 // AuthServiceInterface defines auth service contract untuk testing
 type AuthServiceInterface interface {
 	RegisterUser(user *models.User) error
 	LoginUser(email, password string) (*models.User, error)
+	ChangePassword(userID uint, currentPassword, newPassword string) error
+	RequestPasswordReset(email string) error
+	ResetPassword(userID uint, token string, expiresUnix int64, signature, newPassword string) error
 }
+
+var (
+	ErrPasswordResetLinkExpired = errors.New("password reset link expired")
+	ErrPasswordResetLinkUsed    = errors.New("password reset link already used")
+	ErrPasswordResetLinkInvalid  = errors.New("password reset link invalid")
+	ErrCurrentPasswordIncorrect  = errors.New("current password incorrect")
+	ErrPasswordResetNotFound     = errors.New("password reset request not found")
+)
 
 // AuthService menyimpan dependency untuk auth operations
 type AuthService struct {
@@ -64,6 +82,111 @@ func (s *AuthService) LoginUser(email, password string) (*models.User, error) {
 	return user, nil
 }
 
+func (s *AuthService) ChangePassword(userID uint, currentPassword, newPassword string) error {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("user not found")
+		}
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(currentPassword)); err != nil {
+		return ErrCurrentPasswordIncorrect
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = string(hash)
+	user.ResetPasswordTokenHash = ""
+	user.ResetPasswordExpiresAt = nil
+	user.ResetPasswordUsedAt = nil
+
+	return s.userRepo.SaveUser(user)
+}
+
+func (s *AuthService) RequestPasswordReset(email string) error {
+	user, err := s.userRepo.GetUserByEmail(email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	if !user.IsVerified {
+		return nil
+	}
+
+	token, err := utils.GenerateRandomToken(32)
+	if err != nil {
+		return err
+	}
+
+	expiresAt := time.Now().Add(1 * time.Hour)
+	user.ResetPasswordTokenHash = utils.HashOneTimeLoginToken(token)
+	user.ResetPasswordExpiresAt = &expiresAt
+	user.ResetPasswordUsedAt = nil
+
+	if err := s.userRepo.SaveUser(user); err != nil {
+		return err
+	}
+
+	resetURL, err := utils.BuildPasswordResetURL(os.Getenv("APP_LOGIN_URL"), user.ID, token, expiresAt)
+	if err != nil {
+		return err
+	}
+
+	SendPasswordResetEmail(user.FullName, user.Email, resetURL)
+	return nil
+}
+
+func (s *AuthService) ResetPassword(userID uint, token string, expiresUnix int64, signature, newPassword string) error {
+	if err := utils.ValidateOneTimeLoginSignature(userID, token, expiresUnix, signature); err != nil {
+		return ErrPasswordResetLinkInvalid
+	}
+
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrPasswordResetNotFound
+		}
+		return err
+	}
+
+	if user.ResetPasswordUsedAt != nil {
+		return ErrPasswordResetLinkUsed
+	}
+
+	if user.ResetPasswordExpiresAt == nil || user.ResetPasswordTokenHash == "" {
+		return ErrPasswordResetNotFound
+	}
+
+	if time.Now().After(*user.ResetPasswordExpiresAt) || time.Now().Unix() > expiresUnix {
+		return ErrPasswordResetLinkExpired
+	}
+
+	if user.ResetPasswordTokenHash != utils.HashOneTimeLoginToken(token) {
+		return ErrPasswordResetLinkInvalid
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	user.PasswordHash = string(hash)
+	user.ResetPasswordTokenHash = ""
+	user.ResetPasswordExpiresAt = nil
+	user.ResetPasswordUsedAt = &now
+
+	return s.userRepo.SaveUser(user)
+}
+
 // DefaultUserRepository adapter untuk kompatibilitas dengan kode yang sudah ada
 // Ini menghubungkan interface ke concrete repository implementation
 type DefaultUserRepository struct{}
@@ -74,4 +197,16 @@ func (d *DefaultUserRepository) CreateUser(user *models.User) error {
 
 func (d *DefaultUserRepository) GetUserByEmail(email string) (*models.User, error) {
 	return repositories.GetUserByEmail(email)
+}
+
+func (d *DefaultUserRepository) GetUserByID(id uint) (*models.User, error) {
+	user, err := repositories.GetUserByID(id)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (d *DefaultUserRepository) SaveUser(user *models.User) error {
+	return repositories.SaveUser(user)
 }

@@ -104,6 +104,87 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userID, err := GetUserID(c)
+	if err != nil {
+		RespondUserIDError(c, err)
+		return
+	}
+
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.authService.ChangePassword(userID, req.CurrentPassword, req.NewPassword); err != nil {
+		switch {
+		case errors.Is(err, services.ErrCurrentPasswordIncorrect):
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		default:
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.MessageResponse(c, http.StatusOK, "Password updated successfully")
+}
+
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.authService.RequestPasswordReset(req.Email); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.MessageResponse(c, http.StatusOK, "If the email exists, a password reset link has been sent")
+}
+
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	token := c.Param("token")
+	expiresRaw := c.Query("expires")
+	signature := c.Query("signature")
+	if token == "" || expiresRaw == "" || signature == "" {
+		utils.ErrorResponse(c, http.StatusBadRequest, "reset link is incomplete")
+		return
+	}
+
+	expiresUnix, err := strconv.ParseInt(expiresRaw, 10, 64)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid reset link expiry")
+		return
+	}
+
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := h.authService.ResetPassword(uint(userID), token, expiresUnix, signature, req.Password); err != nil {
+		switch {
+		case errors.Is(err, services.ErrPasswordResetLinkExpired), errors.Is(err, services.ErrPasswordResetLinkUsed), errors.Is(err, services.ErrPasswordResetLinkInvalid), errors.Is(err, services.ErrPasswordResetNotFound):
+			utils.ErrorResponse(c, http.StatusUnauthorized, err.Error())
+		default:
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	utils.MessageResponse(c, http.StatusOK, "Password reset successfully")
+}
+
 // VerifyEmailLogin memvalidasi one-time login link dan mengembalikan JWT
 func (h *AuthHandler) VerifyEmailLogin(c *gin.Context) {
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 64)

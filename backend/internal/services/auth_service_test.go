@@ -2,13 +2,17 @@ package services_test
 
 import (
 	"errors"
+	"os"
+	"time"
 
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/utils"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // MockUserRepository untuk mock repository dalam testing
@@ -21,6 +25,15 @@ type MockUserRepository struct {
 	getUserByEmailError  error
 	getUserByEmailUser   *models.User
 	getUserByEmailEmail  string
+
+	getUserByIDCalled bool
+	getUserByIDError  error
+	getUserByIDUser   *models.User
+	getUserByIDID     uint
+
+	saveUserCalled bool
+	saveUserError  error
+	saveUserUser   *models.User
 }
 
 func (m *MockUserRepository) CreateUser(user *models.User) error {
@@ -33,6 +46,18 @@ func (m *MockUserRepository) GetUserByEmail(email string) (*models.User, error) 
 	m.getUserByEmailCalled = true
 	m.getUserByEmailEmail = email
 	return m.getUserByEmailUser, m.getUserByEmailError
+}
+
+func (m *MockUserRepository) GetUserByID(id uint) (*models.User, error) {
+	m.getUserByIDCalled = true
+	m.getUserByIDID = id
+	return m.getUserByIDUser, m.getUserByIDError
+}
+
+func (m *MockUserRepository) SaveUser(user *models.User) error {
+	m.saveUserCalled = true
+	m.saveUserUser = user
+	return m.saveUserError
 }
 
 var _ = ginkgo.Describe("AuthService", func() {
@@ -293,6 +318,189 @@ var _ = ginkgo.Describe("AuthService", func() {
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 				gomega.Expect(loggedInUser.Role).To(gomega.Equal("admin"))
 			})
+		})
+	})
+
+	// ============================================================================
+	// CHANGE PASSWORD TESTS
+	// ============================================================================
+
+	ginkgo.Describe("ChangePassword", func() {
+		var (
+			mockRepo *MockUserRepository
+			service  *services.AuthService
+			user     *models.User
+			plainPassword string
+		)
+
+		ginkgo.BeforeEach(func() {
+			mockRepo = &MockUserRepository{}
+			service = services.NewAuthService(mockRepo)
+			plainPassword = "oldpassword123"
+			hash, _ := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+			user = &models.User{
+				ID:           7,
+				FullName:     "John Doe",
+				Email:        "john@example.com",
+				PasswordHash: string(hash),
+				Role:         "customer",
+				IsVerified:   true,
+			}
+		})
+
+		ginkgo.It("should update password when current password is valid", func() {
+			mockRepo.getUserByIDUser = user
+			mockRepo.getUserByIDError = nil
+			oldHash := user.PasswordHash
+
+			err := service.ChangePassword(user.ID, plainPassword, "newpassword123")
+
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(mockRepo.getUserByIDCalled).To(gomega.BeTrue())
+			gomega.Expect(mockRepo.saveUserCalled).To(gomega.BeTrue())
+			gomega.Expect(mockRepo.saveUserUser.PasswordHash).NotTo(gomega.Equal(oldHash))
+			err = bcrypt.CompareHashAndPassword([]byte(mockRepo.saveUserUser.PasswordHash), []byte("newpassword123"))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		})
+
+		ginkgo.It("should reject wrong current password", func() {
+			mockRepo.getUserByIDUser = user
+			mockRepo.getUserByIDError = nil
+
+			err := service.ChangePassword(user.ID, "wrongpassword", "newpassword123")
+
+			gomega.Expect(err).To(gomega.Equal(services.ErrCurrentPasswordIncorrect))
+			gomega.Expect(mockRepo.saveUserCalled).To(gomega.BeFalse())
+		})
+	})
+
+	// ============================================================================
+	// FORGOT PASSWORD TESTS
+	// ============================================================================
+
+	ginkgo.Describe("RequestPasswordReset", func() {
+		var (
+			mockRepo *MockUserRepository
+			service  *services.AuthService
+			user     *models.User
+		)
+
+		ginkgo.BeforeEach(func() {
+			mockRepo = &MockUserRepository{}
+			service = services.NewAuthService(mockRepo)
+			user = &models.User{
+				ID:           11,
+				FullName:     "Jane Doe",
+				Email:        "jane@example.com",
+				PasswordHash: "hash",
+				Role:         "customer",
+				IsVerified:   true,
+			}
+
+			previousSecret, hadSecret := os.LookupEnv("JWT_SECRET")
+			_ = os.Setenv("JWT_SECRET", "test-secret-key")
+
+			ginkgo.DeferCleanup(func() {
+				if hadSecret {
+					_ = os.Setenv("JWT_SECRET", previousSecret)
+					return
+				}
+				_ = os.Unsetenv("JWT_SECRET")
+			})
+		})
+
+		ginkgo.It("should save reset token and request email", func() {
+			mockRepo.getUserByEmailUser = user
+			mockRepo.getUserByEmailError = nil
+
+			err := service.RequestPasswordReset(user.Email)
+
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(mockRepo.saveUserCalled).To(gomega.BeTrue())
+			gomega.Expect(mockRepo.saveUserUser.ResetPasswordTokenHash).NotTo(gomega.BeEmpty())
+			gomega.Expect(mockRepo.saveUserUser.ResetPasswordExpiresAt).NotTo(gomega.BeNil())
+		})
+
+		ginkgo.It("should ignore missing email", func() {
+			mockRepo.getUserByEmailError = gorm.ErrRecordNotFound
+
+			err := service.RequestPasswordReset("missing@example.com")
+
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(mockRepo.saveUserCalled).To(gomega.BeFalse())
+		})
+	})
+
+	// ============================================================================
+	// RESET PASSWORD TESTS
+	// ============================================================================
+
+	ginkgo.Describe("ResetPassword", func() {
+		var (
+			mockRepo *MockUserRepository
+			service  *services.AuthService
+			user     *models.User
+			token    string
+			expiresAt time.Time
+		)
+
+		ginkgo.BeforeEach(func() {
+			mockRepo = &MockUserRepository{}
+			service = services.NewAuthService(mockRepo)
+			token = "reset-token-123"
+			expiresAt = time.Now().Add(1 * time.Hour)
+
+			previousSecret, hadSecret := os.LookupEnv("JWT_SECRET")
+			_ = os.Setenv("JWT_SECRET", "test-secret-key")
+
+			ginkgo.DeferCleanup(func() {
+				if hadSecret {
+					_ = os.Setenv("JWT_SECRET", previousSecret)
+					return
+				}
+				_ = os.Unsetenv("JWT_SECRET")
+			})
+
+			hashToken := utils.HashOneTimeLoginToken(token)
+			user = &models.User{
+				ID:                     13,
+				FullName:               "Reset User",
+				Email:                  "reset@example.com",
+				PasswordHash:           "oldhash",
+				Role:                   "customer",
+				IsVerified:             true,
+				ResetPasswordTokenHash:  hashToken,
+				ResetPasswordExpiresAt:  &expiresAt,
+			}
+		})
+
+		ginkgo.It("should reset password with valid token", func() {
+			mockRepo.getUserByIDUser = user
+			mockRepo.getUserByIDError = nil
+			signature, err := utils.SignOneTimeLoginLink(user.ID, token, expiresAt.Unix())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			err = service.ResetPassword(user.ID, token, expiresAt.Unix(), signature, "newpassword123")
+
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(mockRepo.saveUserCalled).To(gomega.BeTrue())
+			err = bcrypt.CompareHashAndPassword([]byte(mockRepo.saveUserUser.PasswordHash), []byte("newpassword123"))
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(mockRepo.saveUserUser.ResetPasswordUsedAt).NotTo(gomega.BeNil())
+		})
+
+		ginkgo.It("should reject expired reset links", func() {
+			mockRepo.getUserByIDUser = user
+			mockRepo.getUserByIDError = nil
+			expiredAt := time.Now().Add(-1 * time.Hour)
+			user.ResetPasswordExpiresAt = &expiredAt
+			signature, err := utils.SignOneTimeLoginLink(user.ID, token, expiredAt.Unix())
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			err = service.ResetPassword(user.ID, token, expiredAt.Unix(), signature, "newpassword123")
+
+			gomega.Expect(err).To(gomega.Equal(services.ErrPasswordResetLinkExpired))
+			gomega.Expect(mockRepo.saveUserCalled).To(gomega.BeFalse())
 		})
 	})
 })

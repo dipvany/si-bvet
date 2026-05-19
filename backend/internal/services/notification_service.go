@@ -110,6 +110,13 @@ func SendVerificationRejectedEmail(fullName, email string) {
 	}
 }
 
+func SendPasswordResetEmail(fullName, email, resetURL string) {
+	body := fmt.Sprintf("Halo %s,\n\nKami menerima permintaan reset password untuk akun SI-BVET Anda.\nSilakan gunakan tautan berikut sebelum masa berlakunya habis:\n%s\n\nJika Anda tidak meminta reset password, abaikan email ini.\n\nTerima kasih.", fullName, resetURL)
+	if err := utils.SendEmail(email, "Reset Password Akun - SI-BVET", body); err != nil {
+		log.Printf("failed to send password reset email to %s: %v", email, err)
+	}
+}
+
 func mapSubmissionStatus(status string) string {
 	switch status {
 	case "pending_verification":

@@ -12,6 +12,10 @@ Tujuan: acuan sementara komunikasi frontend-backend.
 - Header untuk endpoint protected:
   - `Authorization: Bearer <JWT_TOKEN>`
 - Token didapat dari endpoint login.
+- Endpoint auth tambahan:
+  - `PATCH /api/auth/change-password` untuk user yang sedang login.
+  - `POST /api/auth/forgot-password` untuk meminta link reset password.
+  - `POST /api/auth/reset-password/:id/:token?expires=...&signature=...` untuk menyimpan password baru.
 
 ## Global Response Pattern
 
@@ -32,6 +36,7 @@ Tujuan: acuan sementara komunikasi frontend-backend.
 ## Content-Type by Endpoint
 
 - `application/json`: login, profile update, admin/account, test-services, submission create/update, feedback, complaint response, billing create/update.
+- `application/json`: juga dipakai untuk change-password, forgot-password, dan reset-password.
 - `multipart/form-data`: register customer, upload billing proof, upload LHU, create complaint.
 - `GET` download file: `/customer/submissions/:submission_id/lhu/download`
 

@@ -47,6 +47,8 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 		{
 			auth.POST("/register", authHandler.RegisterCustomer)
 			auth.POST("/login", authHandler.Login)
+			auth.POST("/forgot-password", authHandler.ForgotPassword)
+			auth.POST("/reset-password/:id/:token", authHandler.ResetPassword)
 			auth.GET("/verify-email/:id/:token", authHandler.VerifyEmailLogin)
 		}
 
@@ -57,6 +59,11 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 			protected.GET("/profile", userHandler.Profile)
 			protected.PATCH("/profile", userHandler.UpdateProfile)
 			protected.GET("/dashboard", userHandler.UserDashboard)
+
+			protectedAuth := protected.Group("/auth")
+			{
+				protectedAuth.PATCH("/change-password", authHandler.ChangePassword)
+			}
 
 			// SUPERADMIN
 			superAdminGroup := protected.Group("/superadmin")
