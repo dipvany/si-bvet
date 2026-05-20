@@ -25,4 +25,5 @@ type RegisterRequest struct {
 	Password        string `json:"password" form:"password" binding:"required"`
 	Institution     string `json:"institution" form:"institution" binding:"required"`
 	RegistrationDoc string `json:"registration_doc" form:"-"`
+	FilePath        string `json:"-" form:"-"`
 }
