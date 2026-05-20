@@ -305,8 +305,22 @@ func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
 		return
 	}
 
+	response := make([]dto.UnverifiedCustomerResponse, 0, len(customers))
+	for _, customer := range customers {
+		response = append(response, dto.UnverifiedCustomerResponse{
+			ID:              customer.ID,
+			FullName:        customer.FullName,
+			Email:           customer.Email,
+			Phone:           customer.Phone,
+			Role:            customer.Role,
+			IsVerified:      customer.IsVerified,
+			Institution:     customer.Institution,
+			RegistrationDoc: customer.RegistrationDoc,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "Unverified customers retrieved successfully",
-		"customers": customers,
+		"customers": response,
 	})
 }

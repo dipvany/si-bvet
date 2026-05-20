@@ -56,7 +56,7 @@ func (h *AuthHandler) RegisterCustomer(c *gin.Context) {
 		Role:            "customer",
 		IsVerified:      false,
 		Institution:    req.Institution,
-		RegistrationDoc: req.FilePath,
+		RegistrationDoc: filePath,
 	}
 
 	if err := h.authService.RegisterUser(&user); err != nil {

@@ -251,6 +251,9 @@ func TestAdminHandler(t *testing.T) {
 		if !strings.Contains(unverifiedRes.Body.String(), "Customer A") {
 			t.Fatalf("unexpected unverified body: %s", unverifiedRes.Body.String())
 		}
+		if !strings.Contains(unverifiedRes.Body.String(), "registration_doc") {
+			t.Fatalf("expected registration_doc in unverified response: %s", unverifiedRes.Body.String())
+		}
 		if !mockService.getUnverifiedCalled {
 			t.Fatal("expected GetUnverifiedCustomers to be called")
 		}
