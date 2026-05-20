@@ -53,7 +53,7 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 				Email:    "test@example.com",
 				FullName: "Test User",
 				Phone:    "081234567890",
-			Role:     "customer",
+				Role:     "customer",
 			}
 			err := db.DB.Create(user).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())

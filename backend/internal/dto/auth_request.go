@@ -19,7 +19,7 @@ type ResetPasswordRequest struct {
 }
 
 type RegisterRequest struct {
-	FullName        string `json:"fullname" form:"fullName" binding:"required"`
+	FullName        string `json:"fullname" form:"fullname" binding:"required"`
 	Email           string `json:"email" form:"email" binding:"required,email"`
 	Phone           string `json:"phone" form:"phone" binding:"required"`
 	Password        string `json:"password" form:"password" binding:"required"`

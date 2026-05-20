@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:8080"
+      "value": "http://localhost:8080/api"
     },
     {
       "key": "token_superadmin",
@@ -114,7 +114,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/auth/register",
+            "url": "{{base_url}}/auth/register",
             "description": "Register a new customer account."
           },
           "response": [
@@ -169,7 +169,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/auth/login",
+            "url": "{{base_url}}/auth/login",
             "description": "Login with email and password."
           },
           "response": [
@@ -224,7 +224,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/auth/forgot-password",
+            "url": "{{base_url}}/auth/forgot-password",
             "description": "Request a password reset link to be sent by email."
           },
           "response": [
@@ -279,7 +279,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/auth/reset-password/{{password_reset_user_id}}/{{password_reset_token}}?expires={{password_reset_expires}}&signature={{password_reset_signature}}",
+            "url": "{{base_url}}/auth/reset-password/{{password_reset_user_id}}/{{password_reset_token}}?expires={{password_reset_expires}}&signature={{password_reset_signature}}",
             "description": "Reset a password using a signed password reset link."
           },
           "response": [
@@ -320,7 +320,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/api/auth/verify-email/{{user_id}}/{{one_time_login_token}}?expires={{one_time_login_expires}}&signature={{one_time_login_signature}}",
+            "url": "{{base_url}}/auth/verify-email/{{user_id}}/{{one_time_login_token}}?expires={{one_time_login_expires}}&signature={{one_time_login_signature}}",
             "description": "Verify a one-time login link and exchange it for a JWT token."
           },
           "response": [
@@ -371,7 +371,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/profile",
+            "url": "{{base_url}}/profile",
             "description": "Get the authenticated user profile."
           },
           "response": [
@@ -430,7 +430,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/profile",
+            "url": "{{base_url}}/profile",
             "description": "Update the authenticated user profile."
           },
           "response": [
@@ -489,7 +489,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/auth/change-password",
+            "url": "{{base_url}}/auth/change-password",
             "description": "Change the authenticated user's password."
           },
           "response": [
@@ -535,7 +535,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/dashboard",
+            "url": "{{base_url}}/dashboard",
             "description": "Get the dashboard welcome message."
           },
           "response": [
@@ -599,7 +599,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/superadmin/admin-accounts",
+            "url": "{{base_url}}/superadmin/admin-accounts",
             "description": "Create a new admin account."
           },
           "response": [
@@ -658,7 +658,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/superadmin/admin-accounts/{{user_id}}",
+            "url": "{{base_url}}/superadmin/admin-accounts/{{user_id}}",
             "description": "Update an admin account."
           },
           "response": [
@@ -704,7 +704,7 @@
                 "value": "Bearer {{token_superadmin}}"
               }
             ],
-            "url": "{{base_url}}/api/superadmin/admin-accounts/{{user_id}}",
+            "url": "{{base_url}}/superadmin/admin-accounts/{{user_id}}",
             "description": "Delete an admin account."
           },
           "response": [
@@ -750,7 +750,7 @@
                 "value": "Bearer {{token_superadmin}}"
               }
             ],
-            "url": "{{base_url}}/api/superadmin/admin-accounts",
+            "url": "{{base_url}}/superadmin/admin-accounts",
             "description": "List all admin accounts."
           },
           "response": [
@@ -801,7 +801,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/customers/unverified",
+            "url": "{{base_url}}/admin/customers/unverified",
             "description": "List unverified customer accounts."
           },
           "response": [
@@ -847,7 +847,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/customers/{{user_id}}/verify",
+            "url": "{{base_url}}/admin/customers/{{user_id}}/verify",
             "description": "Verify a customer account."
           },
           "response": [
@@ -893,7 +893,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/customers/{{user_id}}/reject",
+            "url": "{{base_url}}/admin/customers/{{user_id}}/reject",
             "description": "Reject and delete a customer account."
           },
           "response": [
@@ -939,7 +939,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions",
+            "url": "{{base_url}}/admin/submissions",
             "description": "List all submissions."
           },
           "response": [
@@ -998,7 +998,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/submissions/export",
+            "url": "{{base_url}}/admin/submissions/export",
             "description": "Export submissions to Excel."
           },
           "response": [
@@ -1044,7 +1044,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/approve",
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/approve",
             "description": "Approve a submission."
           },
           "response": [
@@ -1090,7 +1090,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/reject",
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/reject",
             "description": "Reject a submission."
           },
           "response": [
@@ -1149,7 +1149,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/test-services",
+            "url": "{{base_url}}/admin/test-services",
             "description": "Create a test service."
           },
           "response": [
@@ -1205,7 +1205,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/admin/test-services/import",
+            "url": "{{base_url}}/admin/test-services/import",
             "description": "Import test services from an Excel file using multipart form upload."
           },
           "response": [
@@ -1251,7 +1251,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/test-services",
+            "url": "{{base_url}}/admin/test-services",
             "description": "List all test services for admin."
           },
           "response": [
@@ -1297,7 +1297,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}",
+            "url": "{{base_url}}/admin/test-services/{{test_service_id}}",
             "description": "Get a test service by ID."
           },
           "response": [
@@ -1356,7 +1356,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}",
+            "url": "{{base_url}}/admin/test-services/{{test_service_id}}",
             "description": "Update a test service."
           },
           "response": [
@@ -1402,7 +1402,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/test-services/{{test_service_id}}",
+            "url": "{{base_url}}/admin/test-services/{{test_service_id}}",
             "description": "Delete a test service."
           },
           "response": [
@@ -1461,7 +1461,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}",
+            "url": "{{base_url}}/admin/billings/{{submission_id}}",
             "description": "Create billing for a submission."
           },
           "response": [
@@ -1507,7 +1507,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}",
+            "url": "{{base_url}}/admin/billings/{{submission_id}}",
             "description": "Get billing by submission ID."
           },
           "response": [
@@ -1566,7 +1566,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}",
+            "url": "{{base_url}}/admin/billings/{{submission_id}}",
             "description": "Update billing for a submission."
           },
           "response": [
@@ -1612,7 +1612,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}/verify",
+            "url": "{{base_url}}/admin/billings/{{submission_id}}/verify",
             "description": "Mark billing as paid."
           },
           "response": [
@@ -1658,7 +1658,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/billings/{{submission_id}}/reject",
+            "url": "{{base_url}}/admin/billings/{{submission_id}}/reject",
             "description": "Reject a payment submission."
           },
           "response": [
@@ -1719,7 +1719,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/lhu",
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/lhu",
             "description": "Upload an LHU document."
           },
           "response": [
@@ -1765,7 +1765,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/submissions/{{submission_id}}/lhu",
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/lhu",
             "description": "Get an LHU by submission ID."
           },
           "response": [
@@ -1811,7 +1811,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/feedbacks",
+            "url": "{{base_url}}/admin/feedbacks",
             "description": "List all feedback entries."
           },
           "response": [
@@ -1857,7 +1857,7 @@
                 "value": "Bearer {{token_admin}}"
               }
             ],
-            "url": "{{base_url}}/api/admin/complaints",
+            "url": "{{base_url}}/admin/complaints",
             "description": "List all complaints."
           },
           "response": [
@@ -1916,7 +1916,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/complaints/{{complaint_id}}/respond",
+            "url": "{{base_url}}/admin/complaints/{{complaint_id}}/respond",
             "description": "Update a complaint response."
           },
           "response": [
@@ -1967,7 +1967,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/notifications",
+            "url": "{{base_url}}/customer/notifications",
             "description": "List customer notifications."
           },
           "response": [
@@ -2013,7 +2013,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/notifications/{{notification_id}}/read",
+            "url": "{{base_url}}/customer/notifications/{{notification_id}}/read",
             "description": "Mark one notification as read."
           },
           "response": [
@@ -2059,7 +2059,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/notifications/read-all",
+            "url": "{{base_url}}/customer/notifications/read-all",
             "description": "Mark all notifications as read."
           },
           "response": [
@@ -2118,7 +2118,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/submissions",
+            "url": "{{base_url}}/customer/submissions",
             "description": "Create a new submission."
           },
           "response": [
@@ -2164,7 +2164,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/submissions/my",
+            "url": "{{base_url}}/customer/submissions/my",
             "description": "List the current customer submissions."
           },
           "response": [
@@ -2223,7 +2223,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}",
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}",
             "description": "Update a customer submission."
           },
           "response": [
@@ -2269,7 +2269,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}/tracking",
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/tracking",
             "description": "Get submission tracking timeline."
           },
           "response": [
@@ -2315,7 +2315,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/test-services",
+            "url": "{{base_url}}/customer/test-services",
             "description": "List test services for customers."
           },
           "response": [
@@ -2361,7 +2361,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/test-services/{{test_service_id}}",
+            "url": "{{base_url}}/customer/test-services/{{test_service_id}}",
             "description": "Get a test service by ID."
           },
           "response": [
@@ -2407,7 +2407,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/billings/{{submission_id}}",
+            "url": "{{base_url}}/customer/billings/{{submission_id}}",
             "description": "Get billing for a submission."
           },
           "response": [
@@ -2463,7 +2463,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/customer/billings/{{submission_id}}/proof",
+            "url": "{{base_url}}/customer/billings/{{submission_id}}/proof",
             "description": "Upload payment proof."
           },
           "response": [
@@ -2509,7 +2509,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}/lhu",
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/lhu",
             "description": "Get LHU for a submission."
           },
           "response": [
@@ -2555,7 +2555,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/submissions/{{submission_id}}/lhu/download",
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/lhu/download",
             "description": "Download the LHU file."
           },
           "response": [
@@ -2614,7 +2614,7 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/customer/feedbacks",
+            "url": "{{base_url}}/customer/feedbacks",
             "description": "Submit customer feedback."
           },
           "response": [
@@ -2660,7 +2660,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/feedbacks",
+            "url": "{{base_url}}/customer/feedbacks",
             "description": "List the current customer feedback."
           },
           "response": [
@@ -2706,7 +2706,7 @@
                 "value": "Bearer {{token_customer}}"
               }
             ],
-            "url": "{{base_url}}/api/customer/complaints",
+            "url": "{{base_url}}/customer/complaints",
             "description": "List the current customer complaints."
           },
           "response": [
@@ -2777,7 +2777,7 @@
                 }
               ]
             },
-            "url": "{{base_url}}/api/customer/complaints",
+            "url": "{{base_url}}/customer/complaints",
             "description": "Create a new complaint."
           },
           "response": [
@@ -2823,7 +2823,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{base_url}}/api/ping",
+            "url": "{{base_url}}/ping",
             "description": "Health check endpoint."
           },
           "response": [
