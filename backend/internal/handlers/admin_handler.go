@@ -321,10 +321,9 @@ func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
 
 	response := make([]dto.UnverifiedCustomerResponse, 0, len(customers))
 	for _, customer := range customers {
-		registrationDoc, err := h.fileStorage.ResolveDownloadLocation(context.Background(), customer.RegistrationDoc)
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "failed to resolve registration document")
-			return
+		registrationDoc := customer.RegistrationDoc
+		if resolved, err := h.fileStorage.ResolveDownloadLocation(context.Background(), customer.RegistrationDoc); err == nil {
+			registrationDoc = resolved
 		}
 
 		response = append(response, dto.UnverifiedCustomerResponse{

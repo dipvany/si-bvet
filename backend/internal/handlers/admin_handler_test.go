@@ -2,7 +2,9 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,6 +17,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+type failingDocumentStorage struct{}
+
+func (f failingDocumentStorage) SaveRegistrationDocument(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (f failingDocumentStorage) SaveBillingProof(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (f failingDocumentStorage) SaveComplaintAttachment(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (f failingDocumentStorage) SaveLHUFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (f failingDocumentStorage) ResolveDownloadLocation(ctx context.Context, location string) (string, error) {
+	return "", http.ErrAbortHandler
+}
 
 type MockAdminService struct {
 	createCalled bool
@@ -253,6 +277,29 @@ func TestAdminHandler(t *testing.T) {
 		}
 		if !strings.Contains(unverifiedRes.Body.String(), "registration_doc") {
 			t.Fatalf("expected registration_doc in unverified response: %s", unverifiedRes.Body.String())
+		}
+		if !mockService.getUnverifiedCalled {
+			t.Fatal("expected GetUnverifiedCustomers to be called")
+		}
+	})
+
+	t.Run("GetUnverifiedCustomers keeps response when storage resolution fails", func(t *testing.T) {
+		mockService := &MockAdminService{
+			getUnverifiedResult: []models.User{{ID: 2, FullName: "Customer A", Email: "customer@example.com", RegistrationDoc: "/uploads/registration-docs/doc.pdf"}},
+		}
+		handler := handlers.NewAdminHandler(mockService, failingDocumentStorage{})
+		router := gin.New()
+		router.GET("/admins/unverified", handler.GetUnverifiedCustomers)
+
+		req := httptest.NewRequest(http.MethodGet, "/admins/unverified", nil)
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected unverified status 200, got %d", res.Code)
+		}
+		if !strings.Contains(res.Body.String(), "/uploads/registration-docs/doc.pdf") {
+			t.Fatalf("expected fallback registration_doc in response: %s", res.Body.String())
 		}
 		if !mockService.getUnverifiedCalled {
 			t.Fatal("expected GetUnverifiedCustomers to be called")
