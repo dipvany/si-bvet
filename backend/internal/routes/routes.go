@@ -39,8 +39,9 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 	testServiceHandler := mustDependency("test service handler", deps.TestServiceHandler)
 	billingHandler := mustDependency("billing handler", deps.BillingHandler)
 
-	// serve uploaded files from internal/uploads at /uploads/*
+	// serve uploaded files from internal/uploads for both direct and /api-prefixed URLs
 	r.Static("/uploads", "internal/uploads")
+	r.Static("/api/uploads", "internal/uploads")
 
 	api := r.Group("/api")
 	{
