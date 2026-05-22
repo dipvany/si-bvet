@@ -127,6 +127,12 @@ func (h *ComplaintHandler) GetAllComplaints(c *gin.Context) {
 		return
 	}
 
+	for i := range complaints {
+		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), complaints[i].AttachmentPath); err == nil {
+			complaints[i].AttachmentPath = resolved
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"complaints": complaints,
 	})
@@ -175,6 +181,12 @@ func (h *ComplaintHandler) GetMyComplaints(c *gin.Context) {
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	for i := range complaints {
+		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), complaints[i].AttachmentPath); err == nil {
+			complaints[i].AttachmentPath = resolved
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{

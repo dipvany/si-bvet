@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/storage"
 	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -53,17 +55,29 @@ func (defaultAdminService) GetUnverifiedCustomers() ([]models.User, error) {
 }
 
 type AdminHandler struct {
-	Service AdminServiceInterface
+	Service    AdminServiceInterface
+	fileStorage storage.DocumentStorage
 }
 
-func NewAdminHandler(service AdminServiceInterface) *AdminHandler {
-	return &AdminHandler{Service: service}
+func NewAdminHandler(service AdminServiceInterface, fileStorage ...storage.DocumentStorage) *AdminHandler {
+	var storageImpl storage.DocumentStorage
+	if len(fileStorage) > 0 && fileStorage[0] != nil {
+		storageImpl = fileStorage[0]
+	} else {
+		storageImpl = storage.NewLocalDocumentStorage("")
+	}
+
+	return &AdminHandler{Service: service, fileStorage: storageImpl}
 }
 
 var defaultAdminHandler = NewAdminHandler(defaultAdminService{})
 
 func NewAdminHandlerWithDefault() *AdminHandler {
 	return defaultAdminHandler
+}
+
+func NewAdminHandlerWithStorage(fileStorage storage.DocumentStorage) *AdminHandler {
+	return NewAdminHandler(defaultAdminService{}, fileStorage)
 }
 
 func CreateAdmin(c *gin.Context) {
@@ -307,6 +321,12 @@ func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
 
 	response := make([]dto.UnverifiedCustomerResponse, 0, len(customers))
 	for _, customer := range customers {
+		registrationDoc, err := h.fileStorage.ResolveDownloadLocation(context.Background(), customer.RegistrationDoc)
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "failed to resolve registration document")
+			return
+		}
+
 		response = append(response, dto.UnverifiedCustomerResponse{
 			ID:              customer.ID,
 			FullName:        customer.FullName,
@@ -315,7 +335,7 @@ func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
 			Role:            customer.Role,
 			IsVerified:      customer.IsVerified,
 			Institution:     customer.Institution,
-			RegistrationDoc: customer.RegistrationDoc,
+			RegistrationDoc: registrationDoc,
 		})
 	}
 

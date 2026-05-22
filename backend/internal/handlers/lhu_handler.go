@@ -121,6 +121,10 @@ func (h *LHUHandler) GetLHU(c *gin.Context) {
 		return
 	}
 
+	if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), lhu.FilePath); err == nil {
+		lhu.FilePath = resolved
+	}
+
 	c.JSON(http.StatusOK, lhu)
 }
 

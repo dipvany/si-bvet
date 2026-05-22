@@ -39,7 +39,7 @@ func NewRouter() *gin.Engine {
 	routes.RegisterRoutes(r, routes.Dependencies{
 		AuthHandler:         authHandler,
 		SubmissionHandler:   submissionHandler,
-		AdminHandler:        handlers.NewAdminHandlerWithDefault(),
+		AdminHandler:        handlers.NewAdminHandlerWithStorage(uploadStorage),
 		ComplaintHandler:    handlers.NewComplaintHandlerWithStorage(uploadStorage),
 		FeedbackHandler:     handlers.NewFeedbackHandlerWithDefault(),
 		NotificationHandler: handlers.NewNotificationHandlerWithDefault(),

@@ -56,7 +56,7 @@ func (s *LocalDocumentStorage) ResolveDownloadLocation(ctx context.Context, loca
 	_ = ctx
 
 	if location == "" {
-		return "", fmt.Errorf("file location is required")
+		return "", nil
 	}
 
 	if strings.HasPrefix(location, "/uploads/") {
@@ -153,7 +153,7 @@ func (s *GCSDocumentStorage) SaveLHUFile(ctx context.Context, fileHeader *multip
 
 func (s *GCSDocumentStorage) ResolveDownloadLocation(ctx context.Context, location string) (string, error) {
 	if location == "" {
-		return "", fmt.Errorf("file location is required")
+		return "", nil
 	}
 
 	if strings.HasPrefix(location, "http://") || strings.HasPrefix(location, "https://") {

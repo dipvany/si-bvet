@@ -133,6 +133,15 @@ func (h *BillingHandler) GetBillingBySubmissionID(c *gin.Context) {
 		return
 	}
 
+	if billing != nil {
+		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), billing.InvoiceDoc); err == nil {
+			billing.InvoiceDoc = resolved
+		}
+		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), billing.ProofPayment); err == nil {
+			billing.ProofPayment = resolved
+		}
+	}
+
 	c.JSON(http.StatusOK, billing)
 }
 
