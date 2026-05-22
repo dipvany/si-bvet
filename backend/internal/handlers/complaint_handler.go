@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/storage"
 	"si-bvet/internal/utils"
 	"strconv"
 	"time"
@@ -38,17 +40,29 @@ func (defaultComplaintService) GetComplaintsByUserID(userID uint) ([]models.Comp
 }
 
 type ComplaintHandler struct {
-	Service ComplaintServiceInterface
+	Service    ComplaintServiceInterface
+	fileStorage storage.DocumentStorage
 }
 
-func NewComplaintHandler(service ComplaintServiceInterface) *ComplaintHandler {
-	return &ComplaintHandler{Service: service}
+func NewComplaintHandler(service ComplaintServiceInterface, fileStorage ...storage.DocumentStorage) *ComplaintHandler {
+	var storageImpl storage.DocumentStorage
+	if len(fileStorage) > 0 && fileStorage[0] != nil {
+		storageImpl = fileStorage[0]
+	} else {
+		storageImpl = storage.NewLocalDocumentStorage("")
+	}
+
+	return &ComplaintHandler{Service: service, fileStorage: storageImpl}
 }
 
 var defaultComplaintHandler = NewComplaintHandler(defaultComplaintService{})
 
 func NewComplaintHandlerWithDefault() *ComplaintHandler {
 	return defaultComplaintHandler
+}
+
+func NewComplaintHandlerWithStorage(fileStorage storage.DocumentStorage) *ComplaintHandler {
+	return NewComplaintHandler(defaultComplaintService{}, fileStorage)
 }
 
 func CreateComplaint(c *gin.Context) {
@@ -69,8 +83,11 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 	filePath := ""
 	file, err := c.FormFile("attachment")
 	if err == nil {
-		filePath = "internal/uploads/complaints/" + file.Filename
-		_ = c.SaveUploadedFile(file, filePath)
+		filePath, err = h.fileStorage.SaveComplaintAttachment(context.Background(), file)
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save attachment")
+			return
+		}
 	}
 
 	// validate date_of_complaint when provided (accept RFC3339 or YYYY-MM-DD)

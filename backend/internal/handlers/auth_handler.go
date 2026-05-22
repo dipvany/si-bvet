@@ -8,6 +8,7 @@ import (
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/storage"
 	"si-bvet/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +17,21 @@ import (
 // AuthHandler menyimpan dependency untuk auth operations
 type AuthHandler struct {
 	authService services.AuthServiceInterface
+	documentStorage storage.DocumentStorage
 }
 
 // NewAuthHandler membuat instance baru AuthHandler dengan injected service
-func NewAuthHandler(authService services.AuthServiceInterface) *AuthHandler {
+func NewAuthHandler(authService services.AuthServiceInterface, documentStorage ...storage.DocumentStorage) *AuthHandler {
+	var storageImpl storage.DocumentStorage
+	if len(documentStorage) > 0 && documentStorage[0] != nil {
+		storageImpl = documentStorage[0]
+	} else {
+		storageImpl = storage.NewLocalDocumentStorage("")
+	}
+
 	return &AuthHandler{
-		authService: authService,
+		authService:     authService,
+		documentStorage: storageImpl,
 	}
 }
 
@@ -41,9 +51,8 @@ func (h *AuthHandler) RegisterCustomer(c *gin.Context) {
 		return
 	}
 
-	// Simpan file
-	filePath := "internal/uploads/" + file.Filename
-	if err := c.SaveUploadedFile(file, filePath); err != nil {
+	filePath, err := h.documentStorage.SaveRegistrationDocument(c.Request.Context(), file)
+	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save file")
 		return
 	}

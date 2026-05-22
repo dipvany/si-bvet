@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/storage"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,17 +27,29 @@ func (defaultLHUService) GetLHU(submissionID uint) (models.LhuDocument, error) {
 }
 
 type LHUHandler struct {
-	Service LHUServiceInterface
+	Service    LHUServiceInterface
+	fileStorage storage.DocumentStorage
 }
 
-func NewLHUHandler(service LHUServiceInterface) *LHUHandler {
-	return &LHUHandler{Service: service}
+func NewLHUHandler(service LHUServiceInterface, fileStorage ...storage.DocumentStorage) *LHUHandler {
+	var storageImpl storage.DocumentStorage
+	if len(fileStorage) > 0 && fileStorage[0] != nil {
+		storageImpl = fileStorage[0]
+	} else {
+		storageImpl = storage.NewLocalDocumentStorage("")
+	}
+
+	return &LHUHandler{Service: service, fileStorage: storageImpl}
 }
 
 var defaultLHUHandler = NewLHUHandler(defaultLHUService{})
 
 func NewLHUHandlerWithDefault() *LHUHandler {
 	return defaultLHUHandler
+}
+
+func NewLHUHandlerWithStorage(fileStorage storage.DocumentStorage) *LHUHandler {
+	return NewLHUHandler(defaultLHUService{}, fileStorage)
 }
 
 func UploadLHU(c *gin.Context) {
@@ -63,9 +77,8 @@ func (h *LHUHandler) UploadLHU(c *gin.Context) {
 		return
 	}
 
-	filePath := "internal/uploads/lhu/" + file.Filename
-
-	if err := c.SaveUploadedFile(file, filePath); err != nil {
+	filePath, err := h.fileStorage.SaveLHUFile(c.Request.Context(), file)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to save file",
 		})
@@ -135,7 +148,20 @@ func (h *LHUHandler) DownloadLHU(c *gin.Context) {
 		return
 	}
 
-	c.FileAttachment(lhu.FilePath, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
+	resolvedLocation, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), lhu.FilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to resolve file location",
+		})
+		return
+	}
+
+	if strings.HasPrefix(strings.ToLower(resolvedLocation), "http") {
+		c.Redirect(http.StatusFound, resolvedLocation)
+		return
+	}
+
+	c.FileAttachment(resolvedLocation, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
 	return
 }
 

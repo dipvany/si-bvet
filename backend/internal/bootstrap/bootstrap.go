@@ -1,9 +1,11 @@
 package bootstrap
 
 import (
+	"context"
 	"si-bvet/internal/handlers"
 	"si-bvet/internal/routes"
 	"si-bvet/internal/services"
+	"si-bvet/internal/storage"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,7 +13,16 @@ import (
 
 func NewRouter() *gin.Engine {
 	authService := services.NewAuthService(&services.DefaultUserRepository{})
-	authHandler := handlers.NewAuthHandler(authService)
+	documentStorage, err := storage.NewRegistrationDocumentStorage(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	uploadStorage, err := storage.NewUploadStorage(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	authHandler := handlers.NewAuthHandler(authService, documentStorage)
 	submissionHandler := handlers.NewSubmissionHandler(services.NewSubmissionService())
 
 	r := gin.Default()
@@ -29,13 +40,13 @@ func NewRouter() *gin.Engine {
 		AuthHandler:         authHandler,
 		SubmissionHandler:   submissionHandler,
 		AdminHandler:        handlers.NewAdminHandlerWithDefault(),
-		ComplaintHandler:    handlers.NewComplaintHandlerWithDefault(),
+		ComplaintHandler:    handlers.NewComplaintHandlerWithStorage(uploadStorage),
 		FeedbackHandler:     handlers.NewFeedbackHandlerWithDefault(),
 		NotificationHandler: handlers.NewNotificationHandlerWithDefault(),
 		UserHandler:         handlers.NewUserHandlerWithDefault(),
-		LHUHandler:          handlers.NewLHUHandlerWithDefault(),
+		LHUHandler:          handlers.NewLHUHandlerWithStorage(uploadStorage),
 		TestServiceHandler:  handlers.NewTestServiceHandlerWithDefault(),
-		BillingHandler:      handlers.NewBillingHandlerWithDefault(),
+		BillingHandler:      handlers.NewBillingHandlerWithStorage(uploadStorage),
 	})
 
 	return r

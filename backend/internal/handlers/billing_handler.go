@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
+	"si-bvet/internal/storage"
 	"si-bvet/internal/utils"
 	"time"
 
@@ -52,17 +54,29 @@ func (defaultBillingService) UpdateSubmissionStatusWithNotification(submissionID
 }
 
 type BillingHandler struct {
-	Service BillingServiceInterface
+	Service    BillingServiceInterface
+	fileStorage storage.DocumentStorage
 }
 
-func NewBillingHandler(service BillingServiceInterface) *BillingHandler {
-	return &BillingHandler{Service: service}
+func NewBillingHandler(service BillingServiceInterface, fileStorage ...storage.DocumentStorage) *BillingHandler {
+	var storageImpl storage.DocumentStorage
+	if len(fileStorage) > 0 && fileStorage[0] != nil {
+		storageImpl = fileStorage[0]
+	} else {
+		storageImpl = storage.NewLocalDocumentStorage("")
+	}
+
+	return &BillingHandler{Service: service, fileStorage: storageImpl}
 }
 
 var defaultBillingHandler = NewBillingHandler(defaultBillingService{})
 
 func NewBillingHandlerWithDefault() *BillingHandler {
 	return defaultBillingHandler
+}
+
+func NewBillingHandlerWithStorage(fileStorage storage.DocumentStorage) *BillingHandler {
+	return NewBillingHandler(defaultBillingService{}, fileStorage)
 }
 
 func CreateBilling(c *gin.Context) {
@@ -174,9 +188,8 @@ func (h *BillingHandler) UploadBillingProof(c *gin.Context) {
 		return
 	}
 
-	proofPath := "internal/uploads/" + proofFile.Filename
-
-	if err := c.SaveUploadedFile(proofFile, proofPath); err != nil {
+	proofPath, err := h.fileStorage.SaveBillingProof(context.Background(), proofFile)
+	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to save proof file")
 		return
 	}

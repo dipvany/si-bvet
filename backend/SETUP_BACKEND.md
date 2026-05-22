@@ -145,7 +145,68 @@ DB_PASSWORD=strong_password_production
 DB_NAME=sibvet_prod
 JWT_SECRET=production_secret_key_very_long_and_complex
 JWT_EXPIRED_HOURS=5
+GCS_BUCKET_NAME=sibvet-documents
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 ```
+
+Jika `GCS_BUCKET_NAME` diisi, backend akan menyimpan dokumen registrasi ke Google Cloud Storage.
+Jika env bucket tidak diisi, backend tetap bisa jalan dengan penyimpanan lokal sementara untuk development.
+
+### 3. Setup Google Cloud Storage Permission
+
+Jika Anda menjalankan backend di Google Cloud atau ingin upload dokumen tidak bergantung ke filesystem lokal, lakukan langkah berikut:
+
+1. **Buat bucket GCS**
+
+```bash
+gsutil mb -l asia-southeast2 gs://sibvet-documents
+```
+
+Ganti `sibvet-documents` dengan nama bucket Anda sendiri jika diperlukan.
+
+2. **Buat atau pilih service account untuk backend**
+
+Service account ini yang akan dipakai oleh Cloud Run, VM, atau server yang menjalankan backend.
+
+3. **Berikan izin upload ke bucket**
+
+Minimal role yang dibutuhkan:
+
+- `roles/storage.objectAdmin` untuk upload dan baca object di bucket
+- `roles/iam.serviceAccountTokenCreator` jika backend perlu membuat signed URL memakai service account credentials
+
+Contoh command:
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://sibvet-documents \
+  --member="serviceAccount:YOUR_BACKEND_SA@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
+
+gcloud iam service-accounts add-iam-policy-binding \
+  YOUR_BACKEND_SA@PROJECT_ID.iam.gserviceaccount.com \
+  --member="serviceAccount:YOUR_BACKEND_SA@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator"
+```
+
+4. **Kalau deploy ke Cloud Run**
+
+- Attach service account backend tadi ke Cloud Run service
+- Pastikan Cloud Run service punya akses ke bucket yang sama
+- Set environment variable:
+
+```env
+GCS_BUCKET_NAME=sibvet-documents
+```
+
+Jika Anda menjalankan backend secara lokal dengan file key service account, tambahkan juga:
+
+```env
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+```
+
+5. **Uji upload**
+
+Setelah backend jalan, upload dokumen registrasi sekali lalu cek apakah object muncul di bucket dan link dokumen bisa dibuka dari halaman admin.
 
 **⚠️ PENTING**:
 
