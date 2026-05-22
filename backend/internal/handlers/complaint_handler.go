@@ -40,7 +40,7 @@ func (defaultComplaintService) GetComplaintsByUserID(userID uint) ([]models.Comp
 }
 
 type ComplaintHandler struct {
-	Service    ComplaintServiceInterface
+	Service     ComplaintServiceInterface
 	fileStorage storage.DocumentStorage
 }
 
@@ -78,7 +78,7 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 
 	subjects := c.PostForm("subjects")
 	description := c.PostForm("description")
-		dateOfComplaint := c.PostForm("date_of_complaint")
+	dateOfComplaint := c.PostForm("date_of_complaint")
 
 	filePath := ""
 	file, err := c.FormFile("attachment")
@@ -128,7 +128,10 @@ func (h *ComplaintHandler) GetAllComplaints(c *gin.Context) {
 	}
 
 	for i := range complaints {
-		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), complaints[i].AttachmentPath); err == nil {
+		if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, complaints[i].AttachmentPath); err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		} else {
 			complaints[i].AttachmentPath = resolved
 		}
 	}
@@ -184,7 +187,10 @@ func (h *ComplaintHandler) GetMyComplaints(c *gin.Context) {
 	}
 
 	for i := range complaints {
-		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), complaints[i].AttachmentPath); err == nil {
+		if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, complaints[i].AttachmentPath); err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		} else {
 			complaints[i].AttachmentPath = resolved
 		}
 	}

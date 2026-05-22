@@ -27,7 +27,7 @@ func (defaultLHUService) GetLHU(submissionID uint) (models.LhuDocument, error) {
 }
 
 type LHUHandler struct {
-	Service    LHUServiceInterface
+	Service     LHUServiceInterface
 	fileStorage storage.DocumentStorage
 }
 
@@ -121,7 +121,12 @@ func (h *LHUHandler) GetLHU(c *gin.Context) {
 		return
 	}
 
-	if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), lhu.FilePath); err == nil {
+	if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, lhu.FilePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "failed to resolve file location",
+		})
+		return
+	} else {
 		lhu.FilePath = resolved
 	}
 
@@ -152,7 +157,7 @@ func (h *LHUHandler) DownloadLHU(c *gin.Context) {
 		return
 	}
 
-	resolvedLocation, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), lhu.FilePath)
+	resolvedLocation, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, lhu.FilePath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "failed to resolve file location",
@@ -173,4 +178,3 @@ func (h *LHUHandler) DownloadLHU(c *gin.Context) {
 	c.FileAttachment(resolvedLocation, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
 	return
 }
-

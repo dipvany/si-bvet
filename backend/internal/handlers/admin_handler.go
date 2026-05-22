@@ -55,7 +55,7 @@ func (defaultAdminService) GetUnverifiedCustomers() ([]models.User, error) {
 }
 
 type AdminHandler struct {
-	Service    AdminServiceInterface
+	Service     AdminServiceInterface
 	fileStorage storage.DocumentStorage
 }
 
@@ -322,7 +322,10 @@ func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
 	response := make([]dto.UnverifiedCustomerResponse, 0, len(customers))
 	for _, customer := range customers {
 		registrationDoc := customer.RegistrationDoc
-		if resolved, err := h.fileStorage.ResolveDownloadLocation(context.Background(), customer.RegistrationDoc); err == nil {
+		if resolved, err := ResolveDocumentLocation(context.Background(), h.fileStorage, customer.RegistrationDoc); err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		} else {
 			registrationDoc = resolved
 		}
 

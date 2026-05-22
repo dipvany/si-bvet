@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"si-bvet/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,4 +60,23 @@ func RespondUserIDError(c *gin.Context, err error) {
 	}
 
 	utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+}
+
+func ResolveDocumentLocation(ctx context.Context, fileStorage interface {
+	ResolveDownloadLocation(context.Context, string) (string, error)
+}, location string) (string, error) {
+	if location == "" {
+		return "", nil
+	}
+
+	resolved, err := fileStorage.ResolveDownloadLocation(ctx, location)
+	if err != nil {
+		if strings.HasPrefix(location, "gs://") {
+			return "", err
+		}
+
+		return location, nil
+	}
+
+	return resolved, nil
 }

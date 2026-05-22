@@ -54,7 +54,7 @@ func (defaultBillingService) UpdateSubmissionStatusWithNotification(submissionID
 }
 
 type BillingHandler struct {
-	Service    BillingServiceInterface
+	Service     BillingServiceInterface
 	fileStorage storage.DocumentStorage
 }
 
@@ -134,10 +134,16 @@ func (h *BillingHandler) GetBillingBySubmissionID(c *gin.Context) {
 	}
 
 	if billing != nil {
-		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), billing.InvoiceDoc); err == nil {
+		if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, billing.InvoiceDoc); err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		} else {
 			billing.InvoiceDoc = resolved
 		}
-		if resolved, err := h.fileStorage.ResolveDownloadLocation(c.Request.Context(), billing.ProofPayment); err == nil {
+		if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, billing.ProofPayment); err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		} else {
 			billing.ProofPayment = resolved
 		}
 	}
