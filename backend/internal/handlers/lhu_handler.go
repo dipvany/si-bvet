@@ -165,6 +165,11 @@ func (h *LHUHandler) DownloadLHU(c *gin.Context) {
 		return
 	}
 
+	if strings.HasPrefix(resolvedLocation, "/uploads/") {
+		c.Redirect(http.StatusFound, resolvedLocation)
+		return
+	}
+
 	c.FileAttachment(resolvedLocation, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
 	return
 }

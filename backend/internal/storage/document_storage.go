@@ -60,12 +60,15 @@ func (s *LocalDocumentStorage) ResolveDownloadLocation(ctx context.Context, loca
 	}
 
 	if strings.HasPrefix(location, "/uploads/") {
-		relativePath := strings.TrimPrefix(location, "/uploads/")
-		return filepath.Join(s.baseDir, filepath.FromSlash(relativePath)), nil
+		return location, nil
 	}
 
 	if strings.HasPrefix(location, "internal/uploads/") {
-		return filepath.Clean(location), nil
+		relativePath := strings.TrimPrefix(filepath.ToSlash(location), "internal/uploads/")
+		if relativePath == "" {
+			return "/uploads/", nil
+		}
+		return "/uploads/" + relativePath, nil
 	}
 
 	return location, nil
