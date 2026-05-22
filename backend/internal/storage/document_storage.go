@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -11,8 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
+	iamcredentials "google.golang.org/api/iamcredentials/v1"
 	"google.golang.org/api/option"
 )
 
@@ -113,8 +117,16 @@ func (s *LocalDocumentStorage) saveMultipartFile(ctx context.Context, objectPref
 }
 
 type GCSDocumentStorage struct {
-	bucketName string
-	client     *storage.Client
+	bucketName  string
+	client      *storage.Client
+	signerEmail string
+	privateKey  []byte
+	iamService  *iamcredentials.Service
+}
+
+type serviceAccountCredentials struct {
+	ClientEmail string `json:"client_email"`
+	PrivateKey  string `json:"private_key"`
 }
 
 func NewGCSDocumentStorage(ctx context.Context, bucketName string, credentialsFile string) (*GCSDocumentStorage, error) {
@@ -132,10 +144,40 @@ func NewGCSDocumentStorage(ctx context.Context, bucketName string, credentialsFi
 		return nil, err
 	}
 
-	return &GCSDocumentStorage{
+	storageImpl := &GCSDocumentStorage{
 		bucketName: bucketName,
 		client:     client,
-	}, nil
+	}
+
+	if credentialsFile != "" {
+		credentials, err := readServiceAccountCredentials(credentialsFile)
+		if err != nil {
+			return nil, err
+		}
+
+		storageImpl.signerEmail = credentials.ClientEmail
+		storageImpl.privateKey = []byte(credentials.PrivateKey)
+	} else {
+		if signerEmail := os.Getenv("GCS_SIGNER_EMAIL"); signerEmail != "" {
+			storageImpl.signerEmail = signerEmail
+		}
+
+		if storageImpl.signerEmail == "" {
+			if signerEmail, err := metadata.Email("default"); err == nil {
+				storageImpl.signerEmail = signerEmail
+			}
+		}
+
+		if storageImpl.signerEmail != "" {
+			iamService, err := iamcredentials.NewService(ctx)
+			if err != nil {
+				return nil, err
+			}
+			storageImpl.iamService = iamService
+		}
+	}
+
+	return storageImpl, nil
 }
 
 func (s *GCSDocumentStorage) SaveRegistrationDocument(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
@@ -172,16 +214,47 @@ func (s *GCSDocumentStorage) ResolveDownloadLocation(ctx context.Context, locati
 		return "", fmt.Errorf("gcs object belongs to unsupported bucket %s", bucketName)
 	}
 
-	url, err := storage.SignedURL(s.bucketName, objectName, &storage.SignedURLOptions{
+	options := &storage.SignedURLOptions{
 		Method:  http.MethodGet,
 		Expires: time.Now().Add(24 * time.Hour),
 		Scheme:  storage.SigningSchemeV4,
-	})
+	}
+
+	if len(s.privateKey) > 0 && s.signerEmail != "" {
+		options.GoogleAccessID = s.signerEmail
+		options.PrivateKey = s.privateKey
+	} else if s.iamService != nil && s.signerEmail != "" {
+		options.GoogleAccessID = s.signerEmail
+		options.SignBytes = s.signBytesWithIAM
+	} else {
+		return "", fmt.Errorf("gcs signed url requires a service account signer")
+	}
+
+	url, err := storage.SignedURL(s.bucketName, objectName, options)
 	if err != nil {
 		return "", err
 	}
 
 	return url, nil
+}
+
+func (s *GCSDocumentStorage) signBytesWithIAM(b []byte) ([]byte, error) {
+	if s.iamService == nil || s.signerEmail == "" {
+		return nil, fmt.Errorf("gcs signer is not configured")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := s.iamService.Projects.ServiceAccounts.SignBlob(
+		"projects/-/serviceAccounts/"+s.signerEmail,
+		&iamcredentials.SignBlobRequest{Payload: base64.StdEncoding.EncodeToString(b)},
+	).Context(ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	return base64.StdEncoding.DecodeString(resp.SignedBlob)
 }
 
 func (s *GCSDocumentStorage) saveMultipartFile(ctx context.Context, objectPrefix string, fileHeader *multipart.FileHeader) (string, error) {
@@ -270,4 +343,22 @@ func parseGCSLocation(location string) (string, string, bool) {
 	}
 
 	return parts[0], parts[1], true
+}
+
+func readServiceAccountCredentials(credentialsFile string) (*serviceAccountCredentials, error) {
+	content, err := os.ReadFile(credentialsFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var credentials serviceAccountCredentials
+	if err := json.Unmarshal(content, &credentials); err != nil {
+		return nil, err
+	}
+
+	if credentials.ClientEmail == "" || credentials.PrivateKey == "" {
+		return nil, fmt.Errorf("invalid service account credentials in %s", credentialsFile)
+	}
+
+	return &credentials, nil
 }
