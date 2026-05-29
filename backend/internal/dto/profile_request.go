@@ -12,7 +12,7 @@ type ProfileRequest struct {
 	PICContact   *string `json:"pic_contact"`
 	Province     *string `json:"province"`
 	City         *string `json:"city"`
-	District     *string `json:"district"`
+	Subdistrict  *string `json:"subdistrict"`
 	Village      *string `json:"village"`
 	Address      *string `json:"address"`
 	ZipCode      *string `json:"zip_code"`

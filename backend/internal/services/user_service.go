@@ -51,8 +51,8 @@ func UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
 		if req.City != nil {
 			customerUpdates["city"] = *req.City
 		}
-		if req.District != nil {
-			customerUpdates["district"] = *req.District
+		if req.Subdistrict != nil {
+			customerUpdates["subdistrict"] = *req.Subdistrict
 		}
 		if req.Village != nil {
 			customerUpdates["village"] = *req.Village
