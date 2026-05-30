@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
@@ -20,19 +22,26 @@ func CreateSubmission(sub *models.Submission) error {
 }
 
 func CreateSubmissionWithTicket(tx *gorm.DB, sub *models.Submission) error {
+	sub.NoTicket = generateSubmissionTicket()
+
 	if err := tx.Create(sub).Error; err != nil {
 		return err
 	}
 
-	ticket := fmt.Sprintf("TCK-%d-%03d", time.Now().Year(), sub.ID)
+	return nil
+}
 
-	if err := tx.Model(sub).Update("no_ticket", ticket).Error; err != nil {
-		return err
+func generateSubmissionTicket() string {
+	return fmt.Sprintf("TCK-%d-%s", time.Now().Year(), randomTicketSuffix())
+}
+
+func randomTicketSuffix() string {
+	buffer := make([]byte, 4)
+	if _, err := rand.Read(buffer); err != nil {
+		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 
-	sub.NoTicket = ticket
-
-	return nil
+	return hex.EncodeToString(buffer)
 }
 
 func GetSubmissionByIDTx(tx *gorm.DB, id uint) (models.Submission, error) {

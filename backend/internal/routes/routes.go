@@ -89,6 +89,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				adminGroup.PATCH("/customers/:id/reject", adminHandler.RejectUser)
 
 				adminGroup.GET("/submissions", submissionHandler.GetAllSubmissions)
+				adminGroup.POST("/submissions/samples/template", submissionHandler.UploadSampleTemplate)
 				adminGroup.PATCH("/submissions/:id/approve", submissionHandler.ApproveSubmission)
 				adminGroup.PATCH("/submissions/:id/reject", submissionHandler.RejectSubmission)
 				adminGroup.POST("/submissions/export", submissionHandler.ExportSubmissionsExcel)
@@ -125,7 +126,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 				customerGroup.POST("/submissions", submissionHandler.CreateSubmission)
 				customerGroup.GET("/submissions/samples/template", submissionHandler.DownloadSampleTemplate)
-				customerGroup.POST("/submissions/samples/import", submissionHandler.ImportSampleTemplate)
+				customerGroup.POST("/submissions/:submission_id/samples/import", submissionHandler.ImportSampleTemplate)
 				customerGroup.GET("/submissions/my", submissionHandler.GetMySubmissions)
 				customerGroup.PATCH("/submissions/:id", submissionHandler.UpdateSubmission)
 				customerGroup.GET("/submissions/:id/tracking", submissionHandler.GetSubmissionTrackingTimeline)

@@ -23,7 +23,7 @@ func NewRouter() *gin.Engine {
 	}
 
 	authHandler := handlers.NewAuthHandler(authService, documentStorage)
-	submissionHandler := handlers.NewSubmissionHandler(services.NewSubmissionService())
+	submissionHandler := handlers.NewSubmissionHandler(services.NewSubmissionService(), uploadStorage)
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{

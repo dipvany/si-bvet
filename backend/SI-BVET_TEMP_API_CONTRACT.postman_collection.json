@@ -189,10 +189,10 @@
               "body": "{\n  \"message\": \"Login successful\",\n  \"token\": \"<jwt_token>\",\n  \"user\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\"\n  }\n}"
             },
             {
-              "name": "Bad Request",
+              "name": "Unauthorized",
               "originalRequest": {},
-              "status": "Bad Request",
-              "code": 400,
+              "status": "Unauthorized",
+              "code": 401,
               "_postman_previewlanguage": "json",
               "header": [
                 {
@@ -201,7 +201,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"error\": \"invalid email or password\"\n}"
+              "body": "{\n  \"error\": \"email not found\"\n}"
             }
           ]
         },
@@ -388,7 +388,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Profile retrieved successfully\",\n  \"profile\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"role\": \"customer\",\n    \"customer\": {\n      \"group\": \"Perusahaan\"\n    }\n  }\n}"
+              "body": "{\n  \"message\": \"Profile retrieved successfully\",\n  \"profile\": {\n    \"id\": 1,\n    \"fullname\": \"PT Maju Sehat\",\n    \"email\": \"customer@mail.com\",\n    \"phone\": \"08123456789\",\n    \"role\": \"customer\",\n    \"is_verified\": true,\n    \"institution\": \"PT Maju Sehat\",\n    \"customer\": {\n      \"group\": \"Perusahaan\",\n      \"is_membership\": true,\n      \"membership_no\": \"MEM-001\",\n      \"pic_name\": \"Budi\",\n      \"pic_contact\": \"08129876543\",\n      \"province\": \"Lampung\",\n      \"city\": \"Bandar Lampung\",\n      \"subdistrict\": \"Rajabasa\",\n      \"village\": \"Gedong Meneng\",\n      \"address\": \"Jl. Soekarno Hatta\",\n      \"zip_code\": \"35141\",\n      \"occupation\": \"Peternakan\"\n    }\n  }\n}"
             },
             {
               "name": "Unauthorized",
@@ -423,7 +423,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullname\": \"PT Maju Sehat Tbk\",\n  \"phone\": \"08123456000\",\n  \"group\": \"Perusahaan\",\n  \"is_membership\": true,\n  \"membership_no\": \"MEM-001\",\n  \"pic_name\": \"Budi\",\n  \"pic_contact\": \"08129876543\",\n  \"province\": \"Lampung\",\n  \"city\": \"Bandar Lampung\",\n  \"district\": \"Rajabasa\",\n  \"village\": \"Gedong Meneng\",\n  \"address\": \"Jl. Soekarno Hatta\",\n  \"zip_code\": \"35141\",\n  \"occupation\": \"Peternakan\"\n}",
+              "raw": "{\n  \"fullname\": \"PT Maju Sehat Tbk\",\n  \"phone\": \"08123456000\",\n  \"group\": \"Perusahaan\",\n  \"is_membership\": true,\n  \"membership_no\": \"MEM-001\",\n  \"pic_name\": \"Budi\",\n  \"pic_contact\": \"08129876543\",\n  \"province\": \"Lampung\",\n  \"city\": \"Bandar Lampung\",\n  \"subdistrict\": \"Rajabasa\",\n  \"village\": \"Gedong Meneng\",\n  \"address\": \"Jl. Soekarno Hatta\",\n  \"zip_code\": \"35141\",\n  \"occupation\": \"Peternakan\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -721,7 +721,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Admin successfully deleted\"\n}"
+              "body": "{\n  \"message\": \"Account successfully deleted\"\n}"
             },
             {
               "name": "Unauthorized",
@@ -767,7 +767,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Managed accounts retrieved successfully\",\n  \"accounts\": [\n    {\n      \"id\": 1,\n      \"fullname\": \"Admin Lab\",\n      \"email\": \"admin@mail.com\",\n      \"phone\": \"081200001111\",\n      \"position\": \"Analis\",\n      \"unit_lab\": \"Virologi\",\n      \"employee_no\": \"EMP-001\",\n      \"role\": \"admin\"\n    }\n  ]\n}"
+              "body": "{\n  \"message\": \"Managed accounts retrieved successfully\",\n  \"accounts\": [\n    {\n      \"id\": 1,\n      \"fullname\": \"Admin Lab\",\n      \"email\": \"admin@mail.com\",\n      \"phone\": \"081200001111\",\n      \"position\": \"Analis\",\n      \"unit_lab\": \"Virologi\",\n      \"employee_no\": \"EMP-001\",\n      \"role\": \"admin\",\n      \"is_verified\": false\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -818,7 +818,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Unverified customers retrieved successfully\",\n  \"customers\": [\n    {\n      \"id\": 2,\n      \"fullname\": \"PT Contoh\",\n      \"email\": \"new@mail.com\",\n      \"phone\": \"081200000000\",\n      \"role\": \"customer\",\n      \"is_verified\": false,\n      \"institution\": \"PT Contoh\"\n    }\n  ]\n}"
+              "body": "{\n  \"message\": \"Unverified customers retrieved successfully\",\n  \"customers\": [\n    {\n      \"id\": 2,\n      \"fullname\": \"PT Contoh\",\n      \"email\": \"new@mail.com\",\n      \"phone\": \"081200000000\",\n      \"role\": \"customer\",\n      \"is_verified\": false,\n      \"institution\": \"PT Contoh\",\n      \"registration_doc\": \"uploads/registration-documents/registration-2.pdf\"\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -956,7 +956,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n  \"message\": \"Submissions retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"no_ticket\": \"TCK-2026-001\",\n      \"process_status\": \"pending_verification\"\n    }\n  ]\n}"
+              "body": "{\n  \"message\": \"Submissions retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"user_id\": 1,\n      \"no_registration\": \"REG-001\",\n      \"no_epi\": \"EPI-001\",\n      \"no_ticket\": \"TCK-2026-001\",\n      \"type_service\": \"Reguler\",\n      \"purpose_of_test\": \"Surveilans\",\n      \"sample_taker\": \"Petugas Lapangan\",\n      \"notes\": \"Mohon diproses cepat\",\n      \"samples_count\": 1,\n      \"process_status\": \"pending_verification\",\n      \"user_info\": {\n        \"id\": 1,\n        \"fullname\": \"PT Maju Sehat\",\n        \"email\": \"customer@mail.com\",\n        \"role\": \"customer\"\n      }\n    }\n  ]\n}"
             },
             {
               "name": "Unauthorized",
@@ -2111,7 +2111,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"type_service\": \"Reguler\",\n  \"purpose_of_test\": \"Surveilans\",\n  \"sample_taker\": \"Petugas Lapangan\",\n  \"notes\": \"Mohon diproses cepat\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"SMPL-001\",\n      \"sample_model\": \"Swab\",\n      \"specimen_type\": \"Oropharyngeal\",\n      \"species\": \"Ayam\",\n      \"age\": \"12 minggu\",\n      \"volume\": \"1 ml\",\n      \"condition\": \"Baik\",\n      \"location_smpl\": \"Lampung Selatan\",\n      \"total_sample\": 10,\n      \"tests\": [\n        { \"test_service_id\": 1 },\n        { \"test_service_id\": 2 }\n      ]\n    }\n  ]\n}",
+              "raw": "{\n  \"type_service\": \"Reguler\",\n  \"purpose_of_test\": \"Surveilans\",\n  \"sample_taker\": \"Petugas Lapangan\",\n  \"notes\": \"Mohon diproses cepat\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"SMPL-001\",\n      \"sample_model\": \"Swab\",\n      \"specimen_group\": \"Unggas\",\n      \"specimen_type\": \"Oropharyngeal\",\n      \"species\": \"Ayam\",\n      \"batch\": \"B-001\",\n      \"preservative\": \"VTM\",\n      \"packaging\": \"Ice box\",\n      \"production_date\": \"2026-05-18\",\n      \"expired_date\": \"2026-05-25\",\n      \"sex\": \"Jantan\",\n      \"age\": 12,\n      \"unit_age\": \"minggu\",\n      \"owner\": \"PT Maju Sehat\",\n      \"test_type\": \"PCR\",\n      \"sampling\": \"Swab\",\n      \"sampling_infra\": \"Farm\",\n      \"location_type\": \"Peternakan\",\n      \"location_smpl\": \"Lampung Selatan\",\n      \"is_vaccinated\": \"Ya\",\n      \"volume\": \"1 ml\",\n      \"condition\": \"Baik\",\n      \"total_sample\": 10,\n      \"tests\": [\n        { \"test_service_id\": 1 },\n        { \"test_service_id\": 2 }\n      ]\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2119,7 +2119,7 @@
               }
             },
             "url": "{{base_url}}/customer/submissions",
-            "description": "Create a new submission."
+            "description": "Create a new submission. Use raw JSON for manual samples or multipart form-data with file for bulk template upload."
           },
           "response": [
             {
@@ -2181,7 +2181,7 @@
                 }
               ],
               "cookie": [],
-              "body": "[\n  {\n    \"id\": 1,\n    \"no_ticket\": \"TCK-2026-001\",\n    \"process_status\": \"submitted\",\n    \"samples_count\": 1\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"user_id\": 1,\n    \"no_registration\": \"REG-001\",\n    \"no_epi\": \"EPI-001\",\n    \"no_ticket\": \"TCK-2026-001\",\n    \"type_service\": \"Reguler\",\n    \"purpose_of_test\": \"Surveilans\",\n    \"sample_taker\": \"Petugas Lapangan\",\n    \"notes\": \"Mohon diproses cepat\",\n    \"samples_count\": 1,\n    \"process_status\": \"pending_verification\"\n  }\n]"
             },
             {
               "name": "Unauthorized",
@@ -2302,6 +2302,108 @@
               ],
               "cookie": [],
               "body": "{\n  \"error\": \"unauthorized\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download Sample Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "url": "{{base_url}}/customer/submissions/samples/template",
+            "description": "Download the submission sample template."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                }
+              ],
+              "cookie": [],
+              "body": "binary/xlsx file stream"
+            },
+            {
+              "name": "Unauthorized",
+              "originalRequest": {},
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"Invalid or expired token\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Import Sample Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_customer}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/samples/import",
+            "description": "Import sample rows from an Excel template."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {},
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"Successfully parsed 1 sample rows\",\n  \"data\": {\n    \"samples\": [\n      {\n        \"sample_code_cust\": \"SMPL-001\",\n        \"sample_model\": \"Swab\",\n        \"specimen_group\": \"Unggas\",\n        \"specimen_type\": \"Oropharyngeal\",\n        \"species\": \"Ayam\",\n        \"batch\": \"B-001\",\n        \"preservative\": \"VTM\",\n        \"packaging\": \"Ice box\",\n        \"production_date\": \"2026-05-18\",\n        \"expired_date\": \"2026-05-25\",\n        \"sex\": \"Jantan\",\n        \"age\": 12,\n        \"unit_age\": \"minggu\",\n        \"owner\": \"PT Maju Sehat\",\n        \"test_type\": \"PCR\",\n        \"sampling\": \"Swab\",\n        \"sampling_infra\": \"Farm\",\n        \"location_type\": \"Peternakan\",\n        \"location_smpl\": \"Lampung Selatan\",\n        \"is_vaccinated\": \"Ya\",\n        \"volume\": \"1 ml\",\n        \"condition\": \"Baik\",\n        \"total_sample\": 10,\n        \"tests\": [\n          {\n            \"test_service_id\": 1\n          }\n        ]\n      }\n    ],\n    \"total_samples\": 1\n  }\n}"
+            },
+            {
+              "name": "Bad Request",
+              "originalRequest": {},
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"error\": \"file is required\"\n}"
             }
           ]
         },

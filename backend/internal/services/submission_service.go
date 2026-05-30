@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
@@ -26,7 +27,9 @@ type SubmissionServiceInterface interface {
 	Update(submissionID uint, userID uint, req dto.UpdateSubmissionRequest) error
 	GetTrackingTimeline(submissionID uint, userID uint) (dto.SubmissionTrackingTimelineResponse, error)
 	GetSampleTemplate() (*bytes.Buffer, error)
-	ImportSamplesFromTemplate(file io.Reader) (dto.SampleTemplateImportResponse, error)
+	GetUploadedSampleTemplate() (*models.SubmissionSampleTemplate, error)
+	SaveUploadedSampleTemplate(userID uint, filePath string, fileName string) error
+	ImportSamplesFromTemplate(submissionID uint, file io.Reader) (dto.SampleTemplateImportResponse, error)
 }
 
 type SubmissionService struct{}
@@ -67,13 +70,26 @@ func (s *SubmissionService) GetSampleTemplate() (*bytes.Buffer, error) {
 	return GenerateSampleTemplateExcel()
 }
 
-func (s *SubmissionService) ImportSamplesFromTemplate(file io.Reader) (dto.SampleTemplateImportResponse, error) {
+func (s *SubmissionService) GetUploadedSampleTemplate() (*models.SubmissionSampleTemplate, error) {
+	return repositories.GetLatestSubmissionSampleTemplate()
+}
+
+func (s *SubmissionService) SaveUploadedSampleTemplate(userID uint, filePath string, fileName string) error {
+	return repositories.CreateSubmissionSampleTemplate(&models.SubmissionSampleTemplate{
+		UploadedByUserID: userID,
+		FilePath:         filePath,
+		FileName:         fileName,
+	})
+}
+
+func (s *SubmissionService) ImportSamplesFromTemplate(submissionID uint, file io.Reader) (dto.SampleTemplateImportResponse, error) {
 	samples, err := ParseSamplesFromTemplateExcel(file)
 	if err != nil {
 		return dto.SampleTemplateImportResponse{}, err
 	}
 
 	return dto.SampleTemplateImportResponse{
+		SubmissionID: submissionID,
 		Samples:      samples,
 		TotalSamples: len(samples),
 	}, nil
@@ -263,6 +279,9 @@ func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.Sampl
 		for _, testReq := range sampleReq.Tests {
 			service, err := repositories.GetTestServiceByIDTx(tx, testReq.TestServiceID)
 			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("test service with id %d not found", testReq.TestServiceID)
+				}
 				return err
 			}
 
@@ -642,23 +661,13 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 		return nil, errors.New("template must contain header and at least one data row")
 	}
 
-	headerMap := map[string]int{}
-	for idx, cell := range rows[0] {
-		normalized := normalizeHeader(cell)
-		if normalized != "" {
-			headerMap[normalized] = idx
-		}
-	}
-
-	requiredHeaders := []string{"samplecodecust", "samplemodel", "totalsample", "testserviceids"}
-	for _, required := range requiredHeaders {
-		if _, ok := headerMap[required]; !ok {
-			return nil, fmt.Errorf("missing required column: %s", required)
-		}
+	headerMap, headerRowIdx, err := resolveSampleTemplateHeaderMap(rows)
+	if err != nil {
+		return nil, err
 	}
 
 	samples := make([]dto.SampleInput, 0)
-	for rowIdx := 1; rowIdx < len(rows); rowIdx++ {
+	for rowIdx := headerRowIdx + 1; rowIdx < len(rows); rowIdx++ {
 		row := rows[rowIdx]
 
 		if isRowEmpty(row) {
@@ -666,11 +675,11 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 		}
 
 		sample := dto.SampleInput{
-			SampleCodeCust: getCellValueByHeader(row, headerMap, []string{"samplecodecust", "samplecode", "kodesampel"}),
-			SampleModel:    getCellValueByHeader(row, headerMap, []string{"samplemodel", "modelsampel"}),
-			SpecimenGroup:  getCellValueByHeader(row, headerMap, []string{"specimengroup", "kelompokspesimen"}),
-			SpecimenType:   getCellValueByHeader(row, headerMap, []string{"specimentype", "jenisspesimen"}),
-			Species:        getCellValueByHeader(row, headerMap, []string{"species", "spesies"}),
+			SampleCodeCust: getCellValueByHeader(row, headerMap, []string{"samplecodecust", "samplecodecustomer", "samplecode", "sample code customer", "sample code cust", "kodesampel", "kodesampelcustomer"}),
+			SampleModel:    getCellValueByHeader(row, headerMap, []string{"samplemodel", "sample model", "model sampel"}),
+			SpecimenGroup:  getCellValueByHeader(row, headerMap, []string{"specimengroup", "specimen group", "kelompokspesimen"}),
+			SpecimenType:   getCellValueByHeader(row, headerMap, []string{"specimentype", "specimen", "jenisspesimen"}),
+			Species:        getCellValueByHeader(row, headerMap, []string{"species", "hewanspecies", "hewan species", "spesies"}),
 			Batch:          getCellValueByHeader(row, headerMap, []string{"batch"}),
 			Preservative:   getCellValueByHeader(row, headerMap, []string{"preservative", "pengawet"}),
 			Packaging:      getCellValueByHeader(row, headerMap, []string{"packaging", "kemasan"}),
@@ -678,13 +687,17 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 			ExpiredDate:    getCellValueByHeader(row, headerMap, []string{"expireddate", "tanggalkedaluwarsa", "tanggalkadaluarsa"}),
 			Sex:            getCellValueByHeader(row, headerMap, []string{"sex", "jeniskelamin"}),
 			UnitAge:        getCellValueByHeader(row, headerMap, []string{"unitage", "satuanumur"}),
-			Owner:          getCellValueByHeader(row, headerMap, []string{"owner", "pemilik"}),
-			TestType:       getCellValueByHeader(row, headerMap, []string{"testtype", "tipepengujian"}),
-			LocationType:   getCellValueByHeader(row, headerMap, []string{"locationtype", "tipelokasi"}),
-			LocationSmpl:   getCellValueByHeader(row, headerMap, []string{"locationsmpl", "lokasisampel"}),
-			IsVaccinated:   getCellValueByHeader(row, headerMap, []string{"isvaccinated", "vaksinasi"}),
+			Owner:          getCellValueByHeader(row, headerMap, []string{"owner", "pemilik", "pemilikihewan"}),
+			TestType:       getCellValueByHeader(row, headerMap, []string{"testtype", "test type", "jenis uji", "jenisuji", "tipepengujian"}),
+			LocationType:   getCellValueByHeader(row, headerMap, []string{"locationtype", "location type", "jenis lokasi", "jenislokasi", "tipelokasi"}),
+			LocationSmpl:   getCellValueByHeader(row, headerMap, []string{"locationsmpl", "location sample", "lokasi sampel", "lokasisampel"}),
+			IsVaccinated:   getCellValueByHeader(row, headerMap, []string{"isvaccinated", "is vaccinated", "telah divaksin", "vaksinasi"}),
 			Volume:         getCellValueByHeader(row, headerMap, []string{"volume"}),
 			Condition:      getCellValueByHeader(row, headerMap, []string{"condition", "kondisi"}),
+		}
+
+		if sample.SampleCodeCust == "" && sample.SampleModel == "" {
+			continue
 		}
 
 		if sample.SampleCodeCust == "" {
@@ -714,22 +727,25 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 			sample.Age = age
 		}
 
-		totalSampleStr := getCellValueByHeader(row, headerMap, []string{"totalsample", "jumlahsampel"})
+		totalSampleStr := getCellValueByHeader(row, headerMap, []string{"totalsample", "total sample", "jumlahsampel"})
 		if totalSampleStr == "" {
-			return nil, fmt.Errorf("row %d: total_sample is required", rowIdx+1)
+			sample.TotalSample = 1
+		} else {
+			totalSample, err := strconv.ParseInt(strings.TrimSpace(totalSampleStr), 10, 64)
+			if err != nil || totalSample <= 0 {
+				return nil, fmt.Errorf("row %d: total_sample must be a positive integer", rowIdx+1)
+			}
+			sample.TotalSample = totalSample
 		}
-		totalSample, err := strconv.ParseInt(strings.TrimSpace(totalSampleStr), 10, 64)
-		if err != nil || totalSample <= 0 {
-			return nil, fmt.Errorf("row %d: total_sample must be a positive integer", rowIdx+1)
-		}
-		sample.TotalSample = totalSample
 
-		testsRaw := getCellValueByHeader(row, headerMap, []string{"testserviceids", "testids", "idpengujian"})
-		tests, err := parseTestServiceIDs(testsRaw)
-		if err != nil {
-			return nil, fmt.Errorf("row %d: %w", rowIdx+1, err)
+		testsRaw := getCellValueByHeader(row, headerMap, []string{"testserviceids", "test service ids", "testids", "idpengujian"})
+		if strings.TrimSpace(testsRaw) != "" {
+			tests, err := parseOptionalTestServiceIDs(testsRaw)
+			if err != nil {
+				return nil, fmt.Errorf("row %d: %w", rowIdx+1, err)
+			}
+			sample.Tests = tests
 		}
-		sample.Tests = tests
 
 		samples = append(samples, sample)
 	}
@@ -739,6 +755,119 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 	}
 
 	return samples, nil
+}
+
+type headerSpec struct {
+	canonical string
+	aliases   []string
+}
+
+func resolveSampleTemplateHeaderMap(rows [][]string) (map[string]int, int, error) {
+	headerSpecs := []headerSpec{
+		{canonical: "samplecodecust", aliases: []string{"samplecodecust", "samplecodecustomer", "samplecode", "sample code cust", "sample code customer", "kode sampel", "kodesampelcustomer"}},
+		{canonical: "samplemodel", aliases: []string{"samplemodel", "sample model", "model sampel"}},
+		{canonical: "specimengroup", aliases: []string{"specimengroup", "specimen group", "kelompokspesimen"}},
+		{canonical: "specimentype", aliases: []string{"specimentype", "specimen", "jenisspesimen"}},
+		{canonical: "species", aliases: []string{"species", "hewanspecies", "hewan species", "spesies"}},
+		{canonical: "batch", aliases: []string{"batch"}},
+		{canonical: "preservative", aliases: []string{"preservative", "pengawet"}},
+		{canonical: "packaging", aliases: []string{"packaging", "kemasan"}},
+		{canonical: "productiondate", aliases: []string{"productiondate", "production date", "tanggalproduksi"}},
+		{canonical: "expireddate", aliases: []string{"expireddate", "expired date", "tanggalkedaluwarsa", "tanggalkadaluarsa"}},
+		{canonical: "sex", aliases: []string{"sex", "jeniskelamin"}},
+		{canonical: "age", aliases: []string{"age", "umur"}},
+		{canonical: "unitage", aliases: []string{"unitage", "unit age", "satuanumur"}},
+		{canonical: "owner", aliases: []string{"owner", "pemilik", "pemilikihewan"}},
+		{canonical: "testtype", aliases: []string{"testtype", "test type", "jenis uji", "jenisuji", "tipepengujian"}},
+		{canonical: "locationtype", aliases: []string{"locationtype", "location type", "jenis lokasi", "jenislokasi", "tipelokasi"}},
+		{canonical: "locationsmpl", aliases: []string{"locationsmpl", "location sample", "lokasi sampel", "lokasisampel"}},
+		{canonical: "isvaccinated", aliases: []string{"isvaccinated", "is vaccinated", "telah divaksin", "vaksinasi"}},
+		{canonical: "volume", aliases: []string{"volume"}},
+		{canonical: "condition", aliases: []string{"condition", "kondisi"}},
+		{canonical: "totalsample", aliases: []string{"totalsample", "total sample", "jumlahsampel"}},
+		{canonical: "testserviceids", aliases: []string{"testserviceids", "test service ids", "testids", "idpengujian"}},
+	}
+
+	bestHeaderMap := map[string]int{}
+	bestHeaderRowIdx := -1
+	bestMatchCount := 0
+
+	maxHeaderScanRows := len(rows)
+	if maxHeaderScanRows > 10 {
+		maxHeaderScanRows = 10
+	}
+
+	for rowIdx := 0; rowIdx < maxHeaderScanRows; rowIdx++ {
+		row := rows[rowIdx]
+		headerMap := map[string]int{}
+		for idx, cell := range row {
+			normalized := normalizeHeader(cell)
+			if normalized != "" {
+				headerMap[normalized] = idx
+			}
+		}
+
+		matchCount := 0
+		missingCore := false
+		for _, spec := range headerSpecs {
+			if _, ok := findHeaderIndex(headerMap, spec.aliases); ok {
+				matchCount++
+				continue
+			}
+
+			if spec.canonical == "samplecodecust" || spec.canonical == "samplemodel" {
+				missingCore = true
+			}
+		}
+
+		if missingCore {
+			continue
+		}
+
+		if matchCount > bestMatchCount {
+			bestMatchCount = matchCount
+			bestHeaderMap = headerMap
+			bestHeaderRowIdx = rowIdx
+		}
+
+		if matchCount == len(headerSpecs) {
+			return headerMap, rowIdx, nil
+		}
+	}
+
+	if bestHeaderRowIdx == -1 {
+		return nil, -1, fmt.Errorf("missing required column: %s", "samplecodecust")
+	}
+
+	for _, required := range []headerSpec{
+		{canonical: "samplecodecust", aliases: []string{"samplecodecust", "samplecodecustomer", "samplecode", "sample code cust", "sample code customer", "kode sampel", "kodesampelcustomer"}},
+		{canonical: "samplemodel", aliases: []string{"samplemodel", "sample model", "model sampel"}},
+	} {
+		if _, ok := findHeaderIndex(bestHeaderMap, required.aliases); !ok {
+			return nil, -1, fmt.Errorf("missing required column: %s", required.canonical)
+		}
+	}
+
+	return bestHeaderMap, bestHeaderRowIdx, nil
+}
+
+func findHeaderIndex(headerMap map[string]int, aliases []string) (int, bool) {
+	for _, alias := range aliases {
+		if idx, ok := headerMap[normalizeHeader(alias)]; ok {
+			return idx, true
+		}
+	}
+
+	return 0, false
+}
+
+func parseOptionalTestServiceIDs(raw string) ([]dto.TestInput, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+
+	return parseTestServiceIDs(raw)
 }
 
 func parseTestServiceIDs(raw string) ([]dto.TestInput, error) {
@@ -772,13 +901,17 @@ func parseTestServiceIDs(raw string) ([]dto.TestInput, error) {
 
 func normalizeHeader(header string) string {
 	header = strings.ToLower(strings.TrimSpace(header))
-	replacer := strings.NewReplacer("_", "", " ", "", "-", "", "(", "", ")", "")
-	return replacer.Replace(header)
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return r
+		}
+		return -1
+	}, header)
 }
 
 func getCellValueByHeader(row []string, headerMap map[string]int, keys []string) string {
 	for _, key := range keys {
-		if idx, ok := headerMap[key]; ok {
+		if idx, ok := headerMap[normalizeHeader(key)]; ok {
 			if idx >= 0 && idx < len(row) {
 				return strings.TrimSpace(row[idx])
 			}
@@ -802,10 +935,37 @@ func parseDate(value string) (*time.Time, error) {
 		return nil, nil
 	}
 
-	t, err := time.Parse("2006-01-02", trimmed)
-	if err != nil {
-		return nil, err
+	if serial, err := strconv.ParseFloat(trimmed, 64); err == nil {
+		parsed, err := excelize.ExcelDateToTime(serial, false)
+		if err == nil {
+			return &parsed, nil
+		}
 	}
 
-	return &t, nil
+	dateLayouts := []string{
+		time.DateOnly,
+		"02/01/2006",
+		"02-01-2006",
+		"02/01/06",
+		"02-01-06",
+		"2006/01/02",
+		"2006-1-2",
+		"2/1/2006",
+		"2-1-2006",
+	}
+
+	var lastErr error
+	for _, layout := range dateLayouts {
+		t, err := time.Parse(layout, trimmed)
+		if err == nil {
+			return &t, nil
+		}
+		lastErr = err
+	}
+
+	if lastErr == nil {
+		lastErr = fmt.Errorf("invalid date")
+	}
+
+	return nil, lastErr
 }

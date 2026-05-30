@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"mime/multipart"
@@ -16,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/xuri/excelize/v2"
 )
 
 type MockSubmissionService struct {
@@ -35,6 +37,18 @@ type MockSubmissionService struct {
 	trackingUserID uint
 	trackingResp   dto.SubmissionTrackingTimelineResponse
 	trackingErr    error
+
+	uploadedTemplate    *models.SubmissionSampleTemplate
+	uploadedTemplateErr error
+	saveTemplateCalled   bool
+	saveTemplateUserID   uint
+	saveTemplatePath     string
+	saveTemplateName     string
+	saveTemplateErr      error
+
+	importCalled      bool
+	importSubmissionID uint
+	importReaderSeen   bool
 }
 
 var _ services.SubmissionServiceInterface = (*MockSubmissionService)(nil)
@@ -81,8 +95,65 @@ func (m *MockSubmissionService) GetSampleTemplate() (*bytes.Buffer, error) {
 	return bytes.NewBufferString("template"), nil
 }
 
-func (m *MockSubmissionService) ImportSamplesFromTemplate(file io.Reader) (dto.SampleTemplateImportResponse, error) {
-	return dto.SampleTemplateImportResponse{}, nil
+func (m *MockSubmissionService) GetUploadedSampleTemplate() (*models.SubmissionSampleTemplate, error) {
+	return m.uploadedTemplate, m.uploadedTemplateErr
+}
+
+func (m *MockSubmissionService) SaveUploadedSampleTemplate(userID uint, filePath string, fileName string) error {
+	m.saveTemplateCalled = true
+	m.saveTemplateUserID = userID
+	m.saveTemplatePath = filePath
+	m.saveTemplateName = fileName
+	return m.saveTemplateErr
+}
+
+func (m *MockSubmissionService) ImportSamplesFromTemplate(submissionID uint, file io.Reader) (dto.SampleTemplateImportResponse, error) {
+	m.importCalled = true
+	m.importSubmissionID = submissionID
+	m.importReaderSeen = file != nil
+	return dto.SampleTemplateImportResponse{
+		SubmissionID: submissionID,
+		Samples: []dto.SampleInput{{
+			SampleCodeCust: "SMPL-BULK-001",
+			SampleModel:    "Swab",
+			TotalSample:    2,
+			Tests:          []dto.TestInput{{TestServiceID: 1}},
+		}},
+		TotalSamples: 1,
+	}, nil
+}
+
+type MockTemplateStorage struct {
+	saveResult   string
+	saveErr      error
+	resolveValue string
+	resolveErr   error
+	lastFileName string
+}
+
+func (m *MockTemplateStorage) SaveRegistrationDocument(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (m *MockTemplateStorage) SaveBillingProof(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (m *MockTemplateStorage) SaveComplaintAttachment(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (m *MockTemplateStorage) SaveLHUFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
+func (m *MockTemplateStorage) SaveSampleTemplateFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	m.lastFileName = fileHeader.Filename
+	return m.saveResult, m.saveErr
+}
+
+func (m *MockTemplateStorage) ResolveDownloadLocation(ctx context.Context, location string) (string, error) {
+	return m.resolveValue, m.resolveErr
 }
 
 func withUserID(userID uint) gin.HandlerFunc {
@@ -146,6 +217,52 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("create failed"))
 			gomega.Expect(mockService.createCalled).To(gomega.BeTrue())
 			gomega.Expect(mockService.createUserID).To(gomega.Equal(uint(42)))
+		})
+
+		ginkgo.It("creates submission with bulk template upload", func() {
+			f := excelize.NewFile()
+			sheet := f.GetSheetName(0)
+			f.SetCellValue(sheet, "A1", "sample_code_cust")
+			f.SetCellValue(sheet, "B1", "sample_model")
+			f.SetCellValue(sheet, "C1", "total_sample")
+			f.SetCellValue(sheet, "D1", "test_service_ids")
+			f.SetCellValue(sheet, "A2", "SMPL-BULK-001")
+			f.SetCellValue(sheet, "B2", "Swab")
+			f.SetCellValue(sheet, "C2", "2")
+			f.SetCellValue(sheet, "D2", "1")
+
+			buf := new(bytes.Buffer)
+			gomega.Expect(f.Write(buf)).To(gomega.Succeed())
+
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			gomega.Expect(writer.WriteField("type_service", "Reguler")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("purpose_of_test", "Surveilans")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("sample_taker", "Petugas Lapangan")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("notes", "Bulk submission")).To(gomega.Succeed())
+			part, err := writer.CreateFormFile("file", "bulk-template.xlsx")
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			_, err = part.Write(buf.Bytes())
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			router.POST("/submissions", withUserID(42), handler.CreateSubmission)
+			req := httptest.NewRequest(http.MethodPost, "/submissions", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Submission created successfully"))
+			gomega.Expect(mockService.importCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.importSubmissionID).To(gomega.Equal(uint(0)))
+			gomega.Expect(mockService.importReaderSeen).To(gomega.BeTrue())
+			gomega.Expect(mockService.createCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.createReq.TypeService).To(gomega.Equal("Reguler"))
+			gomega.Expect(mockService.createReq.Samples).To(gomega.HaveLen(1))
+			gomega.Expect(mockService.createReq.Samples[0].SampleCodeCust).To(gomega.Equal("SMPL-BULK-001"))
+			gomega.Expect(mockService.createReq.Samples[0].TotalSample).To(gomega.Equal(int64(2)))
 		})
 	})
 
@@ -259,6 +376,7 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 		var (
 			router      *gin.Engine
 			mockService *MockSubmissionService
+			mockStorage *MockTemplateStorage
 			handler     *handlers.SubmissionHandler
 			w           *httptest.ResponseRecorder
 		)
@@ -267,7 +385,11 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gin.SetMode(gin.TestMode)
 			router = gin.New()
 			mockService = &MockSubmissionService{}
-			handler = handlers.NewSubmissionHandler(mockService)
+			mockStorage = &MockTemplateStorage{
+				saveResult:   "/uploads/submission-sample-templates/template.xlsx",
+				resolveValue: "/uploads/submission-sample-templates/template.xlsx",
+			}
+			handler = handlers.NewSubmissionHandler(mockService, mockStorage)
 		})
 
 		ginkgo.It("downloads sample template excel", func() {
@@ -281,9 +403,45 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(w.Header().Get("Content-Disposition")).To(gomega.ContainSubstring("sample_template.xlsx"))
 		})
 
+		ginkgo.It("downloads uploaded sample template by redirecting to resolved location", func() {
+			mockService.uploadedTemplate = &models.SubmissionSampleTemplate{FilePath: "gs://bucket/submission-sample-templates/template.xlsx", FileName: "customer-template.xlsx"}
+			router.GET("/submissions/samples/template", handler.DownloadSampleTemplate)
+			req := httptest.NewRequest(http.MethodGet, "/submissions/samples/template", nil)
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusFound))
+			gomega.Expect(w.Header().Get("Location")).To(gomega.Equal("/uploads/submission-sample-templates/template.xlsx"))
+		})
+
+		ginkgo.It("uploads sample template successfully", func() {
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			part, err := writer.CreateFormFile("file", "customer-template.xlsx")
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			_, err = part.Write([]byte("dummy-template"))
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			router.POST("/submissions/samples/template", withUserID(77), handler.UploadSampleTemplate)
+			req := httptest.NewRequest(http.MethodPost, "/submissions/samples/template", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Sample template uploaded successfully"))
+			gomega.Expect(mockService.saveTemplateCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.saveTemplateUserID).To(gomega.Equal(uint(77)))
+			gomega.Expect(mockService.saveTemplatePath).To(gomega.Equal("/uploads/submission-sample-templates/template.xlsx"))
+			gomega.Expect(mockService.saveTemplateName).To(gomega.Equal("customer-template.xlsx"))
+		})
+
 		ginkgo.It("returns bad request when import file is missing", func() {
-			router.POST("/submissions/samples/import", handler.ImportSampleTemplate)
-			req := httptest.NewRequest(http.MethodPost, "/submissions/samples/import", nil)
+			router.POST("/submissions/:submission_id/samples/import", handler.ImportSampleTemplate)
+			req := httptest.NewRequest(http.MethodPost, "/submissions/123/samples/import", nil)
 			w = httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -301,8 +459,8 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			gomega.Expect(writer.Close()).To(gomega.Succeed())
 
-			router.POST("/submissions/samples/import", handler.ImportSampleTemplate)
-			req := httptest.NewRequest(http.MethodPost, "/submissions/samples/import", body)
+			router.POST("/submissions/:submission_id/samples/import", handler.ImportSampleTemplate)
+			req := httptest.NewRequest(http.MethodPost, "/submissions/123/samples/import", body)
 			req.Header.Set("Content-Type", writer.FormDataContentType())
 			w = httptest.NewRecorder()
 
@@ -310,6 +468,7 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 
 			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
 			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Successfully parsed"))
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring(`"submission_id":123`))
 		})
 	})
 })

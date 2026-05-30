@@ -36,6 +36,10 @@ func (f failingDocumentStorage) SaveLHUFile(ctx context.Context, fileHeader *mul
 	return "", nil
 }
 
+func (f failingDocumentStorage) SaveSampleTemplateFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
 func (f failingDocumentStorage) ResolveDownloadLocation(ctx context.Context, location string) (string, error) {
 	return "", http.ErrAbortHandler
 }

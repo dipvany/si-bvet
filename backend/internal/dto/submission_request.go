@@ -33,10 +33,10 @@ type SampleInput struct {
 }
 
 type SubmissionRequest struct {
-	TypeService   string        `json:"type_service"`
-	PurposeOfTest string        `json:"purpose_of_test"`
-	SampleTaker   string        `json:"sample_taker"`
-	Notes         string        `json:"notes"`
+	TypeService   string        `json:"type_service" form:"type_service"`
+	PurposeOfTest string        `json:"purpose_of_test" form:"purpose_of_test"`
+	SampleTaker   string        `json:"sample_taker" form:"sample_taker"`
+	Notes         string        `json:"notes" form:"notes"`
 	Samples       []SampleInput `json:"samples"`
 }
 

@@ -25,6 +25,7 @@ type DocumentStorage interface {
 	SaveBillingProof(ctx context.Context, fileHeader *multipart.FileHeader) (string, error)
 	SaveComplaintAttachment(ctx context.Context, fileHeader *multipart.FileHeader) (string, error)
 	SaveLHUFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error)
+	SaveSampleTemplateFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error)
 	ResolveDownloadLocation(ctx context.Context, location string) (string, error)
 }
 
@@ -54,6 +55,10 @@ func (s *LocalDocumentStorage) SaveComplaintAttachment(ctx context.Context, file
 
 func (s *LocalDocumentStorage) SaveLHUFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
 	return s.saveMultipartFile(ctx, "lhu", fileHeader)
+}
+
+func (s *LocalDocumentStorage) SaveSampleTemplateFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return s.saveMultipartFile(ctx, "submission-sample-templates", fileHeader)
 }
 
 func (s *LocalDocumentStorage) ResolveDownloadLocation(ctx context.Context, location string) (string, error) {
@@ -194,6 +199,10 @@ func (s *GCSDocumentStorage) SaveComplaintAttachment(ctx context.Context, fileHe
 
 func (s *GCSDocumentStorage) SaveLHUFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
 	return s.saveMultipartFile(ctx, "lhu", fileHeader)
+}
+
+func (s *GCSDocumentStorage) SaveSampleTemplateFile(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return s.saveMultipartFile(ctx, "submission-sample-templates", fileHeader)
 }
 
 func (s *GCSDocumentStorage) ResolveDownloadLocation(ctx context.Context, location string) (string, error) {

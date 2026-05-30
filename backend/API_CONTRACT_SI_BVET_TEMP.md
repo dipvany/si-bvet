@@ -35,10 +35,13 @@ Tujuan: acuan sementara komunikasi frontend-backend.
 
 ## Content-Type by Endpoint
 
-- `application/json`: login, profile update, admin/account, test-services, submission create/update, feedback, complaint response, billing create/update.
+- `application/json`: login, profile update, admin/account, test-services, submission create/update manual, feedback, complaint response, billing create/update.
 - `application/json`: juga dipakai untuk change-password, forgot-password, dan reset-password.
-- `multipart/form-data`: register customer, upload billing proof, upload LHU, create complaint.
+- `multipart/form-data`: register customer, upload billing proof, upload LHU, create complaint, submit submission bulk upload.
+- `multipart/form-data`: import sample template customer dengan path parameter `submission_id`.
 - `GET` download file: `/customer/submissions/:submission_id/lhu/download`
+- Endpoint import sample template customer: `POST /api/customer/submissions/:submission_id/samples/import`.
+- Endpoint create submission bulk upload customer: `POST /api/customer/submissions` dengan field form biasa + file template `file`.
 
 ## Important Notes (Temporary)
 
@@ -48,6 +51,7 @@ Tujuan: acuan sementara komunikasi frontend-backend.
   - upload proof pembayaran: `proof`
   - upload LHU: `file`
   - complaint attachment (opsional): `attachment`
+  - import sample template customer: `file`
 
 ## Postman Collection
 
