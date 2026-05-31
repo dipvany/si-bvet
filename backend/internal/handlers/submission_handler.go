@@ -72,13 +72,13 @@ func (h *SubmissionHandler) CreateSubmission(c *gin.Context) {
 		}
 	}
 
-	err = h.Service.Create(userID, req)
+	submissionObj, err := h.Service.Create(userID, req)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.MessageResponse(c, http.StatusOK, "Submission created successfully")
+	utils.DataResponse(c, http.StatusOK, "Submission created successfully", submissionObj)
 }
 
 func (h *SubmissionHandler) GetMySubmissions(c *gin.Context) {

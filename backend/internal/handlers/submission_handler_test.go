@@ -53,11 +53,46 @@ type MockSubmissionService struct {
 
 var _ services.SubmissionServiceInterface = (*MockSubmissionService)(nil)
 
-func (m *MockSubmissionService) Create(userID uint, req dto.SubmissionRequest) error {
+func (m *MockSubmissionService) Create(userID uint, req dto.SubmissionRequest) (models.Submission, error) {
 	m.createCalled = true
 	m.createUserID = userID
 	m.createReq = req
-	return m.createErr
+	if m.createErr != nil {
+		return models.Submission{}, m.createErr
+	}
+
+	// build minimal submission object to return
+	samples := make([]models.Sample, 0, len(req.Samples))
+	for i, s := range req.Samples {
+		sampleModel := models.Sample{
+			ID:             uint(i + 1),
+			SampleCodeCust: s.SampleCodeCust,
+			SampleModel:    s.SampleModel,
+			TotalSample:    int64(s.TotalSample),
+		}
+
+		// attach test requests minimal
+		trs := make([]models.TestRequest, 0, len(s.Tests))
+		for j, t := range s.Tests {
+			trs = append(trs, models.TestRequest{ID: uint(j + 1), TestServiceID: t.TestServiceID, SampleID: sampleModel.ID})
+		}
+		sampleModel.TestRequests = trs
+
+		samples = append(samples, sampleModel)
+	}
+
+	submission := models.Submission{
+		ID:          1,
+		UserID:      userID,
+		TypeService: req.TypeService,
+		PurposeOfTest: req.PurposeOfTest,
+		SampleTaker: req.SampleTaker,
+		Notes:       req.Notes,
+		SamplesCount: len(req.Samples),
+		Samples:     samples,
+	}
+
+	return submission, nil
 }
 
 func (m *MockSubmissionService) GetByUser(userID uint) ([]models.Submission, error) {

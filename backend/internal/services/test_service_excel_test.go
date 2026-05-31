@@ -105,6 +105,85 @@ func TestImportTestServicesFromExcel(t *testing.T) {
 		}
 	})
 
+	t.Run("keeps comma thousand separators as whole prices", func(t *testing.T) {
+		setupTestServiceExcelDB(t)
+
+		payload := writeWorkbook(t, func(file *excelize.File) {
+			sheet := file.GetSheetName(file.GetActiveSheetIndex())
+
+			headers := []string{"Test Name", "Harga"}
+			for index, header := range headers {
+				cell, _ := excelize.CoordinatesToCellName(index+1, 1)
+				file.SetCellValue(sheet, cell, header)
+			}
+
+			values := []interface{}{"Blood Panel", "80,000"}
+			for index, value := range values {
+				cell, _ := excelize.CoordinatesToCellName(index+1, 2)
+				file.SetCellValue(sheet, cell, value)
+			}
+
+			secondRow := []interface{}{"Urine Panel", "7,500"}
+			for index, value := range secondRow {
+				cell, _ := excelize.CoordinatesToCellName(index+1, 3)
+				file.SetCellValue(sheet, cell, value)
+			}
+		})
+
+		created, err := services.ImportTestServicesFromExcel(bytes.NewReader(payload))
+		if err != nil {
+			t.Fatalf("import workbook: %v", err)
+		}
+		if created != 2 {
+			t.Fatalf("expected 2 created test services, got %d", created)
+		}
+
+		var servicesOut []models.TestService
+		if err := db.DB.Order("id asc").Find(&servicesOut).Error; err != nil {
+			t.Fatalf("query created services: %v", err)
+		}
+		if len(servicesOut) != 2 {
+			t.Fatalf("expected 2 stored services, got %d", len(servicesOut))
+		}
+
+		if math.Abs(servicesOut[0].Price-80000) > 0.001 {
+			t.Fatalf("expected 80000, got %v", servicesOut[0].Price)
+		}
+		if math.Abs(servicesOut[1].Price-7500) > 0.001 {
+			t.Fatalf("expected 7500, got %v", servicesOut[1].Price)
+		}
+	})
+
+	t.Run("still parses decimal comma values", func(t *testing.T) {
+		setupTestServiceExcelDB(t)
+
+		payload := writeWorkbook(t, func(file *excelize.File) {
+			sheet := file.GetSheetName(file.GetActiveSheetIndex())
+
+			file.SetCellValue(sheet, "A1", "Nama Uji")
+			file.SetCellValue(sheet, "B1", "Harga")
+			file.SetCellValue(sheet, "A2", "Culture Test")
+			file.SetCellValue(sheet, "B2", "80,5")
+		})
+
+		created, err := services.ImportTestServicesFromExcel(bytes.NewReader(payload))
+		if err != nil {
+			t.Fatalf("import workbook: %v", err)
+		}
+		if created != 1 {
+			t.Fatalf("expected 1 created test service, got %d", created)
+		}
+
+		var createdService models.TestService
+		if err := db.DB.First(&createdService).Error; err != nil {
+			t.Fatalf("query created service: %v", err)
+		}
+
+		if math.Abs(createdService.Price-80.5) > 0.001 {
+			t.Fatalf("expected 80.5, got %v", createdService.Price)
+		}
+	})
+
 	t.Run("rejects workbook without test name column", func(t *testing.T) {
 		setupTestServiceExcelDB(t)
 

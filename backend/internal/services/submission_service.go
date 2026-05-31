@@ -19,7 +19,7 @@ import (
 )
 
 type SubmissionServiceInterface interface {
-	Create(userID uint, req dto.SubmissionRequest) error
+	Create(userID uint, req dto.SubmissionRequest) (models.Submission, error)
 	GetByUser(userID uint) ([]models.Submission, error)
 	GetAll() ([]models.Submission, error)
 	Approve(id uint) error
@@ -38,8 +38,18 @@ func NewSubmissionService() SubmissionServiceInterface {
 	return &SubmissionService{}
 }
 
-func (s *SubmissionService) Create(userID uint, req dto.SubmissionRequest) error {
-	return CreateSubmissionWithSamplesAndTests(userID, req)
+func (s *SubmissionService) Create(userID uint, req dto.SubmissionRequest) (models.Submission, error) {
+	id, err := CreateSubmissionWithSamplesAndTests(userID, req)
+	if err != nil {
+		return models.Submission{}, err
+	}
+
+	submission, err := repositories.GetSubmissionByIDWithRelations(id)
+	if err != nil {
+		return models.Submission{}, err
+	}
+
+	return submission, nil
 }
 
 func (s *SubmissionService) GetByUser(userID uint) ([]models.Submission, error) {
@@ -101,7 +111,7 @@ func CreateSubmission(sub *models.Submission) error {
 	return repositories.CreateSubmission(sub)
 }
 
-func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest) error {
+func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest) (uint, error) {
 	submission := buildSubmission(userID, req)
 
 	err := repositories.InTransaction(func(tx *gorm.DB) error {
@@ -116,11 +126,11 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 		return nil
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	NotifySubmissionStatusChanged(submission.ID, submission.ProcessStatus)
-	return nil
+	return submission.ID, nil
 }
 
 func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {

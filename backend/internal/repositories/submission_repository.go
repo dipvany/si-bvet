@@ -123,6 +123,19 @@ func GetSubmissionByID(id uint) (models.Submission, error) {
 	return submission, err
 }
 
+func GetSubmissionByIDWithRelations(id uint) (models.Submission, error) {
+	var submission models.Submission
+
+	err := db.DB.
+		Preload("User").
+		Preload("Samples.TestRequests.TestService").
+		Preload("Billing").
+		Preload("LHU").
+		First(&submission, id).Error
+
+	return submission, err
+}
+
 func GetSubmissionByIDWithUser(id uint) (models.Submission, error) {
 	var submission models.Submission
 	err := db.DB.

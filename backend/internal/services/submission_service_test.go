@@ -58,10 +58,11 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 			}
 
 			// Act
-			err := CreateSubmissionWithSamplesAndTests(10, req)
+			id, err := CreateSubmissionWithSamplesAndTests(10, req)
 
 			// Assert
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(id).ToNot(gomega.Equal(uint(0)))
 
 			var subs []models.Submission
 			gomega.Expect(db.DB.Find(&subs).Error).ToNot(gomega.HaveOccurred())
@@ -104,10 +105,11 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 			}
 
 			// Act
-			err := CreateSubmissionWithSamplesAndTests(11, req)
+			id, err := CreateSubmissionWithSamplesAndTests(11, req)
 
 			// Assert - expect error and no submission persisted
 			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(id).To(gomega.Equal(uint(0)))
 
 			var subs []models.Submission
 			gomega.Expect(db.DB.Find(&subs).Error).ToNot(gomega.HaveOccurred())

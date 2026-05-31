@@ -232,8 +232,14 @@ func parseExcelFloat(value string) (float64, error) {
 			cleaned = strings.ReplaceAll(cleaned, ",", "")
 		}
 	case hasComma && !hasDot:
-		// treat comma as decimal
-		cleaned = strings.ReplaceAll(cleaned, ",", ".")
+		parts := strings.Split(cleaned, ",")
+		if len(parts) > 1 && allGroupsHaveLength(parts[1:], 3) {
+			// treat comma as thousands separator when every grouped suffix has 3 digits
+			cleaned = strings.ReplaceAll(cleaned, ",", "")
+		} else {
+			// treat comma as decimal separator for values like 80,5 or 7,25
+			cleaned = strings.ReplaceAll(cleaned, ",", ".")
+		}
 	case hasDot && !hasComma:
 		// ambiguous: if the last dot is followed by exactly 3 digits, treat dots as thousand separators
 		lastDot := strings.LastIndex(cleaned, ".")
@@ -244,6 +250,20 @@ func parseExcelFloat(value string) (float64, error) {
 	}
 
 	return strconv.ParseFloat(cleaned, 64)
+}
+
+func allGroupsHaveLength(groups []string, expected int) bool {
+	if len(groups) == 0 {
+		return false
+	}
+
+	for _, group := range groups {
+		if len(group) != expected {
+			return false
+		}
+	}
+
+	return true
 }
 
 func normalizeExcelHeader(value string) string {
