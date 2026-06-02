@@ -78,7 +78,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				superAdminGroup.PATCH("/admin-accounts/:id", adminHandler.UpdateAdminAccount)
 				superAdminGroup.DELETE("/admin-accounts/:id", adminHandler.DeleteAdminAccount)
 
-				superAdminGroup.GET("/test-services", testServiceHandler.CreateTestService)
+				superAdminGroup.POST("/test-services", testServiceHandler.CreateTestService)
 				superAdminGroup.POST("/test-services/import", testServiceHandler.ImportTestServicesExcel)
 
 				superAdminGroup.POST("/submissions/samples/template", submissionHandler.UploadSampleTemplate)
