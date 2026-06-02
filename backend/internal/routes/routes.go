@@ -77,6 +77,11 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				superAdminGroup.GET("/admin-accounts", adminHandler.GetAllAdminAccounts)
 				superAdminGroup.PATCH("/admin-accounts/:id", adminHandler.UpdateAdminAccount)
 				superAdminGroup.DELETE("/admin-accounts/:id", adminHandler.DeleteAdminAccount)
+
+				superAdminGroup.GET("/test-services", testServiceHandler.CreateTestService)
+				superAdminGroup.POST("/test-services/import", testServiceHandler.ImportTestServicesExcel)
+
+				superAdminGroup.POST("/submissions/samples/template", submissionHandler.UploadSampleTemplate)
 			}
 
 			// ADMIN
@@ -89,13 +94,10 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				adminGroup.PATCH("/customers/:id/reject", adminHandler.RejectUser)
 
 				adminGroup.GET("/submissions", submissionHandler.GetAllSubmissions)
-				adminGroup.POST("/submissions/samples/template", submissionHandler.UploadSampleTemplate)
 				adminGroup.PATCH("/submissions/:id/approve", submissionHandler.ApproveSubmission)
 				adminGroup.PATCH("/submissions/:id/reject", submissionHandler.RejectSubmission)
 				adminGroup.POST("/submissions/export", submissionHandler.ExportSubmissionsExcel)
 
-				adminGroup.POST("/test-services", testServiceHandler.CreateTestService)
-				adminGroup.POST("/test-services/import", testServiceHandler.ImportTestServicesExcel)
 				adminGroup.GET("/test-services", testServiceHandler.GetAllTestServices)
 				adminGroup.GET("/test-services/:id", testServiceHandler.GetTestServiceByID)
 				adminGroup.PATCH("/test-services/:id", testServiceHandler.UpdateTestService)
