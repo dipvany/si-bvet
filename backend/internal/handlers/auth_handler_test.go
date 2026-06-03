@@ -142,7 +142,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 				writer := multipart.NewWriter(body)
 
 				// Add form fields
-				writer.WriteField("fullName", "John Doe")
+				writer.WriteField("fullname", "John Doe")
 				writer.WriteField("email", "john@example.com")
 				writer.WriteField("phone", "081234567890")
 				writer.WriteField("password", "password123")
@@ -191,7 +191,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 
 				body := &bytes.Buffer{}
 				writer := multipart.NewWriter(body)
-				writer.WriteField("fullName", "John Doe")
+				writer.WriteField("fullname", "John Doe")
 				writer.WriteField("email", "john@example.com")
 				writer.WriteField("phone", "081234567890")
 				writer.WriteField("password", "password123")
@@ -221,7 +221,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 
 				body := &bytes.Buffer{}
 				writer := multipart.NewWriter(body)
-				writer.WriteField("fullName", "Jane Doe")
+				writer.WriteField("fullname", "Jane Doe")
 				writer.WriteField("email", "jane@example.com")
 				writer.WriteField("phone", "081234567890")
 				writer.WriteField("password", "password123")
@@ -252,7 +252,7 @@ var _ = ginkgo.Describe("AuthHandler", func() {
 
 				body := &bytes.Buffer{}
 				writer := multipart.NewWriter(body)
-				writer.WriteField("fullName", "Alice")
+				writer.WriteField("fullname", "Alice")
 				writer.WriteField("email", "alice@example.com")
 				writer.WriteField("phone", "089999999")
 				writer.WriteField("password", "pass123")
