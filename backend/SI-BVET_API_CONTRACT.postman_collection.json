@@ -1,13 +1,13 @@
 {
   "info": {
-    "name": "SI-BVET Temporary API Contract",
-    "description": "Temporary API contract for frontend-backend communication. Source of truth is current Gin routes and handlers.",
+    "name": "SI-BVET API Contract",
+    "description": "API contract for frontend-backend communication. Source of truth is current Gin routes and handlers.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:8080/api"
+      "value": "https://sibvet-lampung-1078527552652.asia-southeast2.run.app/api"
     },
     {
       "key": "token_superadmin",
