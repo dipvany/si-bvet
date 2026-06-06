@@ -33,6 +33,7 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 		// Migrate all models
 		err = db.DB.AutoMigrate(
 			&models.User{},
+			&models.Customer{},
 			&models.Submission{},
 			&models.Sample{},
 			&models.TestService{},
@@ -47,6 +48,44 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 	})
 
 	ginkgo.Describe("Submission Query with Preload Relations", func() {
+		ginkgo.It("should include user customer profile in GetAllSubmissions", func() {
+			user := &models.User{
+				Email:    "customer-profile@example.com",
+				FullName: "Customer Profile",
+				Phone:    "081111111111",
+				Role:     "customer",
+			}
+			err := db.DB.Create(user).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			customer := &models.Customer{
+				UserID:       user.ID,
+				MembershipNo: "MEM-123",
+				Province:     "Jawa Barat",
+				City:         "Bandung",
+			}
+			err = db.DB.Create(customer).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			submission := &models.Submission{
+				UserID:        user.ID,
+				NoTicket:      "TKT-CUST-001",
+				TypeService:   "Blood Test",
+				PurposeOfTest: "Diagnosis",
+				SamplesCount:  1,
+				ProcessStatus: "pending_verification",
+			}
+			err = db.DB.Create(submission).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			loaded, err := GetAllSubmissions()
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(loaded).To(gomega.HaveLen(1))
+			gomega.Expect(loaded[0].User.Customer).NotTo(gomega.BeNil())
+			gomega.Expect(loaded[0].User.Customer.MembershipNo).To(gomega.Equal("MEM-123"))
+			gomega.Expect(loaded[0].User.Customer.City).To(gomega.Equal("Bandung"))
+		})
+
 		ginkgo.It("should preload user relation from submission", func() {
 			// Create user
 			user := &models.User{

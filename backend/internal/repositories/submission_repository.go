@@ -97,6 +97,7 @@ func GetAllSubmissions() ([]models.Submission, error) {
 
 	err := db.DB.
 		Preload("User").
+		Preload("User.Customer").
 		Order("id desc").
 		Find(&submissions).Error
 
@@ -128,6 +129,7 @@ func GetSubmissionByIDWithRelations(id uint) (models.Submission, error) {
 
 	err := db.DB.
 		Preload("User").
+		Preload("User.Customer").
 		Preload("Samples.TestRequests.TestService").
 		Preload("Billing").
 		Preload("LHU").
@@ -140,6 +142,7 @@ func GetSubmissionByIDWithUser(id uint) (models.Submission, error) {
 	var submission models.Submission
 	err := db.DB.
 		Preload("User").
+		Preload("User.Customer").
 		First(&submission, id).Error
 
 	return submission, err
@@ -161,6 +164,7 @@ func GetSubmissionsForExport(ids []uint, exportAll bool) ([]models.Submission, e
 
 	query := db.DB.
 		Preload("User").
+		Preload("User.Customer").
 		Preload("Samples.TestRequests.TestService").
 		Preload("Billing")
 
