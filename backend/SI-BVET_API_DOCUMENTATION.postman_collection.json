@@ -1,0 +1,925 @@
+{
+  "info": {
+    "name": "SI-BVET API Documentation",
+    "description": "Postman collection dokumentasi API SI-BVET Lampung. Gunakan `access_token` untuk Bearer token sesuai role yang sedang diuji.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "token_superadmin",
+      "value": ""
+    },
+    {
+      "key": "token_admin",
+      "value": ""
+    },
+    {
+      "key": "token_customer",
+      "value": ""
+    },
+    {
+      "key": "one_time_login_user_id",
+      "value": "1"
+    },
+    {
+      "key": "one_time_login_token",
+      "value": "one-time-token"
+    },
+    {
+      "key": "one_time_login_expires",
+      "value": "1710000000"
+    },
+    {
+      "key": "one_time_login_signature",
+      "value": "signature"
+    },
+    {
+      "key": "password_reset_user_id",
+      "value": "1"
+    },
+    {
+      "key": "password_reset_token",
+      "value": "reset-token"
+    },
+    {
+      "key": "password_reset_expires",
+      "value": "1710000000"
+    },
+    {
+      "key": "password_reset_signature",
+      "value": "signature"
+    },
+    {
+      "key": "role_filter",
+      "value": "admin"
+    },
+    {
+      "key": "user_id",
+      "value": "1"
+    },
+    {
+      "key": "submission_id",
+      "value": "1"
+    },
+    {
+      "key": "test_service_id",
+      "value": "1"
+    },
+    {
+      "key": "complaint_id",
+      "value": "1"
+    },
+    {
+      "key": "notification_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Public Auth",
+      "item": [
+        {
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fullname", "value": "PT Maju Sehat", "type": "text" },
+                {
+                  "key": "email",
+                  "value": "customer@mail.com",
+                  "type": "text"
+                },
+                { "key": "phone", "value": "08123456789", "type": "text" },
+                {
+                  "key": "institution",
+                  "value": "PT Maju Sehat",
+                  "type": "text"
+                },
+                { "key": "password", "value": "secret123", "type": "text" },
+                { "key": "registration_doc", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/auth/register",
+            "description": "Registrasi customer baru. Field file wajib: registration_doc."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@mail.com\",\n  \"password\": \"secret123\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "Login user dan ambil JWT token. Simpan hasil token ke `access_token` secara manual atau lewat test script Postman."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@mail.com\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/auth/forgot-password",
+            "description": "Meminta link reset password ke email terdaftar."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newsecret123\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/auth/reset-password/{{password_reset_user_id}}/{{password_reset_token}}?expires={{password_reset_expires}}&signature={{password_reset_signature}}",
+            "description": "Reset password memakai parameter path id/token dan query expires/signature."
+          }
+        },
+        {
+          "name": "Verify Email Login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/verify-email/{{one_time_login_user_id}}/{{one_time_login_token}}?expires={{one_time_login_expires}}&signature={{one_time_login_signature}}",
+            "description": "Verifikasi one-time login link dan ambil JWT token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Common Protected",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/profile",
+            "description": "Ambil profile user login."
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Divany Pangestika\",\n  \"phone\": \"08123456789\",\n  \"occupation\": \"Mahasiswa\",\n  \"province\": \"Lampung\",\n  \"city\": \"Bandar Lampung\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/profile",
+            "description": "Update profile sesuai role aktif. Field yang dikirim boleh parsial."
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/dashboard",
+            "description": "Dashboard sederhana sesuai role login."
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"secret123\",\n  \"new_password\": \"newsecret123\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/auth/change-password",
+            "description": "Ganti password user yang sedang login."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Superadmin",
+      "item": [
+        {
+          "name": "Create Admin Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Admin Baru\",\n  \"email\": \"admin.baru@mail.com\",\n  \"phone\": \"08123456780\",\n  \"password\": \"secret123\",\n  \"position\": \"Staf\",\n  \"unit_lab\": \"Lab A\",\n  \"employee_no\": \"EMP-001\",\n  \"role\": \"admin\",\n  \"is_verified\": true\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/superadmin/admin-accounts",
+            "description": "Buat akun admin atau superadmin."
+          }
+        },
+        {
+          "name": "Get Admin Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_superadmin}}" }
+            ],
+            "url": "{{base_url}}/superadmin/admin-accounts?role={{role_filter}}",
+            "description": "Ambil daftar akun admin/superadmin, opsional filter role=admin atau role=superadmin."
+          }
+        },
+        {
+          "name": "Update Admin Account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Admin Diupdate\",\n  \"email\": \"admin.update@mail.com\",\n  \"phone\": \"08123456781\",\n  \"position\": \"Koordinator\",\n  \"unit_lab\": \"Lab B\",\n  \"employee_no\": \"EMP-002\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/superadmin/admin-accounts/{{user_id}}",
+            "description": "Update data akun managed account."
+          }
+        },
+        {
+          "name": "Delete Admin Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_superadmin}}" }
+            ],
+            "url": "{{base_url}}/superadmin/admin-accounts/{{user_id}}",
+            "description": "Hapus akun admin/superadmin."
+          }
+        },
+        {
+          "name": "Create Test Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_name\": \"PCR Swab\",\n  \"unit_lab\": \"Molekuler\",\n  \"target\": \"Virus\",\n  \"method\": \"PCR\",\n  \"result_type\": \"Kualitatif\",\n  \"test_reference\": \"Ref-001\",\n  \"price\": 250000,\n  \"duration\": \"3 hari\",\n  \"description\": \"Contoh layanan uji\",\n  \"sample_reqmt\": \"Swab\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/superadmin/test-services",
+            "description": "Tambah master test service baru."
+          }
+        },
+        {
+          "name": "Import Test Services",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_superadmin}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/superadmin/test-services/import",
+            "description": "Import test service dari file Excel. Field file wajib: file."
+          }
+        },
+        {
+          "name": "Upload Sample Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_superadmin}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/superadmin/submissions/samples/template",
+            "description": "Upload template sample submission. Field file wajib: file."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Admin",
+      "item": [
+        {
+          "name": "Get Unverified Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/customers/unverified",
+            "description": "Daftar customer yang belum diverifikasi."
+          }
+        },
+        {
+          "name": "Verify Customer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/customers/{{user_id}}/verify",
+            "description": "Verifikasi customer berdasarkan ID user."
+          }
+        },
+        {
+          "name": "Reject Customer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/customers/{{user_id}}/reject",
+            "description": "Tolak verifikasi customer dan hapus datanya."
+          }
+        },
+        {
+          "name": "Get All Submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/submissions",
+            "description": "Daftar semua submission."
+          }
+        },
+        {
+          "name": "Approve Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/approve",
+            "description": "Setujui submission tertentu."
+          }
+        },
+        {
+          "name": "Reject Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/reject",
+            "description": "Tolak submission tertentu."
+          }
+        },
+        {
+          "name": "Export Submissions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"export_all\": true,\n  \"submission_ids\": [1, 2, 3]\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/admin/submissions/export",
+            "description": "Export submission ke Excel. Set export_all=true untuk semua data."
+          }
+        },
+        {
+          "name": "Get All Test Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/test-services",
+            "description": "Daftar master test service."
+          }
+        },
+        {
+          "name": "Get Test Service By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/test-services/{{test_service_id}}",
+            "description": "Ambil detail test service by ID."
+          }
+        },
+        {
+          "name": "Update Test Service",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_name\": \"PCR Swab Updated\",\n  \"unit_lab\": \"Molekuler\",\n  \"target\": \"Virus\",\n  \"method\": \"PCR\",\n  \"result_type\": \"Kualitatif\",\n  \"test_reference\": \"Ref-002\",\n  \"price\": 300000,\n  \"duration\": \"2 hari\",\n  \"description\": \"Versi update\",\n  \"sample_reqmt\": \"Swab\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/admin/test-services/{{test_service_id}}",
+            "description": "Update test service by ID."
+          }
+        },
+        {
+          "name": "Delete Test Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/test-services/{{test_service_id}}",
+            "description": "Hapus test service by ID."
+          }
+        },
+        {
+          "name": "Create Billing",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ebilling_code\": \"EB-001\",\n  \"total_amount\": 250000,\n  \"no_registration\": \"REG-001\",\n  \"no_epi\": \"EPI-001\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/admin/billings/{{submission_id}}",
+            "description": "Buat billing untuk submission tertentu."
+          }
+        },
+        {
+          "name": "Get Billing By Submission ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/billings/{{submission_id}}",
+            "description": "Ambil billing berdasarkan submission ID."
+          }
+        },
+        {
+          "name": "Update Billing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ebilling_code\": \"EB-002\",\n  \"total_amount\": 300000,\n  \"no_registration\": \"REG-001\",\n  \"no_epi\": \"EPI-001\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/admin/billings/{{submission_id}}",
+            "description": "Update billing berdasarkan submission ID."
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/billings/{{submission_id}}/verify",
+            "description": "Verifikasi pembayaran billing."
+          }
+        },
+        {
+          "name": "Reject Payment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/billings/{{submission_id}}/reject",
+            "description": "Tolak pembayaran billing."
+          }
+        },
+        {
+          "name": "Get LHU",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/lhu",
+            "description": "Ambil metadata LHU untuk submission tertentu."
+          }
+        },
+        {
+          "name": "Upload LHU",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "no_lhu", "value": "LHU-001", "type": "text" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/admin/submissions/{{submission_id}}/lhu",
+            "description": "Upload file LHU. Field file wajib: file, dan no_lhu opsional."
+          }
+        },
+        {
+          "name": "Get All Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/feedbacks",
+            "description": "Daftar semua feedback."
+          }
+        },
+        {
+          "name": "Get All Complaints",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/complaints",
+            "description": "Daftar semua complaint."
+          }
+        },
+        {
+          "name": "Respond Complaint",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"admin_response\": \"Keluhan sudah kami proses.\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/admin/complaints/{{complaint_id}}/respond",
+            "description": "Berikan respon untuk complaint user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Customer",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/notifications",
+            "description": "Daftar notifikasi milik customer."
+          }
+        },
+        {
+          "name": "Mark Notification As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/notifications/{{notification_id}}/read",
+            "description": "Tandai satu notifikasi sebagai terbaca."
+          }
+        },
+        {
+          "name": "Mark All Notifications As Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/notifications/read-all",
+            "description": "Tandai semua notifikasi sebagai terbaca."
+          }
+        },
+        {
+          "name": "Create Submission",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"no_registration\": \"REG-2026-001\",\n  \"no_epi\": \"EPI-2026-001\",\n  \"no_ticket\": \"TCK-0001\",\n  \"type_service\": \"PCR\",\n  \"purpose_of_test\": \"Screening\",\n  \"date_of_send\": \"2026-06-01\",\n  \"date_of_receive\": \"2026-06-02\",\n  \"sample_taker\": \"Dr. A\",\n  \"id_isikhnas\": \"123456\",\n  \"diagnosis_required\": true,\n  \"agenda_no\": \"AG-001\",\n  \"cust_letter_no\": \"CL-001\",\n  \"courier_name\": \"JNE\",\n  \"courier_contact\": \"08123456789\",\n  \"notes\": \"Dokumen contoh\",\n  \"samples_count\": 1,\n  \"process_status\": \"draft\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"CUST-001\",\n      \"sample_model\": \"Serum\",\n      \"total_sample\": 1,\n      \"tests\": [\n        { \"test_service_id\": 1 }\n      ]\n    }\n  ]\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/customer/submissions",
+            "description": "Buat submission baru. Endpoint ini juga menerima multipart/form-data dengan field file untuk bulk import template."
+          }
+        },
+        {
+          "name": "Download Sample Template",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/submissions/samples/template",
+            "description": "Download template sample submission."
+          }
+        },
+        {
+          "name": "Import Sample Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/samples/import",
+            "description": "Import sample template untuk submission tertentu. Field file wajib: file."
+          }
+        },
+        {
+          "name": "Get My Submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/submissions/my",
+            "description": "Daftar submission milik customer login."
+          }
+        },
+        {
+          "name": "Update Submission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Update catatan submission\",\n  \"process_status\": \"draft\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}",
+            "description": "Update submission milik customer login."
+          }
+        },
+        {
+          "name": "Get Submission Tracking",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/tracking",
+            "description": "Timeline tracking submission."
+          }
+        },
+        {
+          "name": "Get Customer Test Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/test-services",
+            "description": "Daftar test service untuk customer."
+          }
+        },
+        {
+          "name": "Get Customer Test Service By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/test-services/{{test_service_id}}",
+            "description": "Detail test service untuk customer."
+          }
+        },
+        {
+          "name": "Get Billing By Submission ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/billings/{{submission_id}}",
+            "description": "Ambil billing customer berdasarkan submission ID."
+          }
+        },
+        {
+          "name": "Upload Billing Proof",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "proof", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/customer/billings/{{submission_id}}/proof",
+            "description": "Upload bukti pembayaran. Field file wajib: proof."
+          }
+        },
+        {
+          "name": "Get LHU",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/lhu",
+            "description": "Ambil metadata LHU milik submission customer."
+          }
+        },
+        {
+          "name": "Download LHU",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/submissions/{{submission_id}}/lhu/download",
+            "description": "Download file LHU."
+          }
+        },
+        {
+          "name": "Create Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comments\": \"Pelayanan sangat baik\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/customer/feedbacks",
+            "description": "Buat feedback dari customer login."
+          }
+        },
+        {
+          "name": "Get My Feedbacks",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/feedbacks",
+            "description": "Daftar feedback milik customer login."
+          }
+        },
+        {
+          "name": "Get My Complaints",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "url": "{{base_url}}/customer/complaints",
+            "description": "Daftar complaint milik customer login."
+          }
+        },
+        {
+          "name": "Create Complaint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "subjects", "value": "Billing issue", "type": "text" },
+                {
+                  "key": "description",
+                  "value": "Tagihan belum masuk ke sistem",
+                  "type": "text"
+                },
+                {
+                  "key": "date_of_complaint",
+                  "value": "2026-06-06",
+                  "type": "text"
+                },
+                { "key": "attachment", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/customer/complaints",
+            "description": "Buat complaint. Field attachment opsional, field tanggal menerima format RFC3339 atau YYYY-MM-DD."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Utility",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/ping",
+            "description": "Health check sederhana untuk memastikan backend aktif."
+          }
+        }
+      ]
+    }
+  ]
+}
