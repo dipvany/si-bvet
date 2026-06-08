@@ -1,6 +1,14 @@
 .env
 /migrations/
 
+# Generated build and coverage artifacts
+main
+file.out
+coverage.out
+coverage.html
+coverage_parts/
+*.cover
+
 # Ignore API documentation files
 /docs/
  
