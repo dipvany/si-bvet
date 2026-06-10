@@ -15,6 +15,7 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
 
 # IDE
 .vscode/
@@ -26,3 +27,6 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# docker-compose override
+docker-compose.override.yml

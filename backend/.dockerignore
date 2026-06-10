@@ -1,0 +1,20 @@
+# Keep the build context small and avoid shipping local-only files into the image.
+
+.git
+.gitignore
+.vscode
+.idea
+
+# Local environment and secret files should never enter the container image.
+
+.env
+.env.\*
+
+# Ignore test, coverage, and other transient output.
+
+coverage\*
+_.out
+_.log
+tmp
+temp
+uploads
