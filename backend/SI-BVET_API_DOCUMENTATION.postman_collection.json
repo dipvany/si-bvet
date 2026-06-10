@@ -275,6 +275,17 @@
           }
         },
         {
+          "name": "Verify Admin Account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_superadmin}}" }
+            ],
+            "url": "{{base_url}}/superadmin/admin-accounts/{{user_id}}/verify",
+            "description": "Verifikasi akun admin atau superadmin berdasarkan user ID."
+          }
+        },
+        {
           "name": "Update Admin Account",
           "request": {
             "method": "PATCH",
