@@ -49,6 +49,21 @@ type MockSubmissionService struct {
 	importCalled      bool
 	importSubmissionID uint
 	importReaderSeen   bool
+
+	getByUserPaginatedCalled bool
+	getByUserPaginatedUserID uint
+	getByUserPaginatedPage   int
+	getByUserPaginatedPerPage int
+	getByUserPaginatedResp   []models.Submission
+	getByUserPaginatedTotal  int64
+	getByUserPaginatedErr    error
+
+	getAllPaginatedCalled bool
+	getAllPaginatedPage   int
+	getAllPaginatedPerPage int
+	getAllPaginatedResp   []models.Submission
+	getAllPaginatedTotal  int64
+	getAllPaginatedErr    error
 }
 
 var _ services.SubmissionServiceInterface = (*MockSubmissionService)(nil)
@@ -99,8 +114,23 @@ func (m *MockSubmissionService) GetByUser(userID uint) ([]models.Submission, err
 	return nil, nil
 }
 
+func (m *MockSubmissionService) GetByUserPaginated(userID uint, page, perPage int) ([]models.Submission, int64, error) {
+	m.getByUserPaginatedCalled = true
+	m.getByUserPaginatedUserID = userID
+	m.getByUserPaginatedPage = page
+	m.getByUserPaginatedPerPage = perPage
+	return m.getByUserPaginatedResp, m.getByUserPaginatedTotal, m.getByUserPaginatedErr
+}
+
 func (m *MockSubmissionService) GetAll() ([]models.Submission, error) {
 	return nil, nil
+}
+
+func (m *MockSubmissionService) GetAllPaginated(page, perPage int) ([]models.Submission, int64, error) {
+	m.getAllPaginatedCalled = true
+	m.getAllPaginatedPage = page
+	m.getAllPaginatedPerPage = perPage
+	return m.getAllPaginatedResp, m.getAllPaginatedTotal, m.getAllPaginatedErr
 }
 
 func (m *MockSubmissionService) Approve(id uint) error {

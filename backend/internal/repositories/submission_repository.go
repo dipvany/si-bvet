@@ -91,6 +91,25 @@ func GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
 	return submissions, err
 }
 
+func GetSubmissionsByUserPaginated(userID uint, page, perPage int) ([]models.Submission, int64, error) {
+	var submissions []models.Submission
+	var total int64
+
+	countQuery := db.DB.Model(&models.Submission{}).Where("user_id = ?", userID)
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := db.DB.
+		Where("user_id = ?", userID).
+		Order("id desc").Limit(perPage).
+		Offset(offset).
+		Find(&submissions).Error
+
+	return submissions, total, err
+}
+
 func GetAllSubmissions() ([]models.Submission, error) {
 
 	var submissions []models.Submission
@@ -104,7 +123,25 @@ func GetAllSubmissions() ([]models.Submission, error) {
 	return submissions, err
 }
 
-// update submission sebelum diapprove/reject
+func GetAllSubmissionsPaginated(page, perPage int) ([]models.Submission, int64, error) {
+	var submissions []models.Submission
+	var total int64
+
+	countQuery := db.DB.Model(&models.Submission{})
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := db.DB.
+		Preload("User").Preload("User.Customer").
+		Order("id desc").Limit(perPage).
+		Offset(offset).
+		Find(&submissions).Error
+
+	return submissions, total, err
+}
+
 func UpdateSubmission(id uint, data map[string]interface{}) error {
 	return db.DB.Model(&models.Submission{}).
 		Where("id = ?", id).

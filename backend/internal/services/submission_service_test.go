@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"bytes"
+	"fmt"
 	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
@@ -561,4 +562,127 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 		})
 	})
 
+	ginkgo.Describe("Pagination Queries", func() {
+		ginkgo.It("GetByUserPaginated should return total count and paginated submissions", func() {
+			user := &models.User{
+				Email:    "pagination-user@example.com",
+				FullName: "Pagination User",
+				Phone:    "081234567890",
+				Role:     "customer",
+			}
+			err := db.DB.Create(user).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			for i := 1; i <= 5; i++ {
+				submission := &models.Submission{
+					UserID:        user.ID,
+					NoTicket:      fmt.Sprintf("TKT-PAG-%03d", i),
+					TypeService:   "Blood Test",
+					PurposeOfTest: "Diagnosis",
+					SamplesCount:  1,
+					ProcessStatus: "pending_verification",
+				}
+				err := db.DB.Create(submission).Error
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			}
+
+			service := NewSubmissionService()
+			items, total, err := service.GetByUserPaginated(user.ID, 2, 2)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(total).To(gomega.Equal(int64(5)))
+			gomega.Expect(items).To(gomega.HaveLen(2))
+			gomega.Expect(items[0].NoTicket).To(gomega.Equal("TKT-PAG-003"))
+			gomega.Expect(items[1].NoTicket).To(gomega.Equal("TKT-PAG-002"))
+		})
+
+		ginkgo.It("GetAllPaginated should return total count and paginated submissions", func() {
+			user := &models.User{
+				Email:    "admin-pagination@example.com",
+				FullName: "Admin Pagination",
+				Phone:    "081234567891",
+				Role:     "customer",
+			}
+			err := db.DB.Create(user).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			customer := &models.Customer{
+				UserID:       user.ID,
+				MembershipNo: "MEM-PAG-001",
+				Province:     "Lampung",
+				City:         "Bandar Lampung",
+			}
+			err = db.DB.Create(customer).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			for i := 1; i <= 4; i++ {
+				submission := &models.Submission{
+					UserID:        user.ID,
+					NoTicket:      fmt.Sprintf("TKT-ALL-%03d", i),
+					TypeService:   "Blood Test",
+					PurposeOfTest: "Screening",
+					SamplesCount:  1,
+					ProcessStatus: "done",
+				}
+				err := db.DB.Create(submission).Error
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			}
+
+			service := NewSubmissionService()
+			items, total, err := service.GetAllPaginated(1, 3)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(total).To(gomega.Equal(int64(4)))
+			gomega.Expect(items).To(gomega.HaveLen(3))
+			gomega.Expect(items[0].NoTicket).To(gomega.Equal("TKT-ALL-004"))
+			gomega.Expect(items[1].NoTicket).To(gomega.Equal("TKT-ALL-003"))
+			gomega.Expect(items[2].NoTicket).To(gomega.Equal("TKT-ALL-002"))
+		})
+	})
+
+	ginkgo.Describe("Partial Update Scenarios", func() {
+		ginkgo.It("should update specific fields without affecting others", func() {
+			// Arrange: insert a TestService
+			svc := models.TestService{ID: 100, TestName: "Test Service", Price: 150000}
+			gomega.Expect(db.DB.Create(&svc).Error).ToNot(gomega.HaveOccurred())
+
+			submission := &models.Submission{
+				UserID:        1,
+				NoTicket:      "TCK-update-1",
+				TypeService:   "old-service",
+				PurposeOfTest: "old-purpose",
+				SampleTaker:   "old-taker",
+				Notes:         "old-notes",
+				SamplesCount:  1,
+				ProcessStatus: "pending_verification",
+			}
+			gomega.Expect(db.DB.Create(&submission).Error).ToNot(gomega.HaveOccurred())
+
+			submission.UserID = 2
+			submission.NoTicket = "TCK-update-2"
+			submission.TypeService = "new-service"
+			submission.PurposeOfTest = "new-purpose"
+			submission.SampleTaker = "new-taker"
+			submission.Notes = "new-notes"
+			submission.SamplesCount = 2
+			submission.ProcessStatus = "pending_verification"
+
+			err := db.DB.Create(&submission).Error
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			var subs []models.Submission
+			gomega.Expect(db.DB.Find(&subs).Error).ToNot(gomega.HaveOccurred())
+			gomega.Expect(len(subs)).To(gomega.BeNumerically(">=", 1))
+			gomega.Expect(subs[0].NoTicket).ToNot(gomega.BeEmpty())
+			gomega.Expect(subs[0].NoTicket).To(gomega.HavePrefix("TCK-"))
+
+			var samples []models.Sample
+			gomega.Expect(db.DB.Find(&samples).Error).ToNot(gomega.HaveOccurred())
+			gomega.Expect(len(samples)).To(gomega.BeNumerically(">=", 1))
+			gomega.Expect(samples[0].SpecimenType).To(gomega.Equal("swab"))
+
+			var tests []models.TestRequest
+			gomega.Expect(db.DB.Find(&tests).Error).ToNot(gomega.HaveOccurred())
+			gomega.Expect(len(tests)).To(gomega.BeNumerically(">=", 1))
+			gomega.Expect(tests[0].PriceAtMoment).To(gomega.Equal(svc.Price))
+		})
+	})
 })

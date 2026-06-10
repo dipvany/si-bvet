@@ -86,6 +86,78 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 			gomega.Expect(loaded[0].User.Customer.City).To(gomega.Equal("Bandung"))
 		})
 
+		ginkgo.It("should paginate submissions by user and return correct total", func() {
+			user := &models.User{
+				Email:    "paginate-user@example.com",
+				FullName: "Paginate User",
+				Phone:    "081200000001",
+				Role:     "customer",
+			}
+			err := db.DB.Create(user).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			for i := 1; i <= 5; i++ {
+				submission := &models.Submission{
+					UserID:        user.ID,
+					NoTicket:      fmt.Sprintf("TKT-U-%03d", i),
+					TypeService:   "PCR",
+					PurposeOfTest: "Check",
+					SamplesCount:  1,
+					ProcessStatus: "pending_verification",
+				}
+				err = db.DB.Create(submission).Error
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			}
+
+			items, total, err := GetSubmissionsByUserPaginated(user.ID, 2, 2)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(total).To(gomega.Equal(int64(5)))
+			gomega.Expect(items).To(gomega.HaveLen(2))
+			gomega.Expect(items[0].NoTicket).To(gomega.Equal("TKT-U-003"))
+			gomega.Expect(items[1].NoTicket).To(gomega.Equal("TKT-U-002"))
+		})
+
+		ginkgo.It("should paginate all submissions with user preload and correct total", func() {
+			user := &models.User{
+				Email:    "paginate-all@example.com",
+				FullName: "Paginate All",
+				Phone:    "081200000002",
+				Role:     "customer",
+			}
+			err := db.DB.Create(user).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			customer := &models.Customer{
+				UserID:       user.ID,
+				MembershipNo: "MEM-PAG-ALL",
+				Province:     "Lampung",
+				City:         "Metro",
+			}
+			err = db.DB.Create(customer).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			for i := 1; i <= 4; i++ {
+				submission := &models.Submission{
+					UserID:        user.ID,
+					NoTicket:      fmt.Sprintf("TKT-A-%03d", i),
+					TypeService:   "PCR",
+					PurposeOfTest: "Check",
+					SamplesCount:  1,
+					ProcessStatus: "done",
+				}
+				err = db.DB.Create(submission).Error
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			}
+
+			items, total, err := GetAllSubmissionsPaginated(1, 3)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(total).To(gomega.Equal(int64(4)))
+			gomega.Expect(items).To(gomega.HaveLen(3))
+			gomega.Expect(items[0].NoTicket).To(gomega.Equal("TKT-A-004"))
+			gomega.Expect(items[0].User.Customer).NotTo(gomega.BeNil())
+			gomega.Expect(items[0].User.Customer.MembershipNo).To(gomega.Equal("MEM-PAG-ALL"))
+		})
+
 		ginkgo.It("should preload user relation from submission", func() {
 			// Create user
 			user := &models.User{

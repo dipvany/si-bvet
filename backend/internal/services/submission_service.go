@@ -18,10 +18,13 @@ import (
 	"gorm.io/gorm"
 )
 
+
 type SubmissionServiceInterface interface {
 	Create(userID uint, req dto.SubmissionRequest) (models.Submission, error)
 	GetByUser(userID uint) ([]models.Submission, error)
+	GetByUserPaginated(userID uint, page int, perPage int) ([]models.Submission, int64, error)
 	GetAll() ([]models.Submission, error)
+	GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error)
 	Approve(id uint) error
 	Reject(id uint) error
 	Update(submissionID uint, userID uint, req dto.UpdateSubmissionRequest) error
@@ -56,8 +59,16 @@ func (s *SubmissionService) GetByUser(userID uint) ([]models.Submission, error) 
 	return GetSubmissionsByUser(userID)
 }
 
+func (s *SubmissionService) GetByUserPaginated(userID uint, page int, perPage int) ([]models.Submission, int64, error) {
+	return repositories.GetSubmissionsByUserPaginated(userID, page, perPage)
+}
+
 func (s *SubmissionService) GetAll() ([]models.Submission, error) {
 	return GetAllSubmissions()
+}
+
+func (s *SubmissionService) GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error) {
+	return repositories.GetAllSubmissionsPaginated(page, perPage)
 }
 
 func (s *SubmissionService) Approve(id uint) error {

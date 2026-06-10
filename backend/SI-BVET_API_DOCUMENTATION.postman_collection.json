@@ -415,9 +415,27 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{token_admin}}" }
             ],
-            "url": "{{base_url}}/admin/submissions",
-            "description": "Daftar semua submission."
-          }
+            "url": "{{base_url}}/admin/submissions?page=1&per_page=20",
+            "description": "Ambil daftar submission untuk admin dengan pagination. Query params: page default 1, per_page default 20, maksimum disarankan 100. Response berisi data dan meta pagination."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+                ],
+                "url": "{{base_url}}/admin/submissions?page=1&per_page=20"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Submissions retrieved successfully\",\n  \"data\": {\n    \"data\": [\n      {\n        \"id\": 12,\n        \"no_ticket\": \"TCK-2026-0012\",\n        \"user_id\": 5,\n        \"type_service\": \"PCR\",\n        \"purpose_of_test\": \"Screening\",\n        \"samples_count\": 2,\n        \"process_status\": \"pending_verification\"\n      },\n      {\n        \"id\": 11,\n        \"no_ticket\": \"TCK-2026-0011\",\n        \"user_id\": 4,\n        \"type_service\": \"ELISA\",\n        \"purpose_of_test\": \"Monitoring\",\n        \"samples_count\": 1,\n        \"process_status\": \"done\"\n      }\n    ],\n    \"meta\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 52,\n      \"total_pages\": 3\n    }\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Approve Submission",
@@ -743,9 +761,30 @@
             "header": [
               { "key": "Authorization", "value": "Bearer {{token_customer}}" }
             ],
-            "url": "{{base_url}}/customer/submissions/my",
-            "description": "Daftar submission milik customer login."
-          }
+            "url": "{{base_url}}/customer/submissions/my?page=1&per_page=20",
+            "description": "Ambil daftar submission milik customer login dengan pagination. Query params: page default 1, per_page default 20, maksimum disarankan 100. Response berisi data dan meta pagination."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token_customer}}"
+                  }
+                ],
+                "url": "{{base_url}}/customer/submissions/my?page=1&per_page=20"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"message\": \"Submissions retrieved successfully\",\n  \"data\": {\n    \"data\": [\n      {\n        \"id\": 8,\n        \"no_ticket\": \"TCK-2026-0008\",\n        \"user_id\": 9,\n        \"type_service\": \"PCR\",\n        \"purpose_of_test\": \"Check up\",\n        \"samples_count\": 3,\n        \"process_status\": \"awaiting_payment\"\n      },\n      {\n        \"id\": 7,\n        \"no_ticket\": \"TCK-2026-0007\",\n        \"user_id\": 9,\n        \"type_service\": \"Rapid Test\",\n        \"purpose_of_test\": \"Screening\",\n        \"samples_count\": 1,\n        \"process_status\": \"processed\"\n      }\n    ],\n    \"meta\": {\n      \"page\": 1,\n      \"per_page\": 20,\n      \"total\": 8,\n      \"total_pages\": 1\n    }\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Update Submission",
