@@ -7,6 +7,7 @@ import (
 	"si-bvet/internal/services"
 	"si-bvet/internal/storage"
 	"si-bvet/internal/utils"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -88,24 +89,41 @@ func (h *SubmissionHandler) GetMySubmissions(c *gin.Context) {
 		return
 	}
 
-	submissions, err := h.Service.GetByUser(userID)
+	page, perPage, err := parsePaginationParams(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	submissions, total, err := h.Service.GetByUserPaginated(userID, page, perPage)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, submissions)
+	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", gin.H{
+		"data": submissions,
+		"meta": buildPaginationMeta(page, perPage, total),
+	})
 }
 
 func (h *SubmissionHandler) GetAllSubmissions(c *gin.Context) {
+	page, perPage, err := parsePaginationParams(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
-	submissions, err := h.Service.GetAll()
+	submissions, total, err := h.Service.GetAllPaginated(page, perPage)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", submissions)
+	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", gin.H{
+		"data": submissions,
+		"meta": buildPaginationMeta(page, perPage, total),
+	})
 }
 
 func (h *SubmissionHandler) ApproveSubmission(c *gin.Context) {
@@ -335,4 +353,50 @@ func (h *SubmissionHandler) ImportSampleTemplate(c *gin.Context) {
 		"message": fmt.Sprintf("Successfully parsed %d sample rows", result.TotalSamples),
 		"data":    result,
 	})
+}
+
+func parsePaginationParams(c *gin.Context) (int, int, error) {
+	page := 1
+	perPage := 25
+
+	if rawPage := c.Query("page"); rawPage != "" {
+		parsedPage, err := strconv.Atoi(rawPage)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid page parameter")
+		}
+		page = parsedPage
+	}
+	if rawPerPage := c.Query("per_page"); rawPerPage != "" {
+		parsedPerPage, err := strconv.Atoi(rawPerPage)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid per_page parameter")
+		}
+		perPage = parsedPerPage
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 25
+	}
+	if perPage > 100 {
+		perPage = 100
+	}
+
+	return page, perPage, nil
+}
+
+func buildPaginationMeta(page, perPage int, total int64) gin.H {
+	totalPages := int64(0)
+	if perPage > 0 {
+		totalPages = (total + int64(perPage) - 1) / int64(perPage)
+	}
+
+	return gin.H{
+		"page":        page,
+		"per_page":    perPage,
+		"total":       total,
+		"total_pages": totalPages,
+	}
 }
