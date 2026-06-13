@@ -10,7 +10,7 @@ type Sample struct {
 	SpecimenGroup  string     `json:"specimen_group" gorm:"column:specimen_group"`
 	SpecimenType   string     `json:"specimen_type" gorm:"column:specimen_type"`
 	Species        string     `json:"species" gorm:"column:species"`
-	Batch          string     `json:"batch" gorm:"column:batch"`
+	// Batch          string     `json:"batch" gorm:"column:batch"`
 	Preservative   string     `json:"preservative" gorm:"column:preservative"`
 	Packaging      string     `json:"packaging" gorm:"column:packaging"`
 	ProductionDate *time.Time `json:"production_date" gorm:"column:production_date"`
@@ -20,8 +20,8 @@ type Sample struct {
 	UnitAge        string     `json:"unit_age" gorm:"column:unit_age"`
 	Owner          string     `json:"owner" gorm:"column:owner"`
 	TestType       string     `json:"test_type" gorm:"column:test_type"`
-	LocationType   string     `json:"location_type" gorm:"column:location_type"`
-	LocationSmpl   string     `json:"location_smpl" gorm:"column:location_smpl"`
+	// LocationType   string     `json:"location_type" gorm:"column:location_type"`
+	// LocationSmpl   string     `json:"location_smpl" gorm:"column:location_smpl"`
 	IsVaccinated   string     `json:"is_vaccinated" gorm:"column:is_vaccinated"`
 
 	Volume      string `json:"volume" gorm:"column:volume"`

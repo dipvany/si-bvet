@@ -275,7 +275,6 @@ func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.Sampl
 			SpecimenGroup:  sampleReq.SpecimenGroup,
 			SpecimenType:   sampleReq.SpecimenType,
 			Species:        sampleReq.Species,
-			Batch:          sampleReq.Batch,
 			Preservative:   sampleReq.Preservative,
 			Packaging:      sampleReq.Packaging,
 			ProductionDate: productionDate,
@@ -285,10 +284,8 @@ func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.Sampl
 			UnitAge:        sampleReq.UnitAge,
 			Owner:          sampleReq.Owner,
 			TestType:       sampleReq.TestType,
-			LocationType:   sampleReq.LocationType,
 			Volume:         sampleReq.Volume,
 			Condition:      sampleReq.Condition,
-			LocationSmpl:   sampleReq.LocationSmpl,
 			IsVaccinated:   sampleReq.IsVaccinated,
 			TotalSample:    int64(sampleReq.TotalSample),
 		}
@@ -514,23 +511,20 @@ func ExportSubmissionsExcel(
 			f.SetCellValue("Samples", fmt.Sprintf("D%d", row), sample.SpecimenGroup)
 			f.SetCellValue("Samples", fmt.Sprintf("E%d", row), sample.SpecimenType)
 			f.SetCellValue("Samples", fmt.Sprintf("F%d", row), sample.Species)
-			f.SetCellValue("Samples", fmt.Sprintf("G%d", row), sample.Batch)
-			f.SetCellValue("Samples", fmt.Sprintf("H%d", row), sample.Preservative)
-			f.SetCellValue("Samples", fmt.Sprintf("I%d", row), sample.Packaging)
+			f.SetCellValue("Samples", fmt.Sprintf("G%d", row), sample.Preservative)
+			f.SetCellValue("Samples", fmt.Sprintf("H%d", row), sample.Packaging)
 			if sample.ProductionDate != nil {
-				f.SetCellValue("Samples", fmt.Sprintf("J%d", row), sample.ProductionDate.Format("2006-01-02"))
+				f.SetCellValue("Samples", fmt.Sprintf("I%d", row), sample.ProductionDate.Format("2006-01-02"))
 			}
 			if sample.ExpiredDate != nil {
-				f.SetCellValue("Samples", fmt.Sprintf("K%d", row), sample.ExpiredDate.Format("2006-01-02"))
+				f.SetCellValue("Samples", fmt.Sprintf("J%d", row), sample.ExpiredDate.Format("2006-01-02"))
 			}
-			f.SetCellValue("Samples", fmt.Sprintf("L%d", row), sample.Sex)
-			f.SetCellValue("Samples", fmt.Sprintf("M%d", row), sample.Age)
-			f.SetCellValue("Samples", fmt.Sprintf("N%d", row), sample.UnitAge)
-			f.SetCellValue("Samples", fmt.Sprintf("O%d", row), sample.Owner)
-			f.SetCellValue("Samples", fmt.Sprintf("P%d", row), sample.TestType)
-			f.SetCellValue("Samples", fmt.Sprintf("Q%d", row), sample.LocationType)
-			f.SetCellValue("Samples", fmt.Sprintf("R%d", row), sample.LocationSmpl)
-			f.SetCellValue("Samples", fmt.Sprintf("S%d", row), sample.IsVaccinated)
+			f.SetCellValue("Samples", fmt.Sprintf("K%d", row), sample.Sex)
+			f.SetCellValue("Samples", fmt.Sprintf("L%d", row), sample.Age)
+			f.SetCellValue("Samples", fmt.Sprintf("M%d", row), sample.UnitAge)
+			f.SetCellValue("Samples", fmt.Sprintf("N%d", row), sample.Owner)
+			f.SetCellValue("Samples", fmt.Sprintf("O%d", row), sample.TestType)
+			f.SetCellValue("Samples", fmt.Sprintf("R%d", row), sample.IsVaccinated)
 			f.SetCellValue("Samples", fmt.Sprintf("T%d", row), sample.Volume)
 			f.SetCellValue("Samples", fmt.Sprintf("U%d", row), sample.Condition)
 			f.SetCellValue("Samples", fmt.Sprintf("V%d", row), sample.TotalSample)
@@ -599,7 +593,6 @@ func GenerateSampleTemplateExcel() (*bytes.Buffer, error) {
 		"specimen_group",
 		"specimen_type",
 		"species",
-		"batch",
 		"preservative",
 		"packaging",
 		"production_date",
@@ -609,8 +602,6 @@ func GenerateSampleTemplateExcel() (*bytes.Buffer, error) {
 		"unit_age",
 		"owner",
 		"test_type",
-		"location_type",
-		"location_smpl",
 		"is_vaccinated",
 		"volume",
 		"condition",
@@ -701,7 +692,6 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 			SpecimenGroup:  getCellValueByHeader(row, headerMap, []string{"specimengroup", "specimen group", "kelompokspesimen"}),
 			SpecimenType:   getCellValueByHeader(row, headerMap, []string{"specimentype", "specimen", "jenisspesimen"}),
 			Species:        getCellValueByHeader(row, headerMap, []string{"species", "hewanspecies", "hewan species", "spesies"}),
-			Batch:          getCellValueByHeader(row, headerMap, []string{"batch"}),
 			Preservative:   getCellValueByHeader(row, headerMap, []string{"preservative", "pengawet"}),
 			Packaging:      getCellValueByHeader(row, headerMap, []string{"packaging", "kemasan"}),
 			ProductionDate: getCellValueByHeader(row, headerMap, []string{"productiondate", "tanggalproduksi"}),
@@ -710,8 +700,6 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 			UnitAge:        getCellValueByHeader(row, headerMap, []string{"unitage", "satuanumur"}),
 			Owner:          getCellValueByHeader(row, headerMap, []string{"owner", "pemilik", "pemilikihewan"}),
 			TestType:       getCellValueByHeader(row, headerMap, []string{"testtype", "test type", "jenis uji", "jenisuji", "tipepengujian"}),
-			LocationType:   getCellValueByHeader(row, headerMap, []string{"locationtype", "location type", "jenis lokasi", "jenislokasi", "tipelokasi"}),
-			LocationSmpl:   getCellValueByHeader(row, headerMap, []string{"locationsmpl", "location sample", "lokasi sampel", "lokasisampel"}),
 			IsVaccinated:   getCellValueByHeader(row, headerMap, []string{"isvaccinated", "is vaccinated", "telah divaksin", "vaksinasi"}),
 			Volume:         getCellValueByHeader(row, headerMap, []string{"volume"}),
 			Condition:      getCellValueByHeader(row, headerMap, []string{"condition", "kondisi"}),
@@ -790,7 +778,6 @@ func resolveSampleTemplateHeaderMap(rows [][]string) (map[string]int, int, error
 		{canonical: "specimengroup", aliases: []string{"specimengroup", "specimen group", "kelompokspesimen"}},
 		{canonical: "specimentype", aliases: []string{"specimentype", "specimen", "jenisspesimen"}},
 		{canonical: "species", aliases: []string{"species", "hewanspecies", "hewan species", "spesies"}},
-		{canonical: "batch", aliases: []string{"batch"}},
 		{canonical: "preservative", aliases: []string{"preservative", "pengawet"}},
 		{canonical: "packaging", aliases: []string{"packaging", "kemasan"}},
 		{canonical: "productiondate", aliases: []string{"productiondate", "production date", "tanggalproduksi"}},
@@ -800,8 +787,6 @@ func resolveSampleTemplateHeaderMap(rows [][]string) (map[string]int, int, error
 		{canonical: "unitage", aliases: []string{"unitage", "unit age", "satuanumur"}},
 		{canonical: "owner", aliases: []string{"owner", "pemilik", "pemilikihewan"}},
 		{canonical: "testtype", aliases: []string{"testtype", "test type", "jenis uji", "jenisuji", "tipepengujian"}},
-		{canonical: "locationtype", aliases: []string{"locationtype", "location type", "jenis lokasi", "jenislokasi", "tipelokasi"}},
-		{canonical: "locationsmpl", aliases: []string{"locationsmpl", "location sample", "lokasi sampel", "lokasisampel"}},
 		{canonical: "isvaccinated", aliases: []string{"isvaccinated", "is vaccinated", "telah divaksin", "vaksinasi"}},
 		{canonical: "volume", aliases: []string{"volume"}},
 		{canonical: "condition", aliases: []string{"condition", "kondisi"}},

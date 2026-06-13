@@ -3,6 +3,7 @@ module si-bvet
 go 1.25.0
 
 require (
+	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/storage v1.62.2
 	github.com/gin-contrib/cors v1.7.6
 	github.com/glebarez/sqlite v1.11.0
@@ -19,7 +20,6 @@ require (
 	cloud.google.com/go v0.123.0 // indirect
 	cloud.google.com/go/auth v0.19.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
-	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/iam v1.7.0 // indirect
 	cloud.google.com/go/monitoring v1.24.3 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.31.0 // indirect

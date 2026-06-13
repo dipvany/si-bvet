@@ -51,7 +51,6 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 						Age:            2,
 						Volume:         "5ml",
 						Condition:      "fresh",
-						LocationSmpl:   "clinic",
 						TotalSample:    1,
 						Tests:          []dto.TestInput{{TestServiceID: 1}},
 					},
@@ -98,7 +97,6 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 						Age:            1,
 						Volume:         "2ml",
 						Condition:      "fresh",
-						LocationSmpl:   "clinic",
 						TotalSample:    1,
 						Tests:          []dto.TestInput{{TestServiceID: 999}},
 					},
@@ -147,7 +145,6 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 				SampleModel:    "blood",
 				SpecimenType:   "swab",
 				Species:        "cat",
-				LocationSmpl:   "farm",
 				TotalSample:    1,
 			}
 			gomega.Expect(db.DB.Create(&oldSample).Error).ToNot(gomega.HaveOccurred())
@@ -170,7 +167,6 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 						SampleModel:    "mamalia",
 						SpecimenType:   "nasal swab",
 						Species:        "dog",
-						LocationSmpl:   "lab",
 						TotalSample:    2,
 						Tests:          []dto.TestInput{{TestServiceID: svcNew.ID}},
 					},
@@ -226,7 +222,6 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 				SampleCodeCust: "KEEP-1",
 				SampleModel:    "mamalia",
 				Species:        "goat",
-				LocationSmpl:   "field",
 				TotalSample:    1,
 			}
 			gomega.Expect(db.DB.Create(&sample).Error).ToNot(gomega.HaveOccurred())
@@ -249,7 +244,6 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 						SampleModel:    "swab",
 						SpecimenType:   "blood",
 						Species:        "dog",
-						LocationSmpl:   "lab",
 						TotalSample:    1,
 						Tests:          []dto.TestInput{{TestServiceID: 999999}},
 					},

@@ -5,31 +5,31 @@ type TestInput struct {
 }
 
 type SampleInput struct {
-	SampleCodeCust string      `json:"sample_code_cust" binding:"required"`
-	SampleModel    string      `json:"sample_model" binding:"required"`
-	SampleCodePool string      `json:"sample_code_pool"`
-	SpecimenGroup  string      `json:"specimen_group"`
-	SpecimenType   string      `json:"specimen_type"`
-	Species        string      `json:"species"`
-	Batch          string      `json:"batch"`
-	Preservative   string      `json:"preservative"`
-	Packaging      string      `json:"packaging"`
-	ProductionDate string      `json:"production_date"`
-	ExpiredDate    string      `json:"expired_date"`
-	Sex            string      `json:"sex"`
-	Age            float64     `json:"age"`
-	UnitAge        string      `json:"unit_age"`
-	Owner          string      `json:"owner"`
-	TestType       string      `json:"test_type"`
-	Sampling       string      `json:"sampling"`
-	SamplingInfra  string      `json:"sampling_infra"`
-	LocationType   string      `json:"location_type"`
-	LocationSmpl   string      `json:"location_smpl"`
-	IsVaccinated   string      `json:"is_vaccinated"`
-	Volume         string      `json:"volume"`
-	Condition      string      `json:"condition"`
-	TotalSample    int64       `json:"total_sample" binding:"required"`
-	Tests          []TestInput `json:"tests" binding:"required"`
+	SampleCodeCust string `json:"sample_code_cust" binding:"required"`
+	SampleModel    string `json:"sample_model" binding:"required"`
+	SampleCodePool string `json:"sample_code_pool"`
+	SpecimenGroup  string `json:"specimen_group"`
+	SpecimenType   string `json:"specimen_type"`
+	Species        string `json:"species"`
+	// Batch          string      `json:"batch"`
+	Preservative   string  `json:"preservative"`
+	Packaging      string  `json:"packaging"`
+	ProductionDate string  `json:"production_date"`
+	ExpiredDate    string  `json:"expired_date"`
+	Sex            string  `json:"sex"`
+	Age            float64 `json:"age"`
+	UnitAge        string  `json:"unit_age"`
+	Owner          string  `json:"owner"`
+	TestType       string  `json:"test_type"`
+	Sampling       string  `json:"sampling"`
+	SamplingInfra  string  `json:"sampling_infra"`
+	// LocationType   string      `json:"location_type"`
+	// LocationSmpl   string      `json:"location_smpl"`
+	IsVaccinated string      `json:"is_vaccinated"`
+	Volume       string      `json:"volume"`
+	Condition    string      `json:"condition"`
+	TotalSample  int64       `json:"total_sample" binding:"required"`
+	Tests        []TestInput `json:"tests" binding:"required"`
 }
 
 type SubmissionRequest struct {
