@@ -30,6 +30,8 @@ type SubmissionServiceInterface interface {
 	Update(submissionID uint, userID uint, req dto.UpdateSubmissionRequest) error
 	GetTrackingTimeline(submissionID uint, userID uint) (dto.SubmissionTrackingTimelineResponse, error)
 	GetSampleTemplate() (*bytes.Buffer, error)
+	GetSampleTemplateWithTestServices(testServiceIDs []uint) (*bytes.Buffer, error)
+	ApplyTestServicesToUploadedTemplate(templateBytes []byte, testServiceIDs []uint) (*bytes.Buffer, error) // NEW
 	GetUploadedSampleTemplate() (*models.SubmissionSampleTemplate, error)
 	SaveUploadedSampleTemplate(userID uint, filePath string, fileName string) error
 	ImportSamplesFromTemplate(submissionID uint, file io.Reader) (dto.SampleTemplateImportResponse, error)
@@ -89,6 +91,160 @@ func (s *SubmissionService) GetTrackingTimeline(submissionID uint, userID uint) 
 
 func (s *SubmissionService) GetSampleTemplate() (*bytes.Buffer, error) {
 	return GenerateSampleTemplateExcel()
+}
+
+func (s *SubmissionService) resolveOrderedTestServices(testServiceIDs []uint) ([]models.TestService, error) {
+    if len(testServiceIDs) == 0 {
+        return nil, nil
+    }
+
+    testServices, err := repositories.GetTestServicesByIDs(testServiceIDs)
+    if err != nil {
+        return nil, err
+    }
+
+    serviceMap := make(map[uint]models.TestService, len(testServices))
+    for _, service := range testServices {
+        serviceMap[service.ID] = service
+    }
+
+    orderedServices := make([]models.TestService, 0, len(testServiceIDs))
+    for _, id := range testServiceIDs {
+        service, ok := serviceMap[id]
+        if !ok {
+            return nil, fmt.Errorf("test service with id %d not found", id)
+        }
+        orderedServices = append(orderedServices, service)
+    }
+
+    return orderedServices, nil
+}
+
+func (s *SubmissionService) GetSampleTemplateWithTestServices(testServiceIDs []uint) (*bytes.Buffer, error) {
+	if len(testServiceIDs) == 0 {
+		return GenerateSampleTemplateExcel()
+	}
+
+	orderedServices, err := s.resolveOrderedTestServices(testServiceIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return GenerateSampleTemplateExcelWithTestServices(orderedServices)
+}
+
+func (s *SubmissionService) ApplyTestServicesToUploadedTemplate(templateBytes []byte, testServiceIDs []uint) (*bytes.Buffer, error) {
+    if len(templateBytes) == 0 {
+        return nil, errors.New("uploaded template is empty")
+    }
+
+    if len(testServiceIDs) == 0 {
+        return bytes.NewBuffer(templateBytes), nil
+    }
+
+    orderedServices, err := s.resolveOrderedTestServices(testServiceIDs)
+    if err != nil {
+        return nil, err
+    }
+
+    return InjectTestServiceDropdownIntoTemplate(templateBytes, orderedServices)
+}
+
+func InjectTestServiceDropdownIntoTemplate(templateBytes []byte, testServices []models.TestService) (*bytes.Buffer, error) {
+    if len(templateBytes) == 0 {
+        return nil, errors.New("template bytes are empty")
+    }
+    if len(testServices) == 0 {
+        return bytes.NewBuffer(templateBytes), nil
+    }
+
+    f, err := excelize.OpenReader(bytes.NewReader(templateBytes))
+    if err != nil {
+        return nil, errors.New("failed to read uploaded template excel")
+    }
+
+    sheetName, headerRowIdx, testServiceColIdx, err := findSampleTemplateSheetAndTestServiceColumn(f)
+    if err != nil {
+        return nil, err
+    }
+
+    const catalogSheet = "TestServiceCatalog"
+    sheetIdx, err := f.GetSheetIndex(catalogSheet)
+	if err != nil {
+		return nil, err
+	}
+	if sheetIdx == -1 {
+		if _, err := f.NewSheet(catalogSheet); err != nil {
+			return nil, err
+		}
+	}
+
+    f.SetCellValue(catalogSheet, "A1", "test_service_id")
+    f.SetCellValue(catalogSheet, "B1", "test_name")
+    f.SetCellValue(catalogSheet, "C1", "display_label")
+
+    for idx, service := range testServices {
+        row := idx + 2
+        label := fmt.Sprintf("%d - %s", service.ID, service.TestName)
+        f.SetCellValue(catalogSheet, fmt.Sprintf("A%d", row), service.ID)
+        f.SetCellValue(catalogSheet, fmt.Sprintf("B%d", row), service.TestName)
+        f.SetCellValue(catalogSheet, fmt.Sprintf("C%d", row), label)
+    }
+
+    if err := f.SetSheetVisible(catalogSheet, false, true); err != nil {
+        return nil, err
+    }
+
+	colName, err := excelize.ColumnNumberToName(testServiceColIdx + 1)
+    if err != nil {
+        return nil, err
+    }
+    startRow := headerRowIdx + 2
+    dvRange := fmt.Sprintf("%s%d:%s5000", colName, startRow, colName)
+
+    dv := excelize.NewDataValidation(true)
+    dv.Sqref = dvRange
+    dv.SetSqrefDropList(fmt.Sprintf("'%s'!$C$2:$C$%d", catalogSheet, len(testServices)+1))
+
+    if err := f.AddDataValidation(sheetName, dv); err != nil {
+        return nil, err
+    }
+
+    buf := new(bytes.Buffer)
+    if err := f.Write(buf); err != nil {
+        return nil, err
+    }
+    return buf, nil
+}
+
+func findSampleTemplateSheetAndTestServiceColumn(f *excelize.File) (string, int, int, error) {
+    jenisUjiAliases := []string{
+        "jenis uji", "jenisuji",
+        "testserviceid", "test service id",
+        "testserviceids", "test service ids",
+        "testtype", "test type", "tipepengujian",
+    }
+
+    for _, sheet := range f.GetSheetList() {
+        rows, err := f.GetRows(sheet)
+        if err != nil || len(rows) == 0 {
+            continue
+        }
+
+        headerMap, headerRowIdx, err := resolveSampleTemplateHeaderMap(rows)
+        if err != nil {
+            continue
+        }
+
+        colIdx, ok := findHeaderIndex(headerMap, jenisUjiAliases)
+        if !ok {
+            continue
+        }
+
+        return sheet, headerRowIdx, colIdx, nil
+    }
+
+    return "", 0, 0, errors.New("column 'Jenis Uji' not found in uploaded template")
 }
 
 func (s *SubmissionService) GetUploadedSampleTemplate() (*models.SubmissionSampleTemplate, error) {
@@ -583,30 +739,32 @@ func ExportSubmissionsExcel(
 }
 
 func GenerateSampleTemplateExcel() (*bytes.Buffer, error) {
+	return GenerateSampleTemplateExcelWithTestServices(nil)
+}
+
+func GenerateSampleTemplateExcelWithTestServices(testServices []models.TestService) (*bytes.Buffer, error) {
 	f := excelize.NewFile()
 	sheet := "SampleTemplate"
 	f.SetSheetName("Sheet1", sheet)
 
 	headers := []string{
-		"sample_code_cust",
-		"sample_model",
-		"specimen_group",
-		"specimen_type",
-		"species",
-		"preservative",
-		"packaging",
-		"production_date",
-		"expired_date",
-		"sex",
-		"age",
-		"unit_age",
-		"owner",
-		"test_type",
-		"is_vaccinated",
-		"volume",
-		"condition",
-		"total_sample",
-		"test_service_ids",
+		"Kode Sampel",
+		"Model Sampel",
+		"Specimen Group",
+		"Specimen",
+		"Hewan / Species",
+		"Pengawet",
+		"Kemasan",
+		"Tanggal Produksi",
+		"Volume",
+		"Tanggal Kadaluarsa",
+		"Jenis Kelamin",
+		"Umur",
+		"Unit Umur",
+		"Pemilik Hewan",
+		"Jenis Uji",
+		"Telah Divaksin",
+		"Total Sampel",
 	}
 
 	for idx, h := range headers {
@@ -614,35 +772,88 @@ func GenerateSampleTemplateExcel() (*bytes.Buffer, error) {
 		f.SetCellValue(sheet, col+"1", h)
 	}
 
-	// Example row for quicker onboarding in customer side.
-	example := []interface{}{
-		"SAMPLE-001",
-		"Serum",
-		"Darah",
-		"Serum",
-		"Ayam",
-		"BATCH-2026-01",
-		"None",
-		"Tube",
-		"2026-05-01",
-		"2026-05-03",
-		"N/A",
-		1,
-		"hari",
-		"PT Maju Ternak",
-		"Diagnostik",
-		"Kandang",
-		"Bandung",
-		"ya",
-		"5 ml",
-		"baik",
-		1,
-		"1,3",
-	}
+	if len(testServices) > 0 {
+		catalogSheet := "TestServiceCatalog"
+		if _, err := f.NewSheet(catalogSheet); err != nil {
+			return nil, err
+		}
 
-	for idx, value := range example {
-		col, _ := excelize.ColumnNumberToName(idx + 1)
-		f.SetCellValue(sheet, col+"2", value)
+		f.SetCellValue(catalogSheet, "A1", "test_service_id")
+		f.SetCellValue(catalogSheet, "B1", "test_name")
+		f.SetCellValue(catalogSheet, "C1", "display_label")
+
+		for idx, service := range testServices {
+			row := idx + 2
+			label := fmt.Sprintf("%d - %s", service.ID, service.TestName)
+			f.SetCellValue(catalogSheet, fmt.Sprintf("A%d", row), service.ID)
+			f.SetCellValue(catalogSheet, fmt.Sprintf("B%d", row), service.TestName)
+			f.SetCellValue(catalogSheet, fmt.Sprintf("C%d", row), label)
+		}
+
+		if err := f.SetSheetVisible(catalogSheet, false, true); err != nil {
+			return nil, err
+		}
+
+		dv := excelize.NewDataValidation(true)
+		dv.Sqref = "O2:O5000"
+		dv.SetSqrefDropList(fmt.Sprintf("%s!$C$2:$C$%d", catalogSheet, len(testServices)+1))
+		if err := f.AddDataValidation(sheet, dv); err != nil {
+			return nil, err
+		}
+
+		if len(testServices) > 0 {
+			first := testServices[0]
+			example := []interface{}{
+				"SAMPLE-001",
+				"Serum",
+				"Darah",
+				"Serum",
+				"Ayam",
+				"BATCH-2026-01",
+				"None",
+				"2026-05-01",
+				"5 ml",
+				"2026-05-03",
+				"Jantan",
+				1,
+				"hari",
+				"PT Maju Ternak",
+				fmt.Sprintf("%d - %s", first.ID, first.TestName),
+				"ya",
+				1,
+			}
+
+			for idx, value := range example {
+				col, _ := excelize.ColumnNumberToName(idx + 1)
+				f.SetCellValue(sheet, col+"2", value)
+			}
+		}
+	} else {
+		// Example row for quicker onboarding in customer side.
+		example := []interface{}{
+			"SAMPLE-001",
+			"Serum",
+			"Darah",
+			"Serum",
+			"Ayam",
+			"BATCH-2026-01",
+			"None",
+			"2026-05-01",
+			"5 ml",
+			"2026-05-03",
+			"Jantan",
+			1,
+			"hari",
+			"PT Maju Ternak",
+			"1",
+			"ya",
+			1,
+		}
+
+		for idx, value := range example {
+			col, _ := excelize.ColumnNumberToName(idx + 1)
+			f.SetCellValue(sheet, col+"2", value)
+		}
 	}
 
 	buf := new(bytes.Buffer)
@@ -703,6 +914,7 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 			IsVaccinated:   getCellValueByHeader(row, headerMap, []string{"isvaccinated", "is vaccinated", "telah divaksin", "vaksinasi"}),
 			Volume:         getCellValueByHeader(row, headerMap, []string{"volume"}),
 			Condition:      getCellValueByHeader(row, headerMap, []string{"condition", "kondisi"}),
+			TotalSample:    1, // default to 1 if not provided
 		}
 
 		if sample.SampleCodeCust == "" && sample.SampleModel == "" {
@@ -747,13 +959,20 @@ func ParseSamplesFromTemplateExcel(file io.Reader) ([]dto.SampleInput, error) {
 			sample.TotalSample = totalSample
 		}
 
-		testsRaw := getCellValueByHeader(row, headerMap, []string{"testserviceids", "test service ids", "testids", "idpengujian"})
+		testsRaw := getCellValueByHeader(row, headerMap, []string{"testserviceid", "test service id", "testserviceids", "test service ids", "jenis uji", "testtype", "test type", "testids", "idpengujian"})
 		if strings.TrimSpace(testsRaw) != "" {
-			tests, err := parseOptionalTestServiceIDs(testsRaw)
-			if err != nil {
-				return nil, fmt.Errorf("row %d: %w", rowIdx+1, err)
+			if looksLikeTestServiceSelection(testsRaw) {
+				tests, err := parseOptionalTestServiceIDs(testsRaw)
+				if err != nil {
+					return nil, fmt.Errorf("row %d: %w", rowIdx+1, err)
+				}
+				sample.Tests = tests
+				if len(tests) > 0 {
+					sample.TestServiceID = tests[0].TestServiceID
+				}
+			} else if sample.TestType == "" {
+				sample.TestType = testsRaw
 			}
-			sample.Tests = tests
 		}
 
 		samples = append(samples, sample)
@@ -786,12 +1005,11 @@ func resolveSampleTemplateHeaderMap(rows [][]string) (map[string]int, int, error
 		{canonical: "age", aliases: []string{"age", "umur"}},
 		{canonical: "unitage", aliases: []string{"unitage", "unit age", "satuanumur"}},
 		{canonical: "owner", aliases: []string{"owner", "pemilik", "pemilikihewan"}},
-		{canonical: "testtype", aliases: []string{"testtype", "test type", "jenis uji", "jenisuji", "tipepengujian"}},
+		{canonical: "testserviceid", aliases: []string{"testserviceid", "test service id", "testserviceids", "test service ids", "jenis uji", "jenisuji", "testtype", "test type", "tipepengujian", "idpengujian"}},
 		{canonical: "isvaccinated", aliases: []string{"isvaccinated", "is vaccinated", "telah divaksin", "vaksinasi"}},
 		{canonical: "volume", aliases: []string{"volume"}},
 		{canonical: "condition", aliases: []string{"condition", "kondisi"}},
-		{canonical: "totalsample", aliases: []string{"totalsample", "total sample", "jumlahsampel"}},
-		{canonical: "testserviceids", aliases: []string{"testserviceids", "test service ids", "testids", "idpengujian"}},
+		{canonical: "totalsample", aliases: []string{"totalsample", "total sampel", "jumlahsampel"}},
 	}
 
 	bestHeaderMap := map[string]int{}
@@ -890,12 +1108,12 @@ func parseTestServiceIDs(raw string) ([]dto.TestInput, error) {
 			continue
 		}
 
-		id, err := strconv.ParseUint(trimmed, 10, 64)
+		id, err := parseTemplateTestServiceID(trimmed)
 		if err != nil || id == 0 {
 			return nil, fmt.Errorf("invalid test_service_ids value: %s", trimmed)
 		}
 
-		tests = append(tests, dto.TestInput{TestServiceID: uint(id)})
+		tests = append(tests, dto.TestInput{TestServiceID: id})
 	}
 
 	if len(tests) == 0 {
@@ -903,6 +1121,60 @@ func parseTestServiceIDs(raw string) ([]dto.TestInput, error) {
 	}
 
 	return tests, nil
+}
+
+func parseTemplateTestServiceID(raw string) (uint, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return 0, errors.New("test_service_id is required")
+	}
+
+	if id, err := strconv.ParseUint(trimmed, 10, 64); err == nil {
+		if id == 0 {
+			return 0, errors.New("test_service_id must be greater than zero")
+		}
+		return uint(id), nil
+	}
+
+	var digits strings.Builder
+	for _, r := range trimmed {
+		if unicode.IsDigit(r) {
+			digits.WriteRune(r)
+			continue
+		}
+		if digits.Len() > 0 {
+			break
+		}
+	}
+
+	if digits.Len() == 0 {
+		return 0, fmt.Errorf("invalid test_service_id value: %s", trimmed)
+	}
+
+	id, err := strconv.ParseUint(digits.String(), 10, 64)
+	if err != nil || id == 0 {
+		return 0, fmt.Errorf("invalid test_service_id value: %s", trimmed)
+	}
+
+	return uint(id), nil
+}
+
+func looksLikeTestServiceSelection(raw string) bool {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return false
+	}
+
+	for _, r := range trimmed {
+		if unicode.IsDigit(r) {
+			return true
+		}
+		if unicode.IsLetter(r) {
+			return false
+		}
+	}
+
+	return false
 }
 
 func normalizeHeader(header string) string {

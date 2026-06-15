@@ -22,6 +22,20 @@ func GetAllTestServices() ([]models.TestService, error) {
 	return services, err
 }
 
+func GetTestServicesByIDs(ids []uint) ([]models.TestService, error) {
+	var services []models.TestService
+	if len(ids) == 0 {
+		return services, nil
+	}
+
+	err := db.DB.
+		Where("id IN ?", ids).
+		Order("test_name asc").
+		Find(&services).Error
+
+	return services, err
+}
+
 func GetTestServiceByID(id uint) (models.TestService, error) {
 	
 	var service models.TestService

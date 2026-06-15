@@ -21,6 +21,7 @@ type SampleInput struct {
 	UnitAge        string  `json:"unit_age"`
 	Owner          string  `json:"owner"`
 	TestType       string  `json:"test_type"`
+	TestServiceID  uint    `json:"test_service_id"`
 	Sampling       string  `json:"sampling"`
 	SamplingInfra  string  `json:"sampling_infra"`
 	// LocationType   string      `json:"location_type"`

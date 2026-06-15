@@ -160,6 +160,14 @@ func (m *MockSubmissionService) GetSampleTemplate() (*bytes.Buffer, error) {
 	return bytes.NewBufferString("template"), nil
 }
 
+func (m *MockSubmissionService) GetSampleTemplateWithTestServices(testServiceIDs []uint) (*bytes.Buffer, error) {
+	return bytes.NewBufferString("template"), nil
+}
+
+func (m *MockSubmissionService) ApplyTestServicesToUploadedTemplate(templateBytes []byte, testServiceIDs []uint) (*bytes.Buffer, error) {
+    return bytes.NewBuffer(templateBytes), nil
+}
+
 func (m *MockSubmissionService) GetUploadedSampleTemplate() (*models.SubmissionSampleTemplate, error) {
 	return m.uploadedTemplate, m.uploadedTemplateErr
 }

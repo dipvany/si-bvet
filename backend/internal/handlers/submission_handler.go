@@ -2,7 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/services"
 	"si-bvet/internal/storage"
@@ -251,47 +254,169 @@ func (h *SubmissionHandler) ExportSubmissionsExcel(c *gin.Context) {
 }
 
 func (h *SubmissionHandler) DownloadSampleTemplate(c *gin.Context) {
+	testServiceIDs, err := parseUintListQueryParam(c, "test_service_ids")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	uploadedTemplate, err := h.Service.GetUploadedSampleTemplate()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if uploadedTemplate != nil {
+	 if uploadedTemplate != nil {
+        if len(testServiceIDs) > 0 {
+            templateBytes, err := h.readUploadedTemplateBytes(c, uploadedTemplate.FilePath)
+            if err != nil {
+                utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+                return
+            }
+
+            fileBuffer, err := h.Service.ApplyTestServicesToUploadedTemplate(templateBytes, testServiceIDs)
+            if err != nil {
+                utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+                return
+            }
+
+            fileName := uploadedTemplate.FileName
+            if strings.TrimSpace(fileName) == "" {
+                fileName = "sample_template.xlsx"
+            }
+
+            c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+            c.Data(
+                http.StatusOK,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileBuffer.Bytes(),
+            )
+            return
+        }
+
 		resolvedLocation, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, uploadedTemplate.FilePath)
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-			return
-		}
+        if err != nil {
+            utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+            return
+        }
 
-		if strings.HasPrefix(strings.ToLower(resolvedLocation), "http") || strings.HasPrefix(resolvedLocation, "/uploads/") {
-			c.Redirect(http.StatusFound, resolvedLocation)
-			return
-		}
+        if strings.HasPrefix(strings.ToLower(resolvedLocation), "http") || strings.HasPrefix(resolvedLocation, "/uploads/") {
+            c.Redirect(http.StatusFound, resolvedLocation)
+            return
+        }
 
-		if uploadedTemplate.FileName == "" {
-			uploadedTemplate.FileName = "sample_template.xlsx"
-		}
+        if uploadedTemplate.FileName == "" {
+            uploadedTemplate.FileName = "sample_template.xlsx"
+        }
 
-		c.FileAttachment(resolvedLocation, uploadedTemplate.FileName)
-		return
+        c.FileAttachment(resolvedLocation, uploadedTemplate.FileName)
+        return
+    }
+
+	  if len(testServiceIDs) > 0 {
+        fileBuffer, err := h.Service.GetSampleTemplateWithTestServices(testServiceIDs)
+        if err != nil {
+            utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+            return
+        }
+
+        c.Header("Content-Disposition", "attachment; filename=sample_template.xlsx")
+        c.Data(
+            http.StatusOK,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileBuffer.Bytes(),
+        )
+        return
+    }
+
+    fileBuffer, err := h.Service.GetSampleTemplate()
+    if err != nil {
+        utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+        return
+    }
+
+	c.Header("Content-Disposition", "attachment; filename=sample_template.xlsx")
+    c.Data(
+        http.StatusOK,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        fileBuffer.Bytes(),
+    )
+	
+}
+
+func (h *SubmissionHandler) readUploadedTemplateBytes(c *gin.Context, filePath string) ([]byte, error) {
+    resolvedLocation, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, filePath)
+    if err != nil {
+        return nil, err
+    }
+
+    if strings.TrimSpace(resolvedLocation) == "" {
+        return nil, fmt.Errorf("resolved template location is empty")
+    }
+
+    lower := strings.ToLower(resolvedLocation)
+
+    if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") {
+        req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, resolvedLocation, nil)
+        if err != nil {
+            return nil, err
+        }
+
+        resp, err := http.DefaultClient.Do(req)
+        if err != nil {
+            return nil, err
+        }
+        defer func() {
+            _ = resp.Body.Close()
+        }()
+
+        if resp.StatusCode < 200 || resp.StatusCode > 299 {
+            return nil, fmt.Errorf("failed to download uploaded template: http %d", resp.StatusCode)
+        }
+	
+        return io.ReadAll(resp.Body)
 	}
 
-	fileBuffer, err := h.Service.GetSampleTemplate()
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
+	if strings.HasPrefix(resolvedLocation, "/uploads/") {
+        relative := strings.TrimPrefix(resolvedLocation, "/uploads/")
+        localPath := filepath.Join("internal", "uploads", filepath.FromSlash(relative))
+        return os.ReadFile(localPath)
+    }
+
+    return os.ReadFile(resolvedLocation)
+}
+
+func parseUintListQueryParam(c *gin.Context, key string) ([]uint, error) {
+	raw := strings.TrimSpace(c.Query(key))
+	if raw == "" {
+		return nil, nil
 	}
 
-	c.Header(
-		"Content-Disposition",
-		"attachment; filename=sample_template.xlsx",
-	)
-	c.Data(
-		http.StatusOK,
-		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-		fileBuffer.Bytes(),
-	)
+	parts := strings.Split(raw, ",")
+	ids := make([]uint, 0, len(parts))
+	seen := make(map[uint]struct{}, len(parts))
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+
+		value, err := strconv.ParseUint(trimmed, 10, 64)
+		if err != nil || value == 0 {
+			return nil, fmt.Errorf("invalid %s parameter", key)
+		}
+
+		id := uint(value)
+		if _, exists := seen[id]; exists {
+			continue
+		}
+
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+
+	return ids, nil
 }
 
 func (h *SubmissionHandler) UploadSampleTemplate(c *gin.Context) {
