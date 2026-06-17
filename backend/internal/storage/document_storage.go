@@ -333,6 +333,15 @@ func NewUploadStorage(ctx context.Context) (DocumentStorage, error) {
 		return NewGCSDocumentStorage(ctx, bucketName, credentialsFile)
 	}
 
+	// Cek apakah user menggunakan S3-Compatible Storage (AWS, DigitalOcean Spaces, Cloudflare R2, dll)
+	s3Bucket := os.Getenv("S3_BUCKET_NAME")
+	if s3Bucket != "" {
+		// return NewS3DocumentStorage(ctx, s3Bucket) //TODO: Buat implementasi S3 nanti
+		
+		// Note: Saat ini kita fallback ke lokal jika Anda belum membuat implementasi S3-nya
+		fmt.Println("S3 Storage detected in .env, but implementation is pending. Falling back to local storage.")
+	}
+
 	return NewLocalDocumentStorage(""), nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	. "si-bvet/internal/services"
+	"time"
 
 	"github.com/glebarez/sqlite"
 	"github.com/onsi/ginkgo/v2"
@@ -17,17 +18,20 @@ import (
 
 var _ = ginkgo.Describe("SubmissionService", func() {
 	var gdb *gorm.DB
+	var dbCounter int
 
 	ginkgo.BeforeEach(func() {
 		var err error
-		gdb, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+		dbCounter++
+		dsn := fmt.Sprintf("file:submission_service_%d_%d?mode=memory&cache=shared", time.Now().UnixNano(), dbCounter)
+		gdb, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 		gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 		// set global DB used by repositories
 		db.DB = gdb
 
 		// Auto migrate minimal models used
-		err = db.DB.AutoMigrate(&models.User{}, &models.Notification{}, &models.Submission{}, &models.SubmissionSampleTemplate{}, &models.Sample{}, &models.TestService{}, &models.TestRequest{}, &models.Billing{}, &models.LhuDocument{})
+		err = db.DB.AutoMigrate(&models.User{}, &models.Customer{}, &models.Admin{}, &models.Notification{}, &models.Submission{}, &models.SubmissionSampleTemplate{}, &models.Sample{}, &models.TestService{}, &models.TestRequest{}, &models.Billing{}, &models.LhuDocument{})
 		gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	})
 
@@ -634,49 +638,39 @@ var _ = ginkgo.Describe("SubmissionService", func() {
 
 	ginkgo.Describe("Partial Update Scenarios", func() {
 		ginkgo.It("should update specific fields without affecting others", func() {
-			// Arrange: insert a TestService
-			svc := models.TestService{ID: 100, TestName: "Test Service", Price: 150000}
-			gomega.Expect(db.DB.Create(&svc).Error).ToNot(gomega.HaveOccurred())
-
-			submission := &models.Submission{
+			// Arrange: Create an initial submission
+			initialSubmission := &models.Submission{
 				UserID:        1,
-				NoTicket:      "TCK-update-1",
-				TypeService:   "old-service",
-				PurposeOfTest: "old-purpose",
-				SampleTaker:   "old-taker",
-				Notes:         "old-notes",
+				NoTicket:      "TCK-PARTIAL-1",
+				TypeService:   "initial-service",
+				PurposeOfTest: "initial-purpose",
+				SampleTaker:   "initial-taker",
+				Notes:         "initial-notes",
 				SamplesCount:  1,
 				ProcessStatus: "pending_verification",
 			}
-			gomega.Expect(db.DB.Create(&submission).Error).ToNot(gomega.HaveOccurred())
+			gomega.Expect(db.DB.Create(initialSubmission).Error).ToNot(gomega.HaveOccurred())
 
-			submission.UserID = 2
-			submission.NoTicket = "TCK-update-2"
-			submission.TypeService = "new-service"
-			submission.PurposeOfTest = "new-purpose"
-			submission.SampleTaker = "new-taker"
-			submission.Notes = "new-notes"
-			submission.SamplesCount = 2
-			submission.ProcessStatus = "pending_verification"
-
-			err := db.DB.Create(&submission).Error
+			// Act: Update only the 'Notes' field
+			updateData := map[string]interface{}{
+				"Notes": "updated-notes",
+			}
+			err := UpdateSubmission(initialSubmission.ID, updateData)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			var subs []models.Submission
-			gomega.Expect(db.DB.Find(&subs).Error).ToNot(gomega.HaveOccurred())
-			gomega.Expect(len(subs)).To(gomega.BeNumerically(">=", 1))
-			gomega.Expect(subs[0].NoTicket).ToNot(gomega.BeEmpty())
-			gomega.Expect(subs[0].NoTicket).To(gomega.HavePrefix("TCK-"))
+			// Assert: Check if the submission was updated correctly
+			var updatedSubmission models.Submission
+			gomega.Expect(db.DB.First(&updatedSubmission, initialSubmission.ID).Error).ToNot(gomega.HaveOccurred())
 
-			var samples []models.Sample
-			gomega.Expect(db.DB.Find(&samples).Error).ToNot(gomega.HaveOccurred())
-			gomega.Expect(len(samples)).To(gomega.BeNumerically(">=", 1))
-			gomega.Expect(samples[0].SpecimenType).To(gomega.Equal("swab"))
+			// Check that specified fields are updated
+			gomega.Expect(updatedSubmission.Notes).To(gomega.Equal("updated-notes"))
 
-			var tests []models.TestRequest
-			gomega.Expect(db.DB.Find(&tests).Error).ToNot(gomega.HaveOccurred())
-			gomega.Expect(len(tests)).To(gomega.BeNumerically(">=", 1))
-			gomega.Expect(tests[0].PriceAtMoment).To(gomega.Equal(svc.Price))
+			// Check that other fields are not affected
+			gomega.Expect(updatedSubmission.TypeService).To(gomega.Equal(initialSubmission.TypeService))
+			gomega.Expect(updatedSubmission.PurposeOfTest).To(gomega.Equal(initialSubmission.PurposeOfTest))
+			gomega.Expect(updatedSubmission.SampleTaker).To(gomega.Equal(initialSubmission.SampleTaker))
+			gomega.Expect(updatedSubmission.UserID).To(gomega.Equal(initialSubmission.UserID))
+			gomega.Expect(updatedSubmission.ProcessStatus).To(gomega.Equal(initialSubmission.ProcessStatus))
 		})
 	})
 })

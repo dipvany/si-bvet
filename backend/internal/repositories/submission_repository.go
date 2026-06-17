@@ -101,13 +101,16 @@ func GetSubmissionsByUserPaginated(userID uint, page, perPage int) ([]models.Sub
 	}
 
 	offset := (page - 1) * perPage
-	err := db.DB.
+	if err := db.DB.
 		Where("user_id = ?", userID).
 		Order("id desc").Limit(perPage).
 		Offset(offset).
-		Find(&submissions).Error
+		Find(&submissions).Error; err != nil {
+		
+		return nil, 0, err
+	}
 
-	return submissions, total, err
+	return submissions, total, nil
 }
 
 func GetAllSubmissions() ([]models.Submission, error) {
