@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser } from "../../utils/auth";
-import { getMySubmissions } from "../../services/customerServices";
+import { getMySubmissions } from "../../services/CustomerServices";
 
 /* ──────────────────────────────────────────────────────────────────
    DonutChart — pure SVG, konsisten dengan halaman admin/superadmin
