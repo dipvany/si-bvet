@@ -151,7 +151,7 @@ function Navbar() {
           <div className="hidden lg:flex items-center gap-0.5">
             <NavLinks />
             <div className="w-px h-5 bg-white/20 mx-3" />
-            <Link to="/login" className="text-sm font-semibold text-white/85 hover:text-white border border-white/30 hover:border-white/60 px-4 py-1.5 rounded-md transition-all">Login</Link>
+            <Link to="/login" className="text-sm font-semibold text-white/85 hover:text-white border border-white/30 hover:border-white/60 px-4 py-1.5 rounded-md transition-all">Masuk</Link>
             <Link to="/register" className="ml-2 text-sm font-bold text-[#233B6E] bg-[#F5C400] hover:bg-[#ffd020] px-5 py-1.5 rounded-md transition-colors shadow-sm">Daftar</Link>
           </div>
 

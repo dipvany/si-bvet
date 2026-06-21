@@ -2,6 +2,21 @@ import { useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { verifyUser, rejectUser } from "../../services/superAdminServices";
 
+// Helper: path relatif → full URL dokumen
+const getDocUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const origin = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/$/, "");
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  return `${origin}${clean}`;
+};
+
+
+
+
+
 
 export default function DetailPelanggan() {
   const navigate  = useNavigate();
@@ -101,7 +116,7 @@ export default function DetailPelanggan() {
           <div className="px-5 py-4 border-t border-gray-100">
             <p className="text-sm text-gray-400 mb-2">Dokumen Registrasi</p>
             <a
-              href={customer.registration_doc}
+              href={getDocUrl(customer.registration_doc)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[#EEF0F8] text-[#233B6E]

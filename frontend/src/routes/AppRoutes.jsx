@@ -23,8 +23,10 @@ import SuperAdminDetailPelanggan     from "../pages/superAdmin/DetailPelanggan";
 import SuperAdminProfil     from "../pages/superAdmin/Profil";
 
 // ── Halaman customer (role: "customer") ───────────────────────────
-import CustomerBeranda from "../pages/customer/Beranda";
-import CustomerProfil     from "../pages/customer/Profil";
+import CustomerBeranda       from "../pages/customer/Beranda";
+import CustomerProfil        from "../pages/customer/Profil";
+import CustomerPengaduan     from "../pages/customer/Pengaduan";
+import KatalogPengujian      from "../pages/customer/KatalogPengujian";
 /*
   Uncomment saat halaman sudah dibuat:
   import PengajuanUjiSampel from "../pages/customer/PengajuanUjiSampel";
@@ -105,12 +107,13 @@ export default function AppRoutes() {
         }
       >
         <Route index element={<Navigate to="beranda" replace />} />
-        <Route path="beranda" element={<CustomerBeranda />} />
-         <Route path="profil" element={<CustomerProfil />} />
+        <Route path="beranda"             element={<CustomerBeranda />} />
+        <Route path="profil"              element={<CustomerProfil />} />
+        <Route path="katalog-pengujian"   element={<KatalogPengujian />} />
+        <Route path="pengaduan"           element={<CustomerPengaduan />} />
         {/*
           <Route path="pengajuan-uji-sampel" element={<PengajuanUjiSampel />} />
           <Route path="pengajuan-saya"       element={<PengajuanSaya />} />
-          <Route path="pengaduan"            element={<Pengaduan />} />
         */}
       </Route>
 

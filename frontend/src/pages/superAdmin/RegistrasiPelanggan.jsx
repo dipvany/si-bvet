@@ -3,6 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { getUnverifiedCustomers, verifyUser, rejectUser } from "../../services/superAdminServices";
 import StatusBadge from "../../components/StatusBadge";
 
+// Helper: path relatif → full URL dokumen
+const getDocUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const origin = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api")
+    .replace(/\/api\/?$/, "")
+    .replace(/\/$/, "");
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  return `${origin}${clean}`;
+};
+
+
+
+
+
 const PER_PAGE = 10;
 
 /**
@@ -336,7 +351,7 @@ export default function RegistrasiPelanggan() {
                     {/* Dokumen */}
                     <td className="px-4 py-3">
                       {c.registration_doc ? (
-                        <a href={c.registration_doc}
+                        <a href={getDocUrl(c.registration_doc)}
                           target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-[#233B6E] text-xs
                             font-semibold hover:underline">

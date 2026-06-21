@@ -10,7 +10,7 @@ export const getAdminSubmissions = () => apiFetch("/admin/submissions");
 
 // ── Registrasi Customer ───────────────────────────────────────────
 export const getUnverifiedCustomers = () =>
-  apiFetch("/admin/customers/unverified");
+  apiFetch("/admin/customers");
 
 export const verifyUser = (id) =>
   apiFetch(`/admin/customers/${id}/verify`, { method: "PATCH" });

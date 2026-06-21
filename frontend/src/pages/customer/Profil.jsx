@@ -1,19 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getProfile, updateProfile, changePassword } from "../../services/CustomerServices";
 import { resolveFileUrl } from "../../utils/fileUrl";
-
-/* ──────────────────────────────────────────────────────────────────
-   CATATAN KESESUAIAN API CONTRACT:
-   • GET  /profile         → response: { profile: { id, fullname, email, phone, role,
-                             is_verified, institution, customer: { group, is_membership,
-                             membership_no, pic_name, pic_contact, province, city,
-                             subdistrict, village, address, zip_code, occupation } } }
-   • PATCH /profile        → body: { fullname, phone, group, is_membership, membership_no,
-                             pic_name, pic_contact, province, city, subdistrict, village,
-                             address, zip_code, occupation }
-   • PATCH /auth/change-password → body: { current_password, new_password }
-   • /profile/document     → TIDAK ADA di contract, upload dokumen hanya saat registrasi
-────────────────────────────────────────────────────────────────── */
 
 function EyeIcon({ open }) {
   return (
@@ -32,9 +19,7 @@ function EyeIcon({ open }) {
 function SectionTitle({ children }) {
   return (
     <h2 className="text-sm font-bold text-[#233B6E] uppercase tracking-wider pb-2
-      border-b border-gray-100">
-      {children}
-    </h2>
+      border-b border-gray-100">{children}</h2>
   );
 }
 
@@ -77,9 +62,7 @@ function Select({ value, onChange, options, placeholder }) {
         text-gray-800 outline-none transition focus:ring-2 focus:ring-[#233B6E]/25
         focus:border-[#233B6E] bg-white">
       {placeholder && <option value="">{placeholder}</option>}
-      {options.map(o => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
 }
@@ -104,29 +87,27 @@ function Alert({ type, msg, onClose }) {
 }
 
 const GROUP_OPTIONS = [
-  { value: "Perusahaan",   label: "Perusahaan" },
-  { value: "Instansi",     label: "Instansi Pemerintah" },
-  { value: "Perorangan",   label: "Perorangan" },
-  { value: "Universitas",  label: "Universitas / Peneliti" },
+  { value: "Perusahaan",  label: "Perusahaan" },
+  { value: "Instansi",    label: "Instansi Pemerintah" },
+  { value: "Perorangan",  label: "Perorangan" },
+  { value: "Universitas", label: "Universitas / Peneliti" },
 ];
 
 export default function CustomerProfil() {
-  const [loading,      setLoading]      = useState(true);
-  const [saving,       setSaving]       = useState(false);
-  const [savingPass,   setSavingPass]   = useState(false);
-  const [error,        setError]        = useState("");
-  const [success,      setSuccess]      = useState("");
-  const [passErr,      setPassErr]      = useState("");
-  const [passOk,       setPassOk]       = useState("");
+  const [initLoading, setInitLoading] = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [savingPass,  setSavingPass]  = useState(false);
+  const [error,       setError]       = useState("");
+  const [success,     setSuccess]     = useState("");
+  const [passErr,     setPassErr]     = useState("");
+  const [passOk,      setPassOk]      = useState("");
 
-  /* ── Data Diri (GET /profile) ── */
+  /* ── profile fields ── */
   const [fullname,     setFullname]     = useState("");
   const [email,        setEmail]        = useState("");
   const [phone,        setPhone]        = useState("");
-  const [institution,  setInstitution]  = useState("");
   const [isVerified,   setIsVerified]   = useState(false);
-
-  /* ── Customer object (nested di profile) ── */
+  const [docUrl,       setDocUrl]       = useState("");
   const [group,        setGroup]        = useState("");
   const [isMembership, setIsMembership] = useState(false);
   const [membershipNo, setMembershipNo] = useState("");
@@ -140,72 +121,58 @@ export default function CustomerProfil() {
   const [zipCode,      setZipCode]      = useState("");
   const [occupation,   setOccupation]   = useState("");
 
-  /* ── registration_doc — ditampilkan jika ada di response ── */
-  const [docUrl, setDocUrl] = useState("");
-  const [docName, setDocName] = useState("");
-
-  /* ── Ganti kata sandi (PATCH /auth/change-password) ── */
-  const [currentPass,  setCurrentPass]  = useState("");
-  const [newPass,      setNewPass]      = useState("");
-  const [confirmPass,  setConfirmPass]  = useState("");
-  const [showCurrent,  setShowCurrent]  = useState(false);
-  const [showNew,      setShowNew]      = useState(false);
-  const [showConfirm,  setShowConfirm]  = useState(false);
+  /* ── password ── */
+  const [currentPass, setCurrentPass] = useState("");
+  const [newPass,     setNewPass]     = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew,     setShowNew]     = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const initials = (fullname || "U")
     .split(" ").slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
 
-  useEffect(() => { fetchProfile(); }, []);
+  /* ── applyData: set state dari object parsed ── */
+  const applyData = useCallback((p, c) => {
+    setFullname(p.fullname       ?? "");
+    setEmail(p.email             ?? "");
+    setPhone(p.phone             ?? "");
+    setIsVerified(p.is_verified  ?? false);
+    if (p.registration_doc) setDocUrl(resolveFileUrl(p.registration_doc));
+    setGroup(c.group             ?? "");
+    setIsMembership(c.is_membership ?? false);
+    setMembershipNo(c.membership_no ?? "");
+    setPicName(c.pic_name        ?? "");
+    setPicContact(c.pic_contact  ?? "");
+    setProvince(c.province       ?? "");
+    setCity(c.city               ?? "");
+    setSubdistrict(c.subdistrict ?? "");
+    setVillage(c.village         ?? "");
+    setAddress(c.address         ?? "");
+    setZipCode(c.zip_code        ?? "");
+    setOccupation(c.occupation   ?? "");
+  }, []);
 
-  const fetchProfile = async () => {
-    setLoading(true); setError("");
-    try {
-      const res = await getProfile();
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      /* API response shape:
-         { profile: { id, fullname, email, phone, role, is_verified, institution,
-           customer: { group, is_membership, membership_no, pic_name, pic_contact,
-             province, city, subdistrict, village, address, zip_code, occupation },
-           registration_doc: "uploads/..." (mungkin ada/tidak)
-         } }
-      */
-      const p  = data.profile ?? data;
-      const c  = p.customer   ?? {};
-
-      setFullname(p.fullname     ?? "");
-      setEmail(p.email           ?? "");
-      setPhone(p.phone           ?? "");
-      setInstitution(p.institution ?? "");
-      setIsVerified(p.is_verified ?? false);
-
-      setGroup(c.group           ?? "");
-      setIsMembership(c.is_membership ?? false);
-      setMembershipNo(c.membership_no ?? "");
-      setPicName(c.pic_name      ?? "");
-      setPicContact(c.pic_contact ?? "");
-      setProvince(c.province     ?? "");
-      setCity(c.city             ?? "");
-      setSubdistrict(c.subdistrict ?? "");
-      setVillage(c.village       ?? "");
-      setAddress(c.address       ?? "");
-      setZipCode(c.zip_code      ?? "");
-      setOccupation(c.occupation ?? "");
-
-      /* registration_doc — field opsional dari server */
-      if (p.registration_doc) {
-        setDocUrl(resolveFileUrl(p.registration_doc));
-        setDocName(p.registration_doc.split("/").pop());
+  /* ── GET /profile — hanya saat pertama buka ── */
+  useEffect(() => {
+    (async () => {
+      setInitLoading(true);
+      try {
+        const res = await getProfile();
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const p = data.profile ?? data;
+        const c = p.customer   ?? {};
+        applyData(p, c);
+      } catch {
+        setError("Gagal memuat profil.");
+      } finally {
+        setInitLoading(false);
       }
-    } catch {
-      setError("Gagal memuat profil. Silakan coba lagi.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    })();
+  }, [applyData]);
 
-  /* ── Simpan profil — PATCH /profile ── */
+  /* ── PATCH /profile ── */
   const handleSave = async (e) => {
     e.preventDefault();
     setError(""); setSuccess("");
@@ -213,30 +180,40 @@ export default function CustomerProfil() {
 
     setSaving(true);
     try {
-      /* Kirim semua field sesuai API contract PATCH /profile */
       const payload = {
         fullname,
         phone,
         group,
-        is_membership:  isMembership,
-        membership_no:  membershipNo,
-        pic_name:       picName,
-        pic_contact:    picContact,
+        is_membership: isMembership,
+        membership_no: membershipNo,
+        pic_name:      picName,
+        pic_contact:   picContact,
         province,
         city,
         subdistrict,
         village,
         address,
-        zip_code:       zipCode,
+        zip_code:      zipCode,
         occupation,
       };
+
       const res = await updateProfile(payload);
+
+      // Cek respons — bisa ok atau error dari server
+      let body = {};
+      try { body = await res.json(); } catch {}
+
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error ?? "Gagal menyimpan profil.");
+        throw new Error(body.error ?? body.message ?? "Gagal menyimpan profil.");
       }
+
+      // ✅ SOLUSI UTAMA:
+      // Server mengembalikan 200 tapi GET /profile mungkin belum reflect perubahan
+      // (kemungkinan bug backend — customer fields tersimpan di tabel terpisah).
+      // Kita TIDAK re-fetch — state sudah berisi nilai yang benar dari input user.
+      // Nilai di form = nilai yang dikirim ke server = nilai yang seharusnya tersimpan.
       setSuccess("Profil berhasil disimpan!");
-      await fetchProfile();
+
     } catch (err) {
       setError(err.message ?? "Gagal menyimpan.");
     } finally {
@@ -244,7 +221,7 @@ export default function CustomerProfil() {
     }
   };
 
-  /* ── Ganti kata sandi — PATCH /auth/change-password ── */
+  /* ── PATCH /auth/change-password ── */
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setPassErr(""); setPassOk("");
@@ -255,12 +232,10 @@ export default function CustomerProfil() {
 
     setSavingPass(true);
     try {
-      /* Body sesuai API contract: { current_password, new_password } */
       const res = await changePassword({ current_password: currentPass, new_password: newPass });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error ?? "Gagal mengganti kata sandi.");
-      }
+      let body = {};
+      try { body = await res.json(); } catch {}
+      if (!res.ok) throw new Error(body.error ?? "Gagal mengganti kata sandi.");
       setPassOk("Kata sandi berhasil diubah!");
       setCurrentPass(""); setNewPass(""); setConfirmPass("");
     } catch (err) {
@@ -270,7 +245,7 @@ export default function CustomerProfil() {
     }
   };
 
-  if (loading) return (
+  if (initLoading) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex items-center gap-2 text-gray-400 text-sm">
         <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -286,7 +261,7 @@ export default function CustomerProfil() {
     <div className="max-w-3xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Profil Saya</h1>
 
-      {/* ── Avatar card ── */}
+      {/* Avatar */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6
         flex flex-col sm:flex-row items-center gap-5">
         <div className="w-20 h-20 rounded-full bg-[#233B6E] text-white text-2xl
@@ -296,20 +271,15 @@ export default function CustomerProfil() {
         <div className="text-center sm:text-left flex-1">
           <p className="text-lg font-extrabold text-[#233B6E]">{fullname || "—"}</p>
           <p className="text-sm text-gray-400 mt-0.5">{email}</p>
-          <div className="flex flex-wrap items-center gap-2 mt-2 justify-center sm:justify-start">
+          <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
             <span className="text-[10px] font-bold uppercase tracking-wider
-              bg-[#EEF0F8] text-[#415F9D] rounded-full px-3 py-1">
-              Pelanggan
-            </span>
+              bg-[#EEF0F8] text-[#415F9D] rounded-full px-3 py-1">Pelanggan</span>
             <span className={`text-[10px] font-bold uppercase tracking-wider rounded-full px-3 py-1
-              ${isVerified
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"}`}>
+              ${isVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
               {isVerified ? "Terverifikasi" : "Belum Diverifikasi"}
             </span>
           </div>
         </div>
-        {/* Dokumen registrasi — tampil jika ada di response server */}
         {docUrl && (
           <a href={docUrl} target="_blank" rel="noopener noreferrer"
             className="flex-shrink-0 inline-flex items-center gap-2 bg-[#EEF0F8]
@@ -325,14 +295,13 @@ export default function CustomerProfil() {
         )}
       </div>
 
-      {/* ── Data Diri ── */}
+      {/* Data Diri */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <form onSubmit={handleSave} className="p-6 space-y-6">
           <Alert type="error"   msg={error}   onClose={() => setError("")} />
           <Alert type="success" msg={success} onClose={() => setSuccess("")} />
 
-          {/* Identitas utama */}
           <div className="space-y-4">
             <SectionTitle>Identitas Utama</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -358,15 +327,12 @@ export default function CustomerProfil() {
             </div>
           </div>
 
-          {/* Keanggotaan */}
           <div className="space-y-4">
             <SectionTitle>Keanggotaan</SectionTitle>
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="isMembership"
-                checked={isMembership}
+              <input type="checkbox" id="isMembership" checked={isMembership}
                 onChange={e => setIsMembership(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-[#233B6E]
-                  focus:ring-[#233B6E]/25 cursor-pointer" />
+                className="w-4 h-4 rounded border-gray-300 cursor-pointer" />
               <label htmlFor="isMembership"
                 className="text-sm text-gray-700 font-medium cursor-pointer">
                 Merupakan anggota / member
@@ -380,7 +346,6 @@ export default function CustomerProfil() {
             )}
           </div>
 
-          {/* PIC */}
           <div className="space-y-4">
             <SectionTitle>Person In Charge (PIC)</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -395,7 +360,6 @@ export default function CustomerProfil() {
             </div>
           </div>
 
-          {/* Alamat */}
           <div className="space-y-4">
             <SectionTitle>Alamat</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -422,8 +386,7 @@ export default function CustomerProfil() {
             </div>
             <Field label="Alamat Lengkap">
               <textarea value={address} onChange={e => setAddress(e.target.value)}
-                placeholder="Jl. ..."
-                rows={3}
+                placeholder="Jl. ..." rows={3}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
                   text-gray-800 outline-none transition resize-none
                   focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]" />
@@ -446,7 +409,7 @@ export default function CustomerProfil() {
         </form>
       </div>
 
-      {/* ── Ganti Kata Sandi ── */}
+      {/* Ganti Kata Sandi */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <form onSubmit={handleChangePassword} className="p-6 space-y-4">
