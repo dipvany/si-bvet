@@ -90,7 +90,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 			adminGroup.Use(middleware.RequireRole("superadmin", "admin"))
 			{
 
-				adminGroup.GET("/customers/unverified", adminHandler.GetUnverifiedCustomers)
+				adminGroup.GET("/customers", adminHandler.GetAllCustomers)
 				adminGroup.PATCH("/customers/:id/verify", adminHandler.VerifyUser)
 				adminGroup.PATCH("/customers/:id/reject", adminHandler.RejectUser)
 

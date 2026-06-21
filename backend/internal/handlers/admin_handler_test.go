@@ -73,9 +73,9 @@ type MockAdminService struct {
 	updateReq    services.UpdateAdminAccountRequest
 	updateErr    error
 
-	getUnverifiedCalled bool
-	getUnverifiedResult []models.User
-	getUnverifiedErr    error
+	getAllCalled bool
+	getAllResult []models.User
+	getAllErr    error
 }
 
 var _ handlers.AdminServiceInterface = (*MockAdminService)(nil)
@@ -118,9 +118,9 @@ func (m *MockAdminService) UpdateManagedAccount(userID uint, req services.Update
 	return m.updateErr
 }
 
-func (m *MockAdminService) GetUnverifiedCustomers() ([]models.User, error) {
-	m.getUnverifiedCalled = true
-	return m.getUnverifiedResult, m.getUnverifiedErr
+func (m *MockAdminService) GetAllCustomers() ([]models.User, error) {
+	m.getAllCalled = true
+	return m.getAllResult, m.getAllErr
 }
 
 func TestAdminHandler(t *testing.T) {
@@ -227,14 +227,14 @@ func TestAdminHandler(t *testing.T) {
 		}
 	})
 
-	t.Run("UpdateAdminAccount and UnverifiedCustomers", func(t *testing.T) {
+	t.Run("UpdateAdminAccount and GetAllCustomers", func(t *testing.T) {
 		mockService := &MockAdminService{
-			getUnverifiedResult: []models.User{{ID: 2, FullName: "Customer A", Email: "customer@example.com"}},
+			getAllResult: []models.User{{ID: 2, FullName: "Customer A", Email: "customer@example.com"}},
 		}
 		handler := handlers.NewAdminHandler(mockService)
 		router := gin.New()
 		router.PATCH("/admins/:id", handler.UpdateAdminAccount)
-		router.GET("/admins/unverified", handler.GetUnverifiedCustomers)
+		router.GET("/admins/customers", handler.GetAllCustomers)
 
 		body, err := json.Marshal(map[string]any{
 			"fullname":    "Admin Updated",
@@ -269,44 +269,44 @@ func TestAdminHandler(t *testing.T) {
 			t.Fatalf("unexpected role in update request: %+v", mockService.updateReq.Role)
 		}
 
-		unverifiedReq := httptest.NewRequest(http.MethodGet, "/admins/unverified", nil)
-		unverifiedRes := httptest.NewRecorder()
-		router.ServeHTTP(unverifiedRes, unverifiedReq)
+		allCustomersReq := httptest.NewRequest(http.MethodGet, "/admins/customers", nil)
+		allCustomersRes := httptest.NewRecorder()
+		router.ServeHTTP(allCustomersRes, allCustomersReq)
 
-		if unverifiedRes.Code != http.StatusOK {
-			t.Fatalf("expected unverified status 200, got %d", unverifiedRes.Code)
+		if allCustomersRes.Code != http.StatusOK {
+			t.Fatalf("expected all customers status 200, got %d", allCustomersRes.Code)
 		}
-		if !strings.Contains(unverifiedRes.Body.String(), "Customer A") {
-			t.Fatalf("unexpected unverified body: %s", unverifiedRes.Body.String())
+		if !strings.Contains(allCustomersRes.Body.String(), "Customer A") {
+			t.Fatalf("unexpected all customers body: %s", allCustomersRes.Body.String())
 		}
-		if !strings.Contains(unverifiedRes.Body.String(), "registration_doc") {
-			t.Fatalf("expected registration_doc in unverified response: %s", unverifiedRes.Body.String())
+		if !strings.Contains(allCustomersRes.Body.String(), "registration_doc") {
+			t.Fatalf("expected registration_doc in all customers response: %s", allCustomersRes.Body.String())
 		}
-		if !mockService.getUnverifiedCalled {
-			t.Fatal("expected GetUnverifiedCustomers to be called")
+		if !mockService.getAllCalled {
+			t.Fatal("expected GetAllCustomers to be called")
 		}
 	})
 
-	t.Run("GetUnverifiedCustomers keeps response when storage resolution fails", func(t *testing.T) {
+	t.Run("GetAllCustomers keeps response when storage resolution fails", func(t *testing.T) {
 		mockService := &MockAdminService{
-			getUnverifiedResult: []models.User{{ID: 2, FullName: "Customer A", Email: "customer@example.com", RegistrationDoc: "/uploads/registration-docs/doc.pdf"}},
+			getAllResult: []models.User{{ID: 2, FullName: "Customer A", Email: "customer@example.com", RegistrationDoc: "/uploads/registration-docs/doc.pdf"}},
 		}
 		handler := handlers.NewAdminHandler(mockService, failingDocumentStorage{})
 		router := gin.New()
-		router.GET("/admins/unverified", handler.GetUnverifiedCustomers)
+		router.GET("/admins/customers", handler.GetAllCustomers)
 
-		req := httptest.NewRequest(http.MethodGet, "/admins/unverified", nil)
+		req := httptest.NewRequest(http.MethodGet, "/admins/customers", nil)
 		res := httptest.NewRecorder()
 		router.ServeHTTP(res, req)
 
 		if res.Code != http.StatusOK {
-			t.Fatalf("expected unverified status 200, got %d", res.Code)
+			t.Fatalf("expected all customers status 200, got %d", res.Code)
 		}
 		if !strings.Contains(res.Body.String(), "/uploads/registration-docs/doc.pdf") {
 			t.Fatalf("expected fallback registration_doc in response: %s", res.Body.String())
 		}
-		if !mockService.getUnverifiedCalled {
-			t.Fatal("expected GetUnverifiedCustomers to be called")
+		if !mockService.getAllCalled {
+			t.Fatal("expected GetAllCustomers to be called")
 		}
 	})
 }

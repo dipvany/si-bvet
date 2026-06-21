@@ -21,7 +21,7 @@ type AdminServiceInterface interface {
 	RejectUserByID(userID uint) error
 	DeleteManagedAccount(targetID, actorID uint) error
 	UpdateManagedAccount(userID uint, req services.UpdateAdminAccountRequest) error
-	GetUnverifiedCustomers() ([]models.User, error)
+	GetAllCustomers() ([]models.User, error)
 }
 
 type defaultAdminService struct{}
@@ -50,8 +50,8 @@ func (defaultAdminService) UpdateManagedAccount(userID uint, req services.Update
 	return services.UpdateManagedAccount(userID, req)
 }
 
-func (defaultAdminService) GetUnverifiedCustomers() ([]models.User, error) {
-	return services.GetUnverifiedCustomers()
+func (defaultAdminService) GetAllCustomers() ([]models.User, error) {
+	return services.GetAllCustomers()
 }
 
 type AdminHandler struct {
@@ -308,28 +308,25 @@ func (h *AdminHandler) UpdateAdminAccount(c *gin.Context) {
 }
 
 // get customer unverified list for admin to verify
-func GetUnverifiedCustomers(c *gin.Context) {
-	defaultAdminHandler.GetUnverifiedCustomers(c)
+func GetAllCustomers(c *gin.Context) {
+	defaultAdminHandler.GetAllCustomers(c)
 }
 
-func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
-	customers, err := h.Service.GetUnverifiedCustomers()
+func (h *AdminHandler) GetAllCustomers(c *gin.Context) {
+	customers, err := h.Service.GetAllCustomers()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response := make([]dto.UnverifiedCustomerResponse, 0, len(customers))
+	response := make([]dto.CustomerResponse, 0, len(customers))
 	for _, customer := range customers {
 		registrationDoc := customer.RegistrationDoc
-		if resolved, err := ResolveDocumentLocation(context.Background(), h.fileStorage, customer.RegistrationDoc); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-			return
-		} else {
+		if resolved, err := ResolveDocumentLocation(context.Background(), h.fileStorage, customer.RegistrationDoc); err == nil {
 			registrationDoc = resolved
 		}
 
-		response = append(response, dto.UnverifiedCustomerResponse{
+		response = append(response, dto.CustomerResponse{
 			ID:              customer.ID,
 			FullName:        customer.FullName,
 			Email:           customer.Email,
@@ -342,7 +339,7 @@ func (h *AdminHandler) GetUnverifiedCustomers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "Unverified customers retrieved successfully",
+		"message":   "Customers retrieved successfully",
 		"customers": response,
 	})
 }

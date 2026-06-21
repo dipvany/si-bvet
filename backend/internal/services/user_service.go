@@ -93,8 +93,8 @@ func GetUserProfile(userID uint) (models.User, error) {
 	return repositories.GetUserProfile(userID)
 }
 
-// get customer yang belum diverifikasi
-func GetUnverifiedCustomers() ([]models.User, error) {
-	return repositories.GetUnverifiedCustomers()
+// get all customers
+func GetAllCustomers() ([]models.User, error) {
+	return repositories.GetAllCustomers()
 }
 

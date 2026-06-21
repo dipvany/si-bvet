@@ -376,14 +376,14 @@
       "name": "04. Admin",
       "item": [
         {
-          "name": "Get Unverified Customers",
+          "name": "Get All Customers",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token_admin}}" }
             ],
-            "url": "{{base_url}}/admin/customers/unverified",
-            "description": "Daftar customer yang belum diverifikasi."
+            "url": "{{base_url}}/admin/customers",
+            "description": "Daftar semua customers."
           }
         },
         {
