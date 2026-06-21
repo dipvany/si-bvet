@@ -9,6 +9,8 @@ import LandingPage from "../pages/LandingPage";
 // ── Layout ────────────────────────────────────────────────────────
 import AdminLayout      from "../layouts/AdminLayout";
 import SuperAdminLayout from "../layouts/SuperAdminLayout";
+import LaporanPengaduan       from "../pages/superAdmin/LaporanPengaduan";
+import DetailLaporanPengaduan from "../pages/superAdmin/DetailLaporanPengaduan";
 import CustomerLayout   from "../layouts/CustomerLayout";
 
 // ── Halaman admin (role: "admin") ─────────────────────────────────
@@ -89,6 +91,8 @@ export default function AppRoutes() {
         <Route path="beranda"                  element={<SuperAdminBeranda />} />
         <Route path="registrasi-pelanggan"     element={<SuperAdminRegistrasiPelanggan />} />
         <Route path="registrasi-pelanggan/:id" element={<SuperAdminDetailPelanggan />} />
+        <Route path="laporan-pengaduan"     element={<LaporanPengaduan />} />
+        <Route path="laporan-pengaduan/:id" element={<DetailLaporanPengaduan />} />
         <Route path="profil"           element={<SuperAdminProfil />} />
         {/*
           <Route path="pengajuan-masuk"  element={...} />
