@@ -1,6 +1,6 @@
 package dto
 
-type UnverifiedCustomerResponse struct {
+type CustomerResponse struct {
 	ID              uint   `json:"id"`
 	FullName        string `json:"fullname"`
 	Email           string `json:"email"`

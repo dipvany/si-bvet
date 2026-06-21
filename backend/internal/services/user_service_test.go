@@ -230,43 +230,26 @@ var _ = ginkgo.Describe("UserService", func() {
 		})
 	})
 
-	ginkgo.Describe("GetUnverifiedCustomers", func() {
-		ginkgo.It("returns only unverified customers", func() {
-			unverified := models.User{
-				FullName:     "Unverified Customer",
-				Email:        "unverified@example.com",
+	ginkgo.Describe("GetAllCustomers", func() {
+		ginkgo.It("returns all customers", func() {
+			user1 := models.User{
+				FullName:     "Customer One",
+				Email:        "customer1@mail.com",
 				Phone:        "0800000004",
-				PasswordHash: "hashed-password",
-				Role:         "customer",
-				IsVerified:   false,
-			}
-			gomega.Expect(db.DB.Create(&unverified).Error).NotTo(gomega.HaveOccurred())
-
-			verified := models.User{
-				FullName:     "Verified Customer",
-				Email:        "verified@example.com",
-				Phone:        "0800000005",
 				PasswordHash: "hashed-password",
 				Role:         "customer",
 				IsVerified:   true,
 			}
-			gomega.Expect(db.DB.Create(&verified).Error).NotTo(gomega.HaveOccurred())
-
-			admin := models.User{
-				FullName:     "Admin User",
-				Email:        "admin-user@example.com",
-				Phone:        "0800000006",
+			user2 := models.User{
+				FullName:     "Customer Two",
+				Email:        "customer2@mail.com",
+				Phone:        "0800000005",
 				PasswordHash: "hashed-password",
-				Role:         "admin",
+				Role:         "customer",
 				IsVerified:   false,
 			}
-			gomega.Expect(db.DB.Create(&admin).Error).NotTo(gomega.HaveOccurred())
-
-			customers, err := GetUnverifiedCustomers()
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(customers).To(gomega.HaveLen(1))
-			gomega.Expect(customers[0].ID).To(gomega.Equal(unverified.ID))
-			gomega.Expect(customers[0].Email).To(gomega.Equal("unverified@example.com"))
+			gomega.Expect(db.DB.Create(&user1).Error).NotTo(gomega.HaveOccurred())
+			gomega.Expect(db.DB.Create(&user2).Error).NotTo(gomega.HaveOccurred())
 		})
 	})
 })

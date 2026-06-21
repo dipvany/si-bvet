@@ -81,11 +81,10 @@ func UpdateAdminProfile(userID uint, data map[string]interface{}) error {
 		Where("user_id = ?", userID).
 		Updates(data).Error
 }
-
-// get customer yang belum diverifikasi
-func GetUnverifiedCustomers() ([]models.User, error) {
+// get all customers
+func GetAllCustomers() ([]models.User, error) {
 	var users []models.User
-	err := db.DB.Where("role = ? AND is_verified = ?", "customer", false).Find(&users).Error
+	err := db.DB.Where("role = ?", "customer").Find(&users).Error
 	return users, err
 }
 
