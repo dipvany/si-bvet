@@ -206,7 +206,7 @@ export default function SuperAdminProfil() {
           <p className="text-sm text-gray-400 mt-0.5">{email}</p>
           <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-wider
             bg-[#EEF0F8] text-[#415F9D] rounded-full px-3 py-1">
-            Super Admin
+            Admin
           </span>
         </div>
       </div>

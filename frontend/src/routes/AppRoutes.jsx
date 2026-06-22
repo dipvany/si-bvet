@@ -10,6 +10,7 @@ import LandingPage from "../pages/LandingPage";
 import AdminLayout      from "../layouts/AdminLayout";
 import SuperAdminLayout from "../layouts/SuperAdminLayout";
 import LaporanPengaduan       from "../pages/superAdmin/LaporanPengaduan";
+import SuperAdminKatalog from "../pages/superAdmin/KatalogPengujian";
 import DetailLaporanPengaduan from "../pages/superAdmin/DetailLaporanPengaduan";
 import CustomerLayout   from "../layouts/CustomerLayout";
 
@@ -91,6 +92,7 @@ export default function AppRoutes() {
         <Route path="beranda"                  element={<SuperAdminBeranda />} />
         <Route path="registrasi-pelanggan"     element={<SuperAdminRegistrasiPelanggan />} />
         <Route path="registrasi-pelanggan/:id" element={<SuperAdminDetailPelanggan />} />
+        <Route path="katalog-pengujian"     element={<SuperAdminKatalog />} />
         <Route path="laporan-pengaduan"     element={<LaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id" element={<DetailLaporanPengaduan />} />
         <Route path="profil"           element={<SuperAdminProfil />} />
