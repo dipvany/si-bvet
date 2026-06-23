@@ -4,6 +4,7 @@ import {
   createAdminAccount,
   updateAdminAccount,
   deleteAdminAccount,
+  verifyUser,
 } from "../../services/superAdminServices";
 
 /* ─── constants ───────────────────────────────────────────────── */
@@ -255,25 +256,15 @@ function DetailAkun({ account, onBack, onSuccess }) {
 
   const set = key => e => setForm(p => ({ ...p, [key]: e.target.value }));
 
-  /* ── PATCH /superadmin/admin-accounts/:id — verifikasi ── */
+  /* ── PATCH /admin/customers/:id/verify — verifikasi akun petugas ── */
   const handleVerify = async () => {
     if (!window.confirm(`Verifikasi akun ${account.email}?\nPetugas akan mendapatkan email untuk login.`)) return;
     setLoading(true); setError("");
     try {
-      // Verifikasi = update dengan is_verified true (kirim data terkini)
-      const res = await updateAdminAccount(account.id, {
-        fullname:    form.fullname,
-        email:       form.email,
-        phone:       form.phone,
-        position:    form.position,
-        unit_lab:    form.unit_lab,
-        employee_no: form.employee_no,
-        role:        form.role,
-        is_verified: true,
-      });
+      const res = await verifyUser(account.id);
       let body = {};
       try { body = await res.json(); } catch {}
-      if (!res.ok) throw new Error(body.error ?? "Gagal memverifikasi akun.");
+      if (!res.ok) throw new Error(body.error ?? body.message ?? "Gagal memverifikasi akun.");
       onSuccess("Akun berhasil diverifikasi. Email login dikirim ke petugas.");
     } catch (err) {
       setError(err.message ?? "Gagal memverifikasi.");
