@@ -1,5 +1,5 @@
 /**
- * adminServices.js  —  role: "admin" (dulunya officer)
+ * adminServices.js  —  role: "admin"
  * Semua call pakai apiFetch (native fetch + Bearer token).
  */
 import { apiFetch } from "./api";
@@ -30,3 +30,21 @@ export const verifyPayment = (submissionId) =>
 
 export const rejectPayment = (submissionId) =>
   apiFetch(`/admin/billings/${submissionId}/reject`, { method: "PATCH" });
+
+// ── Profil ────────────────────────────────────────────────────────
+export const getProfile = () =>
+  apiFetch("/profile");
+
+export const updateProfile = (data) =>
+  apiFetch("/profile", {
+    method:  "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(data),
+  });
+
+export const changePassword = (data) =>
+  apiFetch("/auth/change-password", {
+    method:  "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(data),
+  });
