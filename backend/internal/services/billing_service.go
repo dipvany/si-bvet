@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -51,6 +52,7 @@ func CreateBilling(submissionID uint, code string, amount float64, noRegistratio
 	}
 
 	NotifySubmissionStatusChanged(submissionID, "awaiting_payment")
+	LogSystemActivity(fmt.Sprintf("Billing dibuat untuk submission ID %d dengan kode %s", submissionID, code))
 	return nil
 }
 
@@ -78,12 +80,17 @@ func UpdateBilling(submissionID uint, code string, amount float64, noRegistratio
 			return err
 		}
 
+		LogSystemActivity(fmt.Sprintf("Billing diperbarui untuk submission ID %d dengan kode %s", submissionID, code))
 		return nil
 	})
 }
 
 func UploadBillingProof(submissionID uint, proofPath string) error {
-	return repositories.UploadBillingProof(submissionID, proofPath)
+	err := repositories.UploadBillingProof(submissionID, proofPath)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Bukti pembayaran diunggah untuk submission ID %d di path: %s", submissionID, proofPath))
+	}
+	return err
 }
 
 // function untuk memverifikasi pembayaran
@@ -101,6 +108,7 @@ func VerifyPayment(submissionID uint) error {
 	}
 
 	NotifyPaymentSuccess(submissionID)
+	LogSystemActivity(fmt.Sprintf("Pembayaran untuk submission ID %d berhasil diverifikasi", submissionID))
 	return nil
 }
 
@@ -111,5 +119,9 @@ func RejectPayment(submissionID uint) error {
 		return err
 	}
 
-	return UpdateSubmissionStatusWithNotification(submissionID, "payment_rejected")
+	err = UpdateSubmissionStatusWithNotification(submissionID, "payment_rejected")
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Pembayaran untuk submission ID %d ditolak", submissionID))
+	}
+	return err
 }

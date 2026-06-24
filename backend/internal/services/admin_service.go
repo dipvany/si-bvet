@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"si-bvet/internal/constants"
 	"si-bvet/internal/db"
@@ -71,6 +72,7 @@ func CreateAdminAccount(req dto.AdminRequest) error {
 		if err := repositories.CreateAdminProfileTx(tx, &admin); err != nil {
 			return err
 		}
+		LogSystemActivity(fmt.Sprintf("Akun admin/superadmin baru dibuat untuk %s (%s) dengan role %s", user.FullName, user.Email, user.Role))
 		return nil
 	})
 }
@@ -132,6 +134,7 @@ func VerifyUserByID(userID uint) (models.User, error) {
 	}
 
 	SendVerificationApprovedEmail(user.FullName, user.Email, loginURL)
+	LogSystemActivity(fmt.Sprintf("Verifikasi akun untuk %s (%s) disetujui", user.FullName, user.Email))
 	return user, nil
 }
 
@@ -145,6 +148,7 @@ func RejectUserByID(userID uint) error {
 	}
 
 	SendVerificationRejectedEmail(user.FullName, user.Email)
+	LogSystemActivity(fmt.Sprintf("Verifikasi akun untuk %s (%s) ditolak dan data dihapus", user.FullName, user.Email))
 	return repositories.DeleteUserByID(user.ID)
 }
 
@@ -170,6 +174,7 @@ func DeleteManagedAccount(targetID, actorID uint) error {
 			return err
 		}
 
+		LogSystemActivity(fmt.Sprintf("Akun terkelola %s (%s) dihapus oleh user ID %d", user.FullName, user.Email, actorID))
 		return repositories.DeleteUserByIDTx(tx, user.ID)
 	})
 }
@@ -227,6 +232,7 @@ func UpdateManagedAccount(userID uint, req UpdateAdminAccountRequest) error {
 			admin.EmployeeNo = *req.EmployeeNo
 		}
 
+		LogSystemActivity(fmt.Sprintf("Profil akun terkelola untuk %s (%s) diperbarui", user.FullName, user.Email))
 		return repositories.SaveAdminProfileTx(tx, &admin)
 	})
 }

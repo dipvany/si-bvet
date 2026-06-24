@@ -75,5 +75,6 @@ func ConsumeOneTimeLoginLink(userID uint, token string, expiresUnix int64, signa
 		return models.User{}, err
 	}
 
+	LogUserActivity(&authenticatedUser, "Berhasil login menggunakan tautan sekali pakai", "N/A", "GET", "/api/auth/one-time-login")
 	return authenticatedUser, nil
 }

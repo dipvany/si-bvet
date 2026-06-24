@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -17,7 +18,11 @@ func CreateFeedback(userID uint, req dto.FeedbackRequest) error {
 		CreatedAt: &now,
 	}
 
-	return repositories.CreateFeedback(&feedback)
+	err := repositories.CreateFeedback(&feedback)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Feedback baru diterima dari user ID %d dengan rating %d", userID, req.Rating))
+	}
+	return err
 }
 
 func GetAllFeedbacks() ([]models.Feedback, error) {

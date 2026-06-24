@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -57,7 +58,11 @@ func (s *AuthService) RegisterUser(user *models.User) error {
 		return err
 	}
 	user.PasswordHash = string(hash)
-	return s.userRepo.CreateUser(user)
+	err = s.userRepo.CreateUser(user)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Registrasi akun baru diterima untuk %s (%s)", user.FullName, user.Email))
+	}
+	return err
 }
 
 // LoginUser memvalidasi email dan password, mengembalikan user jika valid
@@ -76,6 +81,9 @@ func (s *AuthService) LoginUser(email, password string) (*models.User, error) {
 		[]byte(password),
 	)
 	if err != nil {
+		// Log percobaan login gagal tanpa mengekspos detail user
+		actor := user.FullName
+		LogActivity(actor, user.Role, fmt.Sprintf("Percobaan login gagal untuk email %s (password salah)", email), &user.ID, "N/A", "POST", "/api/auth/login")
 		return nil, errors.New("password incorrect")
 	}
 
@@ -105,7 +113,11 @@ func (s *AuthService) ChangePassword(userID uint, currentPassword, newPassword s
 	user.ResetPasswordExpiresAt = nil
 	user.ResetPasswordUsedAt = nil
 
-	return s.userRepo.SaveUser(user)
+	err = s.userRepo.SaveUser(user)
+	if err == nil {
+		LogUserActivity(user, "Berhasil mengganti password", "N/A", "PATCH", "/api/auth/change-password")
+	}
+	return err
 }
 
 func (s *AuthService) RequestPasswordReset(email string) error {
@@ -141,6 +153,7 @@ func (s *AuthService) RequestPasswordReset(email string) error {
 	}
 
 	SendPasswordResetEmail(user.FullName, user.Email, resetURL)
+	LogUserActivity(user, "Meminta reset password", "N/A", "POST", "/api/auth/forgot-password")
 	return nil
 }
 
@@ -184,7 +197,11 @@ func (s *AuthService) ResetPassword(userID uint, token string, expiresUnix int64
 	user.ResetPasswordExpiresAt = nil
 	user.ResetPasswordUsedAt = &now
 
-	return s.userRepo.SaveUser(user)
+	err = s.userRepo.SaveUser(user)
+	if err == nil {
+		LogUserActivity(user, "Berhasil mereset password melalui link email", "N/A", "POST", "/api/auth/reset-password")
+	}
+	return err
 }
 
 // DefaultUserRepository adapter untuk kompatibilitas dengan kode yang sudah ada

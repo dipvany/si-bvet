@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -25,6 +26,7 @@ func UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
 
 	// update common user data
 	if err := repositories.UpdateUserProfile(userID, userUpdates); err != nil {
+		LogSystemActivity(fmt.Sprintf("Profil pengguna (data umum) untuk user ID %d diperbarui", userID))
 		return err
 	}
 
@@ -67,7 +69,11 @@ func UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
 			customerUpdates["occupation"] = *req.Occupation
 		}
 
-		return repositories.UpdateCustomerProfile(userID, customerUpdates)
+		err := repositories.UpdateCustomerProfile(userID, customerUpdates)
+		if err == nil {
+			LogSystemActivity(fmt.Sprintf("Profil customer untuk user ID %d diperbarui", userID))
+		}
+		return err
 	}
 
 	if role == "admin" {
@@ -82,7 +88,11 @@ func UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
 			adminUpdates["employee_no"] = *req.EmployeeNo
 		}
 
-		return repositories.UpdateAdminProfile(userID, adminUpdates)
+		err := repositories.UpdateAdminProfile(userID, adminUpdates)
+		if err == nil {
+			LogSystemActivity(fmt.Sprintf("Profil admin untuk user ID %d diperbarui", userID))
+		}
+		return err
 	}
 
 	return nil
@@ -97,4 +107,3 @@ func GetUserProfile(userID uint) (models.User, error) {
 func GetAllCustomers() ([]models.User, error) {
 	return repositories.GetAllCustomers()
 }
-

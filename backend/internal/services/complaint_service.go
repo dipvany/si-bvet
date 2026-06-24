@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -35,7 +36,11 @@ func CreateComplaint(userID uint, req dto.ComplaintRequest, filePath string) err
 		CreatedAt:      &now,
 	}
 
-	return repositories.CreateComplaint(&complaint)
+	err := repositories.CreateComplaint(&complaint)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Keluhan baru dibuat oleh user ID %d dengan subjek: %s", userID, req.Subjects))
+	}
+	return err
 }
 
 func GetAllComplaints() ([]models.Complaint, error) {
@@ -43,7 +48,11 @@ func GetAllComplaints() ([]models.Complaint, error) {
 }
 
 func UpdateComplaintResponse(id uint, response string) error {
-	return repositories.UpdateComplaintResponse(id, response)
+	err := repositories.UpdateComplaintResponse(id, response)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Admin memberikan respon untuk keluhan ID %d", id))
+	}
+	return err
 }
 
 func GetComplaintsByUserID(userID uint) ([]models.Complaint, error) {

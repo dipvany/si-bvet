@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -19,7 +20,11 @@ func CreateTestService(req dto.TestServiceRequest) error {
 		Description:   req.Description,
 	}
 
-	return repositories.CreateTestService(&service)
+	err := repositories.CreateTestService(&service)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Layanan pengujian baru dibuat: '%s'", req.TestName))
+	}
+	return err
 }
 
 func GetAllTestServices() ([]models.TestService, error) {
@@ -46,9 +51,17 @@ func UpdateTestService(id uint, req dto.TestServiceRequest) error {
 	service.Duration = req.Duration
 	service.Description = req.Description
 
-	return repositories.UpdateTestService(&service)
+	err = repositories.UpdateTestService(&service)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Layanan pengujian ID %d ('%s') diperbarui", id, req.TestName))
+	}
+	return err
 }
 
 func DeleteTestService(id uint) error {
-	return repositories.DeleteTestService(id)
+	err := repositories.DeleteTestService(id)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Layanan pengujian ID %d dihapus", id))
+	}
+	return err
 }

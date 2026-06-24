@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
 	"time"
@@ -22,7 +23,11 @@ func CreateLHu(submissionID uint, noLhu string, filePath string, dateOfPub *time
 		DateOfPub:    dateOfPub,
 	}
 
-	return repositories.CreateLhu(&lhu)
+	err = repositories.CreateLhu(&lhu)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("LHU dibuat untuk submission ID %d dengan nomor %s", submissionID, noLhu))
+	}
+	return err
 }
 
 func GetLHuBySubmissionID(submissionID uint) (*models.LhuDocument, error) {
@@ -34,7 +39,11 @@ func GetLHuBySubmissionID(submissionID uint) (*models.LhuDocument, error) {
 }
 
 func UpdateLHu(submissionID uint, noLhu string, filePath string, dateOfPub string) error {
-	return repositories.UpdateLhu(submissionID, noLhu, filePath, dateOfPub)
+	err := repositories.UpdateLhu(submissionID, noLhu, filePath, dateOfPub)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("LHU untuk submission ID %d diperbarui. Nomor LHU: %s", submissionID, noLhu))
+	}
+	return err
 }
 
 func UploadLHU(submissionID uint, noLHU string, filePath string) error {
@@ -64,6 +73,7 @@ func UploadLHU(submissionID uint, noLHU string, filePath string) error {
 	}
 
 	NotifyLHUAvailable(submissionID)
+	LogSystemActivity(fmt.Sprintf("LHU diunggah untuk submission ID %d. Nomor LHU: %s", submissionID, noLHU))
 	return nil
 }
 

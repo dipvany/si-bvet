@@ -260,6 +260,7 @@ func (s *SubmissionService) SaveUploadedSampleTemplate(userID uint, filePath str
 }
 
 func (s *SubmissionService) ImportSamplesFromTemplate(submissionID uint, file io.Reader) (dto.SampleTemplateImportResponse, error) {
+	LogSystemActivity(fmt.Sprintf("Memulai impor sampel dari templat untuk submission ID %d", submissionID))
 	samples, err := ParseSamplesFromTemplateExcel(file)
 	if err != nil {
 		return dto.SampleTemplateImportResponse{}, err
@@ -297,6 +298,7 @@ func CreateSubmissionWithSamplesAndTests(userID uint, req dto.SubmissionRequest)
 	}
 
 	NotifySubmissionStatusChanged(submission.ID, submission.ProcessStatus)
+	LogSystemActivity(fmt.Sprintf("Submission baru dibuat oleh user ID %d dengan nomor tiket %s", userID, submission.NoTicket))
 	return submission.ID, nil
 }
 
@@ -326,7 +328,11 @@ func ApproveSubmission(id uint) error {
 		return errors.New("submission can only be approved when status is pending_verification")
 	}
 
-	return UpdateSubmissionStatusWithNotification(id, "approved")
+	err = UpdateSubmissionStatusWithNotification(id, "approved")
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Submission ID %d disetujui oleh admin", id))
+	}
+	return err
 }
 
 func RejectSubmission(id uint) error {
@@ -343,7 +349,11 @@ func RejectSubmission(id uint) error {
 		return errors.New("submission can only be rejected when status is pending_verification")
 	}
 
-	return UpdateSubmissionStatusWithNotification(id, "rejected")
+	err = UpdateSubmissionStatusWithNotification(id, "rejected")
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Submission ID %d ditolak oleh admin", id))
+	}
+	return err
 }
 
 func UpdateSubmissionStatusWithNotification(submissionID uint, status string) error {
@@ -360,7 +370,7 @@ func UpdateSubmissionWithSamplesAndTests(
 	userID uint,
 	req dto.UpdateSubmissionRequest,
 ) error {
-	return repositories.InTransaction(func(tx *gorm.DB) error {
+	err := repositories.InTransaction(func(tx *gorm.DB) error {
 		submission, err := repositories.GetSubmissionByIDTx(tx, submissionID)
 		if err != nil {
 			return err
@@ -398,6 +408,10 @@ func UpdateSubmissionWithSamplesAndTests(
 
 		return nil
 	})
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Submission ID %d diperbarui oleh user ID %d", submissionID, userID))
+	}
+	return err
 }
 
 func buildSubmission(userID uint, req dto.SubmissionRequest) models.Submission {

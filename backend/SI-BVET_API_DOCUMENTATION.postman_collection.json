@@ -369,6 +369,20 @@
             "url": "{{base_url}}/superadmin/submissions/samples/template",
             "description": "Upload template sample submission. Field file wajib: file."
           }
+        },
+        {
+          "name": "Get Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              }
+            ],
+            "url": "{{base_url}}/superadmin/activity-logs",
+            "description": "Mengambil log aktivitas sistem. Hanya untuk superadmin."
+          }
         }
       ]
     },

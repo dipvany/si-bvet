@@ -38,7 +38,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 	lhuHandler := mustDependency("lhu handler", deps.LHUHandler)
 	testServiceHandler := mustDependency("test service handler", deps.TestServiceHandler)
 	billingHandler := mustDependency("billing handler", deps.BillingHandler)
-
+	
 	// serve uploaded files from internal/uploads for both direct and /api-prefixed URLs
 	r.Static("/uploads", "internal/uploads")
 	r.Static("/api/uploads", "internal/uploads")
@@ -83,6 +83,8 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				superAdminGroup.POST("/test-services/import", testServiceHandler.ImportTestServicesExcel)
 
 				superAdminGroup.POST("/submissions/samples/template", submissionHandler.UploadSampleTemplate)
+
+				superAdminGroup.GET("/activity-logs", handlers.GetActivityLogsHandler)
 			}
 
 			// ADMIN

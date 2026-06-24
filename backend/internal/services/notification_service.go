@@ -46,6 +46,8 @@ func NotifySubmissionStatusChanged(submissionID uint, status string) {
 
 	if err := CreateInAppNotification(submission.UserID, title, message, "submission_status"); err != nil {
 		log.Printf("failed to create submission status notification (submission_id=%d): %v", submissionID, err)
+	} else {
+		LogSystemActivity(fmt.Sprintf("Perubahan status pengajuan %s menjadi %s", submission.NoTicket, mapSubmissionStatus(status)))
 	}
 }
 
@@ -61,6 +63,8 @@ func NotifyPaymentSuccess(submissionID uint) {
 
 	if err := CreateInAppNotification(submission.UserID, title, message, "payment"); err != nil {
 		log.Printf("failed to create payment in-app notification (submission_id=%d): %v", submissionID, err)
+	} else {
+		LogSystemActivity(fmt.Sprintf("Verifikasi pembayaran berhasil untuk pengajuan %s", submission.NoTicket))
 	}
 
 	body := fmt.Sprintf("Halo %s,\n\nPembayaran untuk submission %s sudah berhasil diverifikasi.\nTim lab sedang memproses sampel Anda.\n\nTerima kasih.", submission.User.FullName, submission.NoTicket)
@@ -81,6 +85,8 @@ func NotifyLHUAvailable(submissionID uint) {
 
 	if err := CreateInAppNotification(submission.UserID, title, message, "lhu"); err != nil {
 		log.Printf("failed to create LHU in-app notification (submission_id=%d): %v", submissionID, err)
+	} else {
+		LogSystemActivity(fmt.Sprintf("LHU untuk pengajuan %s telah tersedia", submission.NoTicket))
 	}
 
 	body := fmt.Sprintf("Halo %s,\n\nLHU untuk submission %s sudah tersedia.\nSilakan login ke aplikasi SI-BVET untuk melihat atau mengunduh dokumen LHU.\n\nTerima kasih.", submission.User.FullName, submission.NoTicket)
@@ -93,6 +99,7 @@ func SendRegistrationPendingEmail(fullName, email string) {
 	body := fmt.Sprintf("Halo %s,\n\nRegistrasi akun pelanggan SI-BVET berhasil diterima.\nAkun Anda saat ini menunggu verifikasi admin.\n\nTerima kasih.", fullName)
 	if err := utils.SendEmail(email, "Registrasi Berhasil - Menunggu Verifikasi", body); err != nil {
 		log.Printf("failed to send registration pending email to %s: %v", email, err)
+		// Log aktivitas registrasi sudah ada di auth_service
 	}
 }
 
@@ -100,6 +107,8 @@ func SendVerificationApprovedEmail(fullName, email, loginURL string) {
 	body := fmt.Sprintf("Halo %s,\n\nAkun SI-BVET Anda telah diverifikasi admin.\nSilakan gunakan tautan login sekali pakai berikut sebelum masa berlakunya habis:\n%s\n\nTerima kasih.", fullName, loginURL)
 	if err := utils.SendEmail(email, "Verifikasi Akun Berhasil - SI-BVET", body); err != nil {
 		log.Printf("failed to send verification approved email to %s: %v", email, err)
+	} else {
+		LogSystemActivity(fmt.Sprintf("Verifikasi akun disetujui untuk %s (%s)", fullName, email))
 	}
 }
 
@@ -107,6 +116,8 @@ func SendVerificationRejectedEmail(fullName, email string) {
 	body := fmt.Sprintf("Halo %s,\n\nMohon maaf, verifikasi akun SI-BVET Anda ditolak.\nSilakan lakukan registrasi ulang dengan dokumen yang valid atau hubungi admin.\n\nTerima kasih.", fullName)
 	if err := utils.SendEmail(email, "Verifikasi Akun Ditolak - SI-BVET", body); err != nil {
 		log.Printf("failed to send verification rejected email to %s: %v", email, err)
+	} else {
+		LogSystemActivity(fmt.Sprintf("Verifikasi akun ditolak untuk %s (%s)", fullName, email))
 	}
 }
 
