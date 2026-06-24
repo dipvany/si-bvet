@@ -21,6 +21,7 @@ var (
 	ErrAccountNotFound   = errors.New("account not found")
 	ErrInvalidRole       = errors.New("role must be admin or superadmin")
 	ErrNotManagedAccount = errors.New("target user is not a managed account")
+	ErrNotCustomerAccount = errors.New("target user is not a customer account")
 	ErrDeleteOwnAccount  = errors.New("cannot delete your own account")
 )
 
@@ -74,6 +75,138 @@ func CreateAdminAccount(req dto.AdminRequest) error {
 		}
 		LogSystemActivity(fmt.Sprintf("Akun admin/superadmin baru dibuat untuk %s (%s) dengan role %s", user.FullName, user.Email, user.Role))
 		return nil
+	})
+}
+
+func CreateCustomerAccount(req dto.CustomerCreateRequest) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		user := models.User{
+			FullName:     req.FullName,
+			Email:        req.Email,
+			Phone:        req.Phone,
+			PasswordHash: string(hash),
+			Role:         constants.RoleCustomer,
+			IsVerified:   true,
+			IsActive:     req.IsActive,
+			VerifiedAt:   &now,
+			Institution:  req.Institution,
+		}
+
+		if err := repositories.CreateUserTx(tx, &user); err != nil {
+			return err
+		}
+
+		customer := models.Customer{
+			UserID: user.ID,
+			Group:  req.Group,
+			MembershipNo: req.MembershipNo,
+			PICName:      req.PICName,
+			PICContact:   req.PICContact,
+			Province:     req.Province,
+			City:         req.City,
+			Subdistrict:  req.Subdistrict,
+			Village:      req.Village,
+			Address:      req.Address,
+			ZipCode:      req.ZipCode,
+		}
+
+		if err := repositories.CreateCustomerTx(tx, &customer); err != nil {
+			return err
+		}
+
+		LogSystemActivity(fmt.Sprintf(
+			"Akun customer baru dibuat oleh Superadmin untuk %s (%s)",
+			user.FullName, user.Email,
+		))
+		return nil
+	})
+}
+
+func UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		user, err := repositories.GetUserByIDTx(tx, userID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrAccountNotFound
+			}
+			return err
+		}
+
+		if user.Role != constants.RoleCustomer {
+			return ErrNotCustomerAccount
+		}
+
+		// Update user fields
+		if req.FullName != nil {
+			user.FullName = *req.FullName
+		}
+		if req.Email != nil {
+			user.Email = *req.Email
+		}
+		if req.Phone != nil {
+			user.Phone = *req.Phone
+		}
+		if req.Institution != nil {
+			user.Institution = *req.Institution
+		}
+		if req.IsActive != nil {
+			user.IsActive = *req.IsActive
+		}
+
+		if err := repositories.SaveUserTx(tx, &user); err != nil {
+			return err
+		}
+
+		// Update customer profile fields
+		customer, err := repositories.GetCustomerProfileByUserIDTx(tx, user.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// Jika profil tidak ada, buat baru (opsional, tergantung kebutuhan)
+				customer = models.Customer{UserID: user.ID}
+			} else {
+				return err
+			}
+		}
+
+		if req.Group != nil {
+			customer.Group = *req.Group
+		}
+		if req.MembershipNo != nil {
+			customer.MembershipNo = *req.MembershipNo
+		}
+		if req.PICName != nil {
+			customer.PICName = *req.PICName
+		}
+		if req.PICContact != nil {
+			customer.PICContact = *req.PICContact
+		}
+		if req.Province != nil {
+			customer.Province = *req.Province
+		}
+		if req.City != nil {
+			customer.City = *req.City
+		}
+		if req.Subdistrict != nil {
+			customer.Subdistrict = *req.Subdistrict
+		}
+		if req.Village != nil {
+			customer.Village = *req.Village
+		}
+		if req.Address != nil {
+			customer.Address = *req.Address
+		}
+		if req.ZipCode != nil {
+			customer.ZipCode = *req.ZipCode
+		}
+
+		LogSystemActivity(fmt.Sprintf("Profil akun customer untuk %s (%s) diperbarui", user.FullName, user.Email))
+		return repositories.SaveCustomerProfileTx(tx, &customer)
 	})
 }
 
@@ -175,6 +308,31 @@ func DeleteManagedAccount(targetID, actorID uint) error {
 		}
 
 		LogSystemActivity(fmt.Sprintf("Akun terkelola %s (%s) dihapus oleh user ID %d", user.FullName, user.Email, actorID))
+		return repositories.DeleteUserByIDTx(tx, user.ID)
+	})
+}
+
+func DeleteCustomerAccount(targetID uint) error {
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		user, err := repositories.GetUserByIDTx(tx, targetID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrAccountNotFound
+			}
+			return err
+		}
+
+		if user.Role != constants.RoleCustomer {
+			return ErrNotCustomerAccount
+		}
+
+		if err := repositories.DeleteCustomerProfileByUserIDTx(tx, user.ID); err != nil {
+			return err
+		}
+
+		LogSystemActivity(fmt.Sprintf(
+			"Akun customer %s (%s) telah dihapus oleh Superadmin",
+			user.FullName, user.Email))
 		return repositories.DeleteUserByIDTx(tx, user.ID)
 	})
 }

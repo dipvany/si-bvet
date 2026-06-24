@@ -10,6 +10,7 @@ type User struct {
 	PasswordHash    string     `json:"-" gorm:"column:password_hash;type:varchar(255);not null"`
 	Role            string     `json:"role" gorm:"column:role;type:varchar(32);not null;check:role IN ('superadmin','admin','customer')"`
 	IsVerified      bool       `json:"is_verified" gorm:"column:is_verified;not null;default:false"`
+	IsActive        bool       `json:"is_active" gorm:"column:is_active;not null;default:true"`
 	VerifiedAt      *time.Time `json:"verified_at" gorm:"column:verified_at"`
 	LoginLinkTokenHash string   `json:"-" gorm:"column:login_link_token_hash;type:varchar(255)"`
 	LoginLinkExpiresAt *time.Time `json:"login_link_expires_at,omitempty" gorm:"column:login_link_expires_at"`

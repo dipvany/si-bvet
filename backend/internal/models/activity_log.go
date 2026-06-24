@@ -15,3 +15,7 @@ type ActivityLog struct {
 	Method    string `gorm:"size:10"`
 	Endpoint  string `gorm:"size:255"`
 }
+
+func (ActivityLog) TableName() string {
+	return "ActivityLogs"
+}
