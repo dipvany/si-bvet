@@ -20,8 +20,8 @@ type Sample struct {
 	UnitAge        string     `json:"unit_age" gorm:"column:unit_age"`
 	Owner          string     `json:"owner" gorm:"column:owner"`
 	TestType       string     `json:"test_type" gorm:"column:test_type"`
-	// LocationType   string     `json:"location_type" gorm:"column:location_type"`
-	// LocationSmpl   string     `json:"location_smpl" gorm:"column:location_smpl"`
+	LocationType   string     `json:"location_type" gorm:"column:location_type"`
+	LocationSmpl   string     `json:"location_smpl" gorm:"column:location_smpl"`
 	IsVaccinated   string     `json:"is_vaccinated" gorm:"column:is_vaccinated"`
 
 	Volume      string `json:"volume" gorm:"column:volume"`

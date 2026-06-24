@@ -12,25 +12,23 @@ type SampleInput struct {
 	SpecimenType   string `json:"specimen_type"`
 	Species        string `json:"species"`
 	// Batch          string      `json:"batch"`
-	Preservative   string  `json:"preservative"`
-	Packaging      string  `json:"packaging"`
-	ProductionDate string  `json:"production_date"`
-	ExpiredDate    string  `json:"expired_date"`
-	Sex            string  `json:"sex"`
-	Age            float64 `json:"age"`
-	UnitAge        string  `json:"unit_age"`
-	Owner          string  `json:"owner"`
-	TestType       string  `json:"test_type"`
-	TestServiceID  uint    `json:"test_service_id"`
-	Sampling       string  `json:"sampling"`
-	SamplingInfra  string  `json:"sampling_infra"`
-	// LocationType   string      `json:"location_type"`
-	// LocationSmpl   string      `json:"location_smpl"`
-	IsVaccinated string      `json:"is_vaccinated"`
-	Volume       string      `json:"volume"`
-	Condition    string      `json:"condition"`
-	TotalSample  int64       `json:"total_sample" binding:"required"`
-	Tests        []TestInput `json:"tests" binding:"required"`
+	Preservative   string      `json:"preservative"`
+	Packaging      string      `json:"packaging"`
+	ProductionDate string      `json:"production_date"`
+	ExpiredDate    string      `json:"expired_date"`
+	Sex            string      `json:"sex"`
+	Age            float64     `json:"age"`
+	UnitAge        string      `json:"unit_age"`
+	Owner          string      `json:"owner"`
+	TestType       string      `json:"test_type"`
+	TestServiceID  uint        `json:"test_service_id"`
+	LocationType   string      `json:"location_type"`
+	LocationSmpl   string      `json:"location_smpl"`
+	IsVaccinated   string      `json:"is_vaccinated"`
+	Volume         string      `json:"volume"`
+	Condition      string      `json:"condition"`
+	TotalSample    int64       `json:"total_sample" binding:"required"`
+	Tests          []TestInput `json:"tests" binding:"required"`
 }
 
 type SubmissionRequest struct {
