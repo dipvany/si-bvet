@@ -56,8 +56,8 @@ function FormPage({ initial, onBack, onSaved }) {
     try {
       const body   = { ...form, price: Number(form.price) };
       const url    = isEdit
-        ? `/superadmin/test-services/${initial.id}`
-        : "/superadmin/test-services";
+        ? `/admin/test-services/${initial.id}`
+        : "/admin/test-services";
       const res = await apiFetch(url, {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,7 +235,7 @@ export default function KatalogPengujian() {
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
-      const res  = await apiFetch("/superadmin/test-services");
+      const res  = await apiFetch("/admin/test-services");
       const data = await res.json();
       setServices(Array.isArray(data) ? data : data.data ?? []);
     } catch {
@@ -252,7 +252,7 @@ export default function KatalogPengujian() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res  = await apiFetch("/superadmin/test-services/import",
+      const res  = await apiFetch("/admin/test-services/import",
         { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Gagal import.");
@@ -270,7 +270,7 @@ export default function KatalogPengujian() {
     if (!window.confirm("Yakin ingin menghapus katalog ini?")) return;
     setDeleting(id);
     try {
-      const res = await apiFetch(`/superadmin/test-services/${id}`,
+      const res = await apiFetch(`/admin/test-services/${id}`,
         { method: "DELETE" });
       if (!res.ok) throw new Error();
       setServices(p => p.filter(s => s.id !== id));
