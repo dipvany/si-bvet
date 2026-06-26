@@ -170,6 +170,38 @@
             "url": "{{base_url}}/auth/verify-email/{{one_time_login_user_id}}/{{one_time_login_token}}?expires={{one_time_login_expires}}&signature={{one_time_login_signature}}",
             "description": "Verifikasi one-time login link dan ambil JWT token."
           }
+        },
+        {
+          "name": "Create Complaint (Public)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fullname", "value": "Nama Pelapor", "type": "text" },
+                {
+                  "key": "email",
+                  "value": "pelapor@example.com",
+                  "type": "text"
+                },
+                { "key": "subjects", "value": "Billing issue", "type": "text" },
+                {
+                  "key": "description",
+                  "value": "Tagihan belum masuk ke sistem",
+                  "type": "text"
+                },
+                {
+                  "key": "date_of_complaint",
+                  "value": "2026-06-06",
+                  "type": "text"
+                },
+                { "key": "attachment", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{base_url}}/complaints",
+            "description": "Buat complaint baru (publik, tidak perlu login). Field attachment opsional, field tanggal menerima format RFC3339 atau YYYY-MM-DD."
+          }
         }
       ]
     },
@@ -1007,34 +1039,6 @@
             ],
             "url": "{{base_url}}/customer/complaints",
             "description": "Daftar complaint milik customer login."
-          }
-        },
-        {
-          "name": "Create Complaint",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                { "key": "subjects", "value": "Billing issue", "type": "text" },
-                {
-                  "key": "description",
-                  "value": "Tagihan belum masuk ke sistem",
-                  "type": "text"
-                },
-                {
-                  "key": "date_of_complaint",
-                  "value": "2026-06-06",
-                  "type": "text"
-                },
-                { "key": "attachment", "type": "file", "src": "" }
-              ]
-            },
-            "url": "{{base_url}}/customer/complaints",
-            "description": "Buat complaint. Field attachment opsional, field tanggal menerima format RFC3339 atau YYYY-MM-DD."
           }
         }
       ]

@@ -15,28 +15,24 @@ import (
 )
 
 type ComplaintServiceInterface interface {
-	CreateComplaint(userID uint, req dto.ComplaintRequest, filePath string) error
+	CreateComplaint(req dto.ComplaintRequest, filePath string) error
 	GetAllComplaints() ([]models.Complaint, error)
 	UpdateComplaintResponse(id uint, response string) error
-	GetComplaintsByUserID(userID uint) ([]models.Complaint, error)
 }
 
 type defaultComplaintService struct{}
 
-func (defaultComplaintService) CreateComplaint(userID uint, req dto.ComplaintRequest, filePath string) error {
-	return services.CreateComplaint(userID, req, filePath)
+// UpdateComplaintResponse implements ComplaintServiceInterface.
+func (d defaultComplaintService) UpdateComplaintResponse(id uint, response string) error {
+	return services.UpdateComplaintResponse(id, response)
+}
+
+func (defaultComplaintService) CreateComplaint(req dto.ComplaintRequest, filePath string) error {
+	return services.CreateComplaint(req, filePath)
 }
 
 func (defaultComplaintService) GetAllComplaints() ([]models.Complaint, error) {
 	return services.GetAllComplaints()
-}
-
-func (defaultComplaintService) UpdateComplaintResponse(id uint, response string) error {
-	return services.UpdateComplaintResponse(id, response)
-}
-
-func (defaultComplaintService) GetComplaintsByUserID(userID uint) ([]models.Complaint, error) {
-	return services.GetComplaintsByUserID(userID)
 }
 
 type ComplaintHandler struct {
@@ -70,19 +66,20 @@ func CreateComplaint(c *gin.Context) {
 }
 
 func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
-	userID, err := GetUserID(c)
-	if err != nil {
-		RespondUserIDError(c, err)
+	var req dto.ComplaintRequest
+	if err := c.ShouldBind(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	subjects := c.PostForm("subjects")
-	description := c.PostForm("description")
-	dateOfComplaint := c.PostForm("date_of_complaint")
-
 	filePath := ""
 	file, err := c.FormFile("attachment")
-	if err == nil {
+	if err != nil && err != http.ErrMissingFile {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid file upload")
+		return
+	}
+
+	if file != nil && file.Size > 0 {
 		filePath, err = h.fileStorage.SaveComplaintAttachment(context.Background(), file)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save attachment")
@@ -91,22 +88,16 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 	}
 
 	// validate date_of_complaint when provided (accept RFC3339 or YYYY-MM-DD)
-	if dateOfComplaint != "" {
-		if _, err := time.Parse(time.RFC3339, dateOfComplaint); err != nil {
-			if _, err2 := time.Parse("2006-01-02", dateOfComplaint); err2 != nil {
+	if req.DateOfComplaint != "" {
+		if _, err := time.Parse(time.RFC3339, req.DateOfComplaint); err != nil {
+			if _, err2 := time.Parse("2006-01-02", req.DateOfComplaint); err2 != nil {
 				utils.ErrorResponse(c, http.StatusBadRequest, "invalid date_of_complaint format; expected RFC3339 or YYYY-MM-DD")
 				return
 			}
 		}
 	}
 
-	req := dto.ComplaintRequest{
-		Subjects:        subjects,
-		Description:     description,
-		DateOfComplaint: dateOfComplaint,
-	}
-
-	err = h.Service.CreateComplaint(userID, req, filePath)
+	err = h.Service.CreateComplaint(req, filePath)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -162,40 +153,9 @@ func (h *ComplaintHandler) UpdateComplaintResponse(c *gin.Context) {
 
 	err = h.Service.UpdateComplaintResponse(uint(idUint), req.AdminResponse)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		utils.ErrorResponse(c, http.StatusNotFound, "complaint not found")
 		return
 	}
 
 	utils.MessageResponse(c, http.StatusOK, "Complaint response updated successfully")
-}
-
-func GetMyComplaints(c *gin.Context) {
-	defaultComplaintHandler.GetMyComplaints(c)
-}
-
-func (h *ComplaintHandler) GetMyComplaints(c *gin.Context) {
-	userID, err := GetUserID(c)
-	if err != nil {
-		RespondUserIDError(c, err)
-		return
-	}
-
-	complaints, err := h.Service.GetComplaintsByUserID(userID)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	for i := range complaints {
-		if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, complaints[i].AttachmentPath); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-			return
-		} else {
-			complaints[i].AttachmentPath = resolved
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"complaints": complaints,
-	})
 }

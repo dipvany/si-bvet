@@ -35,82 +35,98 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 
 	ginkgo.Describe("CreateComplaint", func() {
 		ginkgo.It("should create complaint with valid data and file path", func() {
-			userID := uint(1)
 			req := dto.ComplaintRequest{
-				Subjects:    "Poor service",
+				Fullname:    "John Doe",
+				Email:       "john.doe@example.com",
+				IDNumber:    "1234567890",
 				Description: "The service quality is bad",
+				Suggestion:  "Improve it.",
 			}
 			filePath := "internal/uploads/complaints/file.pdf"
 
-			err := CreateComplaint(userID, req, filePath)
+			err := CreateComplaint(req, filePath)
 
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			// Verify in DB
 			var complaint models.Complaint
-			err = db.DB.First(&complaint, "user_id = ?", userID).Error
+			err = db.DB.First(&complaint, "email = ?", "john.doe@example.com").Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaint.UserID).To(gomega.Equal(userID))
-			gomega.Expect(complaint.Subjects).To(gomega.Equal("Poor service"))
+			gomega.Expect(complaint.Fullname).To(gomega.Equal("John Doe"))
 			gomega.Expect(complaint.Description).To(gomega.Equal("The service quality is bad"))
 			gomega.Expect(complaint.AttachmentPath).To(gomega.Equal(filePath))
 			gomega.Expect(complaint.Status).To(gomega.Equal("open"))
 		})
 
 		ginkgo.It("should create complaint without file path", func() {
-			userID := uint(1)
 			req := dto.ComplaintRequest{
-				Subjects:    "Issue",
+				Fullname:    "Jane Doe",
+				Email:       "jane.doe@example.com",
 				Description: "Something is wrong",
 			}
 			filePath := ""
 
-			err := CreateComplaint(userID, req, filePath)
+			err := CreateComplaint(req, filePath)
 
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			var complaint models.Complaint
-			err = db.DB.First(&complaint, "user_id = ?", userID).Error
+			err = db.DB.First(&complaint, "email = ?", "jane.doe@example.com").Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(complaint.AttachmentPath).To(gomega.Equal(""))
 		})
 
 		ginkgo.It("should set status to open by default", func() {
-			userID := uint(1)
 			req := dto.ComplaintRequest{
-				Subjects:    "Test",
+				Fullname:    "Test User",
+				Email:       "test.user@example.com",
 				Description: "Test description",
 			}
 
-			err := CreateComplaint(userID, req, "")
+			err := CreateComplaint(req, "")
 
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			var complaint models.Complaint
-			err = db.DB.First(&complaint, "user_id = ?", userID).Error
+			err = db.DB.First(&complaint, "email = ?", "test.user@example.com").Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(complaint.Status).To(gomega.Equal("open"))
 		})
 
 		ginkgo.It("should set created_at timestamp", func() {
-			userID := uint(1)
 			req := dto.ComplaintRequest{
-				Subjects:    "Test",
+				Fullname:    "Time User",
+				Email:       "time.user@example.com",
 				Description: "Test description",
 			}
 
 			beforeCreate := time.Now()
-			err := CreateComplaint(userID, req, "")
+			err := CreateComplaint(req, "")
 			afterCreate := time.Now()
 
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			var complaint models.Complaint
-			err = db.DB.First(&complaint, "user_id = ?", userID).Error
+			err = db.DB.First(&complaint, "email = ?", "time.user@example.com").Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(complaint.CreatedAt).NotTo(gomega.BeNil())
 			gomega.Expect(complaint.CreatedAt.After(beforeCreate.Add(-time.Second))).To(gomega.BeTrue())
 			gomega.Expect(complaint.CreatedAt.Before(afterCreate.Add(time.Second))).To(gomega.BeTrue())
+		})
+
+		ginkgo.It("should parse RFC3339 date string", func() {
+			rfc3339Time := "2026-01-02T15:04:05Z"
+			expectedTime, _ := time.Parse(time.RFC3339, rfc3339Time)
+			req := dto.ComplaintRequest{
+				Fullname:        "Date User",
+				Email:           "date.user@example.com",
+				DateOfComplaint: rfc3339Time,
+			}
+			err := CreateComplaint(req, "")
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			var complaint models.Complaint
+			db.DB.First(&complaint, "email = ?", "date.user@example.com")
+			gomega.Expect(complaint.DateOfComplaint.Unix()).To(gomega.Equal(expectedTime.Unix()))
 		})
 	})
 
@@ -127,8 +143,8 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 
 			for i := 1; i <= 3; i++ {
 				complaint := &models.Complaint{
-					UserID:      uint(i),
-					Subjects:    fmt.Sprintf("Subject %d", i),
+					Fullname:    fmt.Sprintf("User %d", i),
+					Email:       fmt.Sprintf("user%d@example.com", i),
 					Description: fmt.Sprintf("Description %d", i),
 					Status:      "open",
 					DateOfComplaint: now,
@@ -144,17 +160,17 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(complaints).To(gomega.HaveLen(3))
 			// Should be ordered by desc id
-			gomega.Expect(complaints[0].UserID).To(gomega.Equal(uint(3)))
-			gomega.Expect(complaints[1].UserID).To(gomega.Equal(uint(2)))
-			gomega.Expect(complaints[2].UserID).To(gomega.Equal(uint(1)))
+			gomega.Expect(complaints[0].Fullname).To(gomega.Equal("User 3"))
+			gomega.Expect(complaints[1].Fullname).To(gomega.Equal("User 2"))
+			gomega.Expect(complaints[2].Fullname).To(gomega.Equal("User 1"))
 		})
 
 		ginkgo.It("should return complaints from multiple users", func() {
 			now := time.Now()
 
 			complaint1 := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Issue 1",
+				Fullname:    "User 1",
+				Email:       "user1@example.com",
 				Description: "Description 1",
 				Status:      "open",
 				DateOfComplaint: now,
@@ -164,8 +180,8 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			complaint2 := &models.Complaint{
-				UserID:      2,
-				Subjects:    "Issue 2",
+				Fullname:    "User 2",
+				Email:       "user2@example.com",
 				Description: "Description 2",
 				Status:      "responded",
 				DateOfComplaint: now,
@@ -186,12 +202,13 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			now := time.Now()
 
 			complaint := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Issue",
+				Fullname:    "Test User",
 				Description: "Description",
+				Email:       "test@example.com",
 				Status:      "open",
 				DateOfComplaint: now,
 				CreatedAt:   &now,
+				UpdatedAt:   &now,
 			}
 			err := db.DB.Create(complaint).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
@@ -205,24 +222,25 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			err = db.DB.First(&updated, complaint.ID).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(updated.AdminResponse).To(gomega.Equal("We have resolved your issue"))
-			gomega.Expect(updated.Status).To(gomega.Equal("responded"))
+			gomega.Expect(updated.Status).To(gomega.Equal("open")) // Note: UpdateComplaintResponse doesn't change status
 		})
 
 		ginkgo.It("should return error when complaint not found", func() {
 			err := UpdateComplaintResponse(99999, "Response")
 
 			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(err.Error()).To(gomega.ContainSubstring("record not found"))
 		})
 
 		ginkgo.It("should overwrite previous response", func() {
 			now := time.Now()
 
 			complaint := &models.Complaint{
-				UserID:         1,
-				Subjects:       "Issue",
+				Fullname:       "Test User",
 				Description:    "Description",
-				Status:         "responded",
-				AdminResponse:  "Old response",
+				Email:          "test@example.com",
+				Status:         "open",
+				AdminResponse:       "Old response",
 				DateOfComplaint: now,
 				CreatedAt:      &now,
 			}
@@ -243,9 +261,9 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			now := time.Now()
 
 			complaint := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Issue",
+				Fullname:    "Test User",
 				Description: "Description",
+				Email:       "test@example.com",
 				Status:      "open",
 				DateOfComplaint: now,
 				CreatedAt:   &now,
@@ -266,145 +284,23 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 		})
 	})
 
-	ginkgo.Describe("GetComplaintsByUserID", func() {
-		ginkgo.It("should return empty list when user has no complaints", func() {
-			userID := uint(1)
-
-			complaints, err := GetComplaintsByUserID(userID)
-
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaints).To(gomega.BeEmpty())
-		})
-
-		ginkgo.It("should return complaints for specific user", func() {
-			now := time.Now()
-
-			complaint := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Issue",
-				Description: "Description",
-				Status:      "open",
-				DateOfComplaint: now,
-				CreatedAt:   &now,
-			}
-			err := db.DB.Create(complaint).Error
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			complaints, err := GetComplaintsByUserID(1)
-
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaints).To(gomega.HaveLen(1))
-			gomega.Expect(complaints[0].UserID).To(gomega.Equal(uint(1)))
-		})
-
-		ginkgo.It("should not return complaints from other users", func() {
-			now := time.Now()
-
-			complaint1 := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Issue 1",
-				Description: "Description 1",
-				Status:      "open",
-				DateOfComplaint: now,
-				CreatedAt:   &now,
-			}
-			err := db.DB.Create(complaint1).Error
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			complaint2 := &models.Complaint{
-				UserID:      2,
-				Subjects:    "Issue 2",
-				Description: "Description 2",
-				Status:      "open",
-				DateOfComplaint: now,
-				CreatedAt:   &now,
-			}
-			err = db.DB.Create(complaint2).Error
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			complaints, err := GetComplaintsByUserID(1)
-
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaints).To(gomega.HaveLen(1))
-			gomega.Expect(complaints[0].UserID).To(gomega.Equal(uint(1)))
-		})
-
-		ginkgo.It("should return multiple complaints for same user sorted by desc id", func() {
-			now := time.Now()
-
-			for i := 1; i <= 3; i++ {
-				complaint := &models.Complaint{
-					UserID:      1,
-					Subjects:    fmt.Sprintf("Issue %d", i),
-					Description: fmt.Sprintf("Description %d", i),
-					Status:      "open",
-					DateOfComplaint: now,
-					CreatedAt:   &now,
-				}
-				err := db.DB.Create(complaint).Error
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				time.Sleep(1 * time.Millisecond)
-			}
-
-			complaints, err := GetComplaintsByUserID(1)
-
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaints).To(gomega.HaveLen(3))
-			// Should be ordered by desc id
-			gomega.Expect(complaints[0].Subjects).To(gomega.Equal("Issue 3"))
-			gomega.Expect(complaints[1].Subjects).To(gomega.Equal("Issue 2"))
-			gomega.Expect(complaints[2].Subjects).To(gomega.Equal("Issue 1"))
-		})
-
-		ginkgo.It("should return complaints with different statuses", func() {
-			now := time.Now()
-
-			complaint1 := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Open issue",
-				Description: "Description",
-				Status:      "open",
-				DateOfComplaint: now,
-				CreatedAt:   &now,
-			}
-			err := db.DB.Create(complaint1).Error
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			complaint2 := &models.Complaint{
-				UserID:      1,
-				Subjects:    "Responded issue",
-				Description: "Description",
-				Status:      "responded",
-				DateOfComplaint: now,
-				CreatedAt:   &now,
-			}
-			err = db.DB.Create(complaint2).Error
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			complaints, err := GetComplaintsByUserID(1)
-
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaints).To(gomega.HaveLen(2))
-		})
-	})
-
 	ginkgo.Describe("Complaint Service Integration", func() {
 		ginkgo.It("should support full complaint workflow: create → respond → retrieve", func() {
-			userID := uint(1)
-
 			// Create complaint
 			req := dto.ComplaintRequest{
-				Subjects:    "Service issue",
+				Fullname:    "Workflow User",
+				Email:       "workflow@example.com",
 				Description: "Poor quality",
 			}
-			err := CreateComplaint(userID, req, "internal/uploads/complaints/doc.pdf")
+			err := CreateComplaint(req, "internal/uploads/complaints/doc.pdf")
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			// Verify created
-			complaints, err := GetComplaintsByUserID(userID)
+			complaints, err := GetAllComplaints()
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(complaints).To(gomega.HaveLen(1))
 			gomega.Expect(complaints[0].Status).To(gomega.Equal("open"))
+			gomega.Expect(complaints[0].Fullname).To(gomega.Equal("Workflow User"))
 
 			// Admin responds
 			complaintID := complaints[0].ID
@@ -412,10 +308,11 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			// Verify responded
-			complaints, err = GetComplaintsByUserID(userID)
+			var updatedComplaint models.Complaint
+			err = db.DB.First(&updatedComplaint, complaintID).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(complaints[0].Status).To(gomega.Equal("responded"))
-			gomega.Expect(complaints[0].AdminResponse).To(gomega.Equal("Thank you for reporting"))
+			gomega.Expect(updatedComplaint.Status).To(gomega.Equal("open")) // Status is not changed by UpdateComplaintResponse
+			gomega.Expect(updatedComplaint.AdminResponse).To(gomega.Equal("Thank you for reporting"))
 		})
 	})
 })

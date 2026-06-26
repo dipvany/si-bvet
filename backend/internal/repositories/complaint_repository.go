@@ -33,11 +33,11 @@ func UpdateComplaintResponse(id uint, response string) error {
 	return nil
 }
 
-// get complaint by my user id
-func GetComplaintsByUserID(userID uint) ([]models.Complaint, error) {
-	var complaints []models.Complaint
-	err := db.DB.Where("user_id = ?", userID).
-		Order("id desc").
-		Find(&complaints).Error
-	return complaints, err
+func GetComplaintByID(id uint) (*models.Complaint, error) {
+	var complaint models.Complaint
+	err := db.DB.First(&complaint, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &complaint, nil
 }

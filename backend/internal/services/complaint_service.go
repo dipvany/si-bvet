@@ -2,13 +2,16 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
 	"time"
+
+	"gorm.io/gorm"
 )
 
-func CreateComplaint(userID uint, req dto.ComplaintRequest, filePath string) error {
+func CreateComplaint(req dto.ComplaintRequest, filePath string) error {
 	now := time.Now()
 
 	// Determine complaint date: prefer client-provided value, fallback to now
@@ -27,20 +30,26 @@ func CreateComplaint(userID uint, req dto.ComplaintRequest, filePath string) err
 	}
 
 	complaint := models.Complaint{
-		UserID:         userID,
-		Subjects:       req.Subjects,
-		Description:    req.Description,
+		Fullname:        req.Fullname,
+		IDNumber:        req.IDNumber,
+		Email:           req.Email,
+		Phone:           req.Phone,
+		Description:     req.Description,
+		Suggestion:      req.Suggestion,
 		DateOfComplaint: complaintDate,
 		Status:         "open",
 		AttachmentPath: filePath,
 		CreatedAt:      &now,
 	}
 
-	err := repositories.CreateComplaint(&complaint)
-	if err == nil {
-		LogSystemActivity(fmt.Sprintf("Keluhan baru dibuat oleh user ID %d dengan subjek: %s", userID, req.Subjects))
+	if err := repositories.CreateComplaint(&complaint); err != nil {
+		return err
 	}
-	return err
+
+	SendNewComplaintEmail(complaint.Fullname, complaint.Email, complaint.ID)
+	LogSystemActivity(fmt.Sprintf("Keluhan baru dibuat oleh %s (%s) dengan ID: %d", complaint.Fullname, complaint.Email, complaint.ID))
+
+	return nil
 }
 
 func GetAllComplaints() ([]models.Complaint, error) {
@@ -48,13 +57,21 @@ func GetAllComplaints() ([]models.Complaint, error) {
 }
 
 func UpdateComplaintResponse(id uint, response string) error {
-	err := repositories.UpdateComplaintResponse(id, response)
-	if err == nil {
-		LogSystemActivity(fmt.Sprintf("Admin memberikan respon untuk keluhan ID %d", id))
+	if err := repositories.UpdateComplaintResponse(id, response); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return gorm.ErrRecordNotFound
+		}
+		return err
 	}
-	return err
-}
 
-func GetComplaintsByUserID(userID uint) ([]models.Complaint, error) {
-	return repositories.GetComplaintsByUserID(userID)
+	complaint, err := repositories.GetComplaintByID(id)
+	if err != nil {
+		// Log error but don't fail the operation, response is already saved
+		log.Printf("[ERROR] Failed to get complaint for notification after responding (ID: %d): %v", id, err)
+		return nil
+	}
+
+	SendComplaintResponseEmail(complaint.Fullname, complaint.Email, complaint.ID, response)
+	LogSystemActivity(fmt.Sprintf("Admin memberikan respon untuk keluhan ID %d", id))
+	return nil
 }

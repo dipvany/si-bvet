@@ -121,6 +121,22 @@ func SendVerificationRejectedEmail(fullName, email string) {
 	}
 }
 
+func SendNewComplaintEmail(fullname, email string, complaintID uint) {
+	body := fmt.Sprintf("Halo %s,\n\nLaporan pengaduan Anda dengan nomor referensi #%d telah kami terima.\nTim kami akan segera meninjau laporan Anda.\n\nTerima kasih.", fullname, complaintID)
+	if err := utils.SendEmail(email, fmt.Sprintf("Laporan Pengaduan Diterima (ID: #%d) - SI-BVET", complaintID), body); err != nil {
+		log.Printf("failed to send new complaint email to %s: %v", email, err)
+	}
+}
+
+func SendComplaintResponseEmail(fullname, email string, complaintID uint, response string) {
+	body := fmt.Sprintf("Halo %s,\n\nAdmin telah memberikan tanggapan untuk laporan pengaduan Anda (ID: #%d):\n\n\"%s\"\n\nSilakan hubungi kami jika ada pertanyaan lebih lanjut.\n\nTerima kasih.", fullname, complaintID, response)
+	if err := utils.SendEmail(email, fmt.Sprintf("Tanggapan untuk Laporan Pengaduan (ID: #%d) - SI-BVET", complaintID), body); err != nil {
+		log.Printf("failed to send complaint response email to %s: %v", email, err)
+	} else {
+		LogSystemActivity(fmt.Sprintf("Email tanggapan keluhan dikirim ke %s untuk keluhan ID %d", email, complaintID))
+	}
+}
+
 func SendPasswordResetEmail(fullName, email, resetURL string) {
 	body := fmt.Sprintf("Halo %s,\n\nKami menerima permintaan reset password untuk akun SI-BVET Anda.\nSilakan gunakan tautan berikut sebelum masa berlakunya habis:\n%s\n\nJika Anda tidak meminta reset password, abaikan email ini.\n\nTerima kasih.", fullName, resetURL)
 	if err := utils.SendEmail(email, "Reset Password Akun - SI-BVET", body); err != nil {

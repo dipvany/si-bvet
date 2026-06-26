@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// ActivityLog merepresentasikan sebuah entri log aktivitas dalam sistem.
 type ActivityLog struct {
 	ID        uint      `gorm:"primarykey"`
 	Timestamp time.Time `gorm:"index"`

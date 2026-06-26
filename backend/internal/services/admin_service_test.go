@@ -262,9 +262,13 @@ var _ = ginkgo.Describe("Admin Action Flows", func() {
 
 			now := time.Now()
 			complaint := models.Complaint{
-				UserID:      user.ID,
-				Subjects:    "Late test result",
+				ID :          1,
+				Fullname:    "Customer",
+				IDNumber:    "1234567890",
+				Email:       "customer@test.com",
+				Phone:       "1234567890",
 				Description: "I submitted my sample 3 days ago",
+				Suggestion:  "Please expedite the process",
 				Status:      "open",
 				DateOfComplaint: now,
 			}
@@ -276,6 +280,7 @@ var _ = ginkgo.Describe("Admin Action Flows", func() {
 			var updated models.Complaint
 			db.DB.First(&updated, complaint.ID)
 			gomega.Expect(updated.AdminResponse).To(gomega.Equal("We apologize for the delay"))
+			gomega.Expect(updated.Status).To(gomega.Equal("responded"))
 		})
 
 		ginkgo.It("should return error when complaint not found", func() {

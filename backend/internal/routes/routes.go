@@ -56,6 +56,8 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 			auth.GET("/verify-email/:id/:token", authHandler.VerifyEmailLogin)
 		}
 
+		api.POST("/complaints", complaintHandler.CreateComplaint)
+
 		// PROTECTED
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware())
@@ -152,8 +154,6 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				customerGroup.POST("/feedbacks", feedbackHandler.CreateFeedback)
 				customerGroup.GET("/feedbacks", feedbackHandler.GetMyFeedbacks)
 
-				customerGroup.GET("/complaints", complaintHandler.GetMyComplaints)
-				customerGroup.POST("/complaints", complaintHandler.CreateComplaint)
 			}
 
 		}
