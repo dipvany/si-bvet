@@ -1,10 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
 import { getProfile, updateProfile, changePassword } from "../../services/adminServices";
+import { getUser } from "../../utils/auth";
+
+/**
+ * Admin Profil — disesuaikan dengan API contract:
+ *
+ * GET  /profile   → { profile: { id, fullname, email, phone, role, position, unit_lab, ... } }
+ * PATCH /profile  → body: { fullname, phone }
+ *                   (position & unit_lab tidak ada di contract PATCH — field ini readonly untuk admin)
+ * PATCH /auth/change-password → body: { current_password, new_password }
+ */
 
 function EyeIcon({ open }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
       {open
         ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
         : <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
@@ -15,14 +25,7 @@ function EyeIcon({ open }) {
   );
 }
 
-function SectionTitle({ children }) {
-  return (
-    <h2 className="text-sm font-bold text-[#233B6E] uppercase tracking-wider pb-2
-      border-b border-gray-100">{children}</h2>
-  );
-}
-
-function Field({ label, required, children, hint }) {
+function Field({ label, required, hint, children }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -41,7 +44,7 @@ function TextInput({ value, onChange, placeholder, disabled, type = "text", righ
         placeholder={placeholder} disabled={disabled}
         className={`w-full border rounded-lg px-3 py-2.5 text-sm text-gray-800
           outline-none transition focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]
-          disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+          disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
           ${disabled ? "border-gray-200" : "border-gray-300"}
           ${rightSlot ? "pr-10" : ""}`}
       />
@@ -73,7 +76,25 @@ function Alert({ type, msg, onClose }) {
   );
 }
 
+function SectionTitle({ children }) {
+  return (
+    <h2 className="text-sm font-bold text-[#233B6E] uppercase tracking-wider pb-2
+      border-b border-gray-100">{children}</h2>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+    </svg>
+  );
+}
+
 export default function AdminProfil() {
+  const localUser = getUser(); // data dari localStorage saat login
+
   const [initLoading, setInitLoading] = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [savingPass,  setSavingPass]  = useState(false);
@@ -82,57 +103,66 @@ export default function AdminProfil() {
   const [passErr,     setPassErr]     = useState("");
   const [passOk,      setPassOk]      = useState("");
 
+  // Field yang bisa diedit — sesuai PATCH /profile body di API contract
   const [fullname, setFullname] = useState("");
-  const [email,    setEmail]    = useState("");
   const [phone,    setPhone]    = useState("");
+
+  // Field readonly — dari response GET /profile, tidak bisa diedit via API
+  const [email,    setEmail]    = useState("");
+  const [role,     setRole]     = useState("");
   const [position, setPosition] = useState("");
   const [unitLab,  setUnitLab]  = useState("");
 
+  // Ganti kata sandi
   const [currentPass, setCurrentPass] = useState("");
   const [newPass,     setNewPass]     = useState("");
   const [confirmPass, setConfirmPass] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
+  const [showCur,     setShowCur]     = useState(false);
   const [showNew,     setShowNew]     = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showConf,    setShowConf]    = useState(false);
 
-  const initials = (fullname || "A")
+  const initials = (fullname || localUser?.fullname || "A")
     .split(" ").slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
 
-  const applyData = useCallback((p) => {
-    setFullname(p.fullname  ?? "");
-    setEmail(p.email        ?? "");
-    setPhone(p.phone        ?? "");
-    setPosition(p.position  ?? "");
-    setUnitLab(p.unit_lab   ?? "");
+  const applyProfile = useCallback((p) => {
+    // Backend bisa taruh position/unit_lab langsung di root profile
+    // atau di nested object "admin" — cek keduanya
+    const adminData = p.admin ?? {};
+    setFullname(p.fullname                          ?? "");
+    setEmail(p.email                                ?? "");
+    setPhone(p.phone                                ?? "");
+    setRole(p.role                                  ?? "");
+    setPosition(p.position   ?? adminData.position  ?? "");
+    setUnitLab(p.unit_lab    ?? adminData.unit_lab   ?? "");
   }, []);
 
   useEffect(() => {
     (async () => {
       setInitLoading(true);
       try {
-        const res = await getProfile();
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        applyData(data.profile ?? data);
-      } catch {
-        setError("Gagal memuat profil.");
+        const res  = await getProfile();
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Gagal memuat profil.");
+        applyProfile(json.profile ?? json);
+      } catch (err) {
+        setError(err.message ?? "Gagal memuat profil.");
       } finally {
         setInitLoading(false);
       }
     })();
-  }, [applyData]);
+  }, [applyProfile]);
 
+  // PATCH /profile — hanya kirim fullname dan phone sesuai API contract
   const handleSave = async (e) => {
     e.preventDefault();
     setError(""); setSuccess("");
     if (!fullname.trim()) { setError("Nama lengkap wajib diisi."); return; }
     setSaving(true);
     try {
-      const res = await updateProfile({ fullname, phone, position, unit_lab: unitLab });
-      let body = {};
-      try { body = await res.json(); } catch {}
-      if (!res.ok) throw new Error(body.error ?? body.message ?? "Gagal menyimpan profil.");
-      setSuccess("Profil berhasil disimpan!");
+      const res  = await updateProfile({ fullname: fullname.trim(), phone });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal menyimpan profil.");
+      setSuccess("Profil berhasil disimpan.");
     } catch (err) {
       setError(err.message ?? "Gagal menyimpan.");
     } finally {
@@ -140,6 +170,7 @@ export default function AdminProfil() {
     }
   };
 
+  // PATCH /auth/change-password
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setPassErr(""); setPassOk("");
@@ -149,11 +180,10 @@ export default function AdminProfil() {
     if (newPass !== confirmPass) { setPassErr("Konfirmasi kata sandi tidak cocok."); return; }
     setSavingPass(true);
     try {
-      const res = await changePassword({ current_password: currentPass, new_password: newPass });
-      let body = {};
-      try { body = await res.json(); } catch {}
-      if (!res.ok) throw new Error(body.error ?? "Gagal mengganti kata sandi.");
-      setPassOk("Kata sandi berhasil diubah!");
+      const res  = await changePassword({ current_password: currentPass, new_password: newPass });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal mengganti kata sandi.");
+      setPassOk("Kata sandi berhasil diubah.");
       setCurrentPass(""); setNewPass(""); setConfirmPass("");
     } catch (err) {
       setPassErr(err.message ?? "Gagal mengganti kata sandi.");
@@ -164,18 +194,14 @@ export default function AdminProfil() {
 
   if (initLoading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="flex items-center gap-2 text-gray-400 text-sm">
-        <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-        </svg>
-        Memuat profil...
-      </div>
+      <span className="flex items-center gap-2 text-gray-400 text-sm">
+        <Spinner />Memuat profil...
+      </span>
     </div>
   );
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Profil Saya</h1>
 
       {/* Avatar card */}
@@ -185,15 +211,21 @@ export default function AdminProfil() {
           font-extrabold flex items-center justify-center ring-4 ring-[#233B6E]/10 flex-shrink-0">
           {initials}
         </div>
-        <div className="text-center sm:text-left flex-1">
-          <p className="text-lg font-extrabold text-[#233B6E]">{fullname || "—"}</p>
-          <p className="text-sm text-gray-400 mt-0.5">{email}</p>
+        <div className="text-center sm:text-left flex-1 min-w-0">
+          <p className="text-lg font-extrabold text-[#233B6E] truncate">
+            {fullname || "—"}
+          </p>
+          <p className="text-sm text-gray-400 mt-0.5 truncate">{email}</p>
           <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
             <span className="text-[10px] font-bold uppercase tracking-wider
               bg-[#EEF0F8] text-[#415F9D] rounded-full px-3 py-1">Admin</span>
             {position && (
               <span className="text-[10px] font-bold uppercase tracking-wider
                 bg-gray-100 text-gray-600 rounded-full px-3 py-1">{position}</span>
+            )}
+            {unitLab && (
+              <span className="text-[10px] font-bold uppercase tracking-wider
+                bg-gray-100 text-gray-600 rounded-full px-3 py-1">{unitLab}</span>
             )}
           </div>
         </div>
@@ -207,25 +239,27 @@ export default function AdminProfil() {
           <Alert type="success" msg={success} onClose={() => setSuccess("")} />
 
           <SectionTitle>Data Diri</SectionTitle>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Bisa diedit */}
             <Field label="Nama Lengkap" required>
               <TextInput value={fullname} onChange={e => setFullname(e.target.value)}
                 placeholder="Nama lengkap" />
-            </Field>
-            <Field label="Email">
-              <TextInput value={email} disabled />
             </Field>
             <Field label="No. Telepon">
               <TextInput value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder="08XXXXXXXXXX" />
             </Field>
-            <Field label="Jabatan / Posisi">
-              <TextInput value={position} onChange={e => setPosition(e.target.value)}
-                placeholder="Cth: Analis" />
+
+            {/* Readonly — tidak ada di body PATCH /profile */}
+            <Field label="Email" hint="Email tidak dapat diubah">
+              <TextInput value={email} disabled />
             </Field>
-            <Field label="Unit Lab">
-              <TextInput value={unitLab} onChange={e => setUnitLab(e.target.value)}
-                placeholder="Cth: Virologi" />
+            <Field label="Jabatan / Posisi" hint="Diatur oleh Super Admin">
+              <TextInput value={position} disabled />
+            </Field>
+            <Field label="Unit Lab" hint="Diatur oleh Super Admin">
+              <TextInput value={unitLab} disabled />
             </Field>
           </div>
 
@@ -234,12 +268,7 @@ export default function AdminProfil() {
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
                 text-white font-bold text-sm px-8 py-3 rounded-xl transition-all
                 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
-              {saving ? (
-                <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                </svg>Menyimpan...</>
-              ) : "Simpan Perubahan"}
+              {saving ? <><Spinner />Menyimpan...</> : "Simpan Perubahan"}
             </button>
           </div>
         </form>
@@ -254,17 +283,18 @@ export default function AdminProfil() {
           <Alert type="success" msg={passOk}  onClose={() => setPassOk("")} />
 
           <Field label="Kata Sandi Saat Ini" required>
-            <TextInput type={showCurrent ? "text" : "password"}
+            <TextInput type={showCur ? "text" : "password"}
               value={currentPass} onChange={e => setCurrentPass(e.target.value)}
               placeholder="Kata sandi saat ini"
               rightSlot={
-                <button type="button" onClick={() => setShowCurrent(p => !p)}
+                <button type="button" onClick={() => setShowCur(p => !p)}
                   className="hover:text-[#233B6E] transition-colors">
-                  <EyeIcon open={showCurrent} />
+                  <EyeIcon open={showCur} />
                 </button>
               }
             />
           </Field>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Kata Sandi Baru" required hint="Minimal 8 karakter">
               <TextInput type={showNew ? "text" : "password"}
@@ -279,29 +309,25 @@ export default function AdminProfil() {
               />
             </Field>
             <Field label="Konfirmasi Kata Sandi Baru" required>
-              <TextInput type={showConfirm ? "text" : "password"}
+              <TextInput type={showConf ? "text" : "password"}
                 value={confirmPass} onChange={e => setConfirmPass(e.target.value)}
                 placeholder="Ulangi kata sandi baru"
                 rightSlot={
-                  <button type="button" onClick={() => setShowConfirm(p => !p)}
+                  <button type="button" onClick={() => setShowConf(p => !p)}
                     className="hover:text-[#233B6E] transition-colors">
-                    <EyeIcon open={showConfirm} />
+                    <EyeIcon open={showConf} />
                   </button>
                 }
               />
             </Field>
           </div>
+
           <div className="flex justify-end pt-2">
             <button type="submit" disabled={savingPass}
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
                 text-white font-bold text-sm px-8 py-3 rounded-xl transition-all
                 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
-              {savingPass ? (
-                <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                </svg>Menyimpan...</>
-              ) : "Ganti Kata Sandi"}
+              {savingPass ? <><Spinner />Menyimpan...</> : "Ganti Kata Sandi"}
             </button>
           </div>
         </form>
