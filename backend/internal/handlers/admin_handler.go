@@ -22,6 +22,9 @@ type AdminServiceInterface interface {
 	DeleteManagedAccount(targetID, actorID uint) error
 	UpdateManagedAccount(userID uint, req services.UpdateAdminAccountRequest) error
 	GetAllCustomers() ([]models.User, error)
+	CreateCustomerAccount(req dto.CustomerCreateRequest) error
+	UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error
+	DeleteCustomerAccount(userID uint) error
 }
 
 type defaultAdminService struct{}
@@ -52,6 +55,18 @@ func (defaultAdminService) UpdateManagedAccount(userID uint, req services.Update
 
 func (defaultAdminService) GetAllCustomers() ([]models.User, error) {
 	return services.GetAllCustomers()
+}
+
+func (defaultAdminService) CreateCustomerAccount(req dto.CustomerCreateRequest) error {
+	return services.CreateCustomerAccount(req)
+}
+
+func (defaultAdminService) UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error {
+	return services.UpdateCustomerAccount(userID, req)
+}
+
+func (defaultAdminService) DeleteCustomerAccount(userID uint) error {
+	return services.DeleteCustomerAccount(userID)
 }
 
 type AdminHandler struct {
@@ -107,6 +122,99 @@ func (h *AdminHandler) CreateAdmin(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Account created successfully"})
+}
+
+func CreateCustomerAccount(c *gin.Context) {
+	defaultAdminHandler.CreateCustomerAccount(c)
+}
+
+func (h *AdminHandler) CreateCustomerAccount(c *gin.Context) {
+	var req dto.CustomerCreateRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err := h.Service.CreateCustomerAccount(req)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Customer account created successfully",
+	})
+}
+
+func UpdateCustomerAccount(c *gin.Context) {
+	defaultAdminHandler.UpdateCustomerAccount(c)
+}
+
+func (h *AdminHandler) UpdateCustomerAccount(c *gin.Context) {
+	idParam := c.Param("id")
+	userID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid customer id")
+		return
+	}
+
+	var req dto.CustomerUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = h.Service.UpdateCustomerAccount(uint(userID), req)
+	if err != nil {
+		switch err {
+		case services.ErrAccountNotFound:
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+			return
+		case services.ErrNotCustomerAccount:
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		default:
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Customer account successfully updated",
+	})
+}
+
+func DeleteCustomerAccount(c *gin.Context) {
+	defaultAdminHandler.DeleteCustomerAccount(c)
+}
+
+func (h *AdminHandler) DeleteCustomerAccount(c *gin.Context) {
+	idParam := c.Param("id")
+	userID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid customer id")
+		return
+	}
+
+	err = h.Service.DeleteCustomerAccount(uint(userID))
+	if err != nil {
+		switch err {
+		case services.ErrAccountNotFound:
+			utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+			return
+		case services.ErrNotCustomerAccount:
+			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
+		default:
+			utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Customer account successfully deleted",
+	})
 }
 
 // get all managed accounts (admin + superadmin) from a single profile table

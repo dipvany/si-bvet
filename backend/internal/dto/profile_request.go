@@ -5,18 +5,20 @@ type ProfileRequest struct {
 	Phone    *string `json:"phone"`
 
 	// customer only
-	Group        *string `json:"group"`
-	IsMembership *bool   `json:"is_membership"`
-	MembershipNo *string `json:"membership_no"`
-	PICName      *string `json:"pic_name"`
-	PICContact   *string `json:"pic_contact"`
-	Province     *string `json:"province"`
-	City         *string `json:"city"`
-	Subdistrict  *string `json:"subdistrict"`
-	Village      *string `json:"village"`
-	Address      *string `json:"address"`
-	ZipCode      *string `json:"zip_code"`
-	Occupation   *string `json:"occupation"`
+	Group              *string `json:"group"`
+	IsMembership       *bool   `json:"is_membership"`
+	MembershipNo       *string `json:"membership_no"`
+	PICName            *string `json:"pic_name"`
+	PICContact         *string `json:"pic_contact"`
+	Province           *string `json:"province"`
+	LhuReceiverName    *string `json:"lhu_receiver_name"`
+	LhuReceiverContact *string `json:"lhu_receiver_contact"`
+	City               *string `json:"city"`
+	Subdistrict        *string `json:"subdistrict"`
+	Village            *string `json:"village"`
+	Address            *string `json:"address"`
+	ZipCode            *string `json:"zip_code"`
+	// Occupation   *string `json:"occupation"`
 
 	// admin only
 	Position   *string `json:"position"`

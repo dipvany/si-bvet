@@ -319,6 +319,74 @@
           }
         },
         {
+          "name": "Create Customer Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Customer by Superadmin\",\n  \"email\": \"cust.super@example.com\",\n  \"phone\": \"081122334455\",\n  \"password\": \"password123\",\n  \"institution\": \"Institusi Pelanggan\",\n  \"group\": \"Grup A\",\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/superadmin/customers",
+            "description": "Membuat akun customer baru oleh Superadmin. Akun akan otomatis terverifikasi."
+          }
+        },
+        {
+          "name": "Update Customer Account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Customer Name Updated\",\n  \"phone\": \"089988776655\",\n  \"institution\": \"Institusi Baru\",\n  \"is_active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/superadmin/customers/{{user_id}}",
+            "description": "Memperbarui data akun customer berdasarkan ID. Semua field opsional."
+          }
+        },
+        {
+          "name": "Delete Customer Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_superadmin}}"
+              }
+            ],
+            "url": "{{base_url}}/superadmin/customers/{{user_id}}",
+            "description": "Menghapus akun customer secara permanen berdasarkan ID."
+          }
+        },
+        {
           "name": "Create Test Service",
           "request": {
             "method": "POST",

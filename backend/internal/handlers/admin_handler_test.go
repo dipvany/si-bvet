@@ -76,6 +76,19 @@ type MockAdminService struct {
 	getAllCalled bool
 	getAllResult []models.User
 	getAllErr    error
+
+	createCustomerCalled bool
+	createCustomerReq    dto.CustomerCreateRequest
+	createCustomerErr    error
+
+	updateCustomerCalled bool
+	updateCustomerUserID uint
+	updateCustomerReq    dto.CustomerUpdateRequest
+	updateCustomerErr    error
+
+	deleteCustomerCalled bool
+	deleteCustomerUserID uint
+	deleteCustomerErr    error
 }
 
 var _ handlers.AdminServiceInterface = (*MockAdminService)(nil)
@@ -121,6 +134,25 @@ func (m *MockAdminService) UpdateManagedAccount(userID uint, req services.Update
 func (m *MockAdminService) GetAllCustomers() ([]models.User, error) {
 	m.getAllCalled = true
 	return m.getAllResult, m.getAllErr
+}
+
+func (m *MockAdminService) CreateCustomerAccount(req dto.CustomerCreateRequest) error {
+	m.createCustomerCalled = true
+	m.createCustomerReq = req
+	return m.createCustomerErr
+}
+
+func (m *MockAdminService) UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error {
+	m.updateCustomerCalled = true
+	m.updateCustomerUserID = userID
+	m.updateCustomerReq = req
+	return m.updateCustomerErr
+}
+
+func (m *MockAdminService) DeleteCustomerAccount(userID uint) error {
+	m.deleteCustomerCalled = true
+	m.deleteCustomerUserID = userID
+	return m.deleteCustomerErr
 }
 
 func TestAdminHandler(t *testing.T) {
@@ -307,6 +339,82 @@ func TestAdminHandler(t *testing.T) {
 		}
 		if !mockService.getAllCalled {
 			t.Fatal("expected GetAllCustomers to be called")
+		}
+	})
+
+	t.Run("CreateCustomerAccount", func(t *testing.T) {
+		mockService := &MockAdminService{}
+		handler := handlers.NewAdminHandler(mockService)
+		router := gin.New()
+		router.POST("/customers", handler.CreateCustomerAccount)
+
+		body, err := json.Marshal(dto.CustomerCreateRequest{
+			FullName:    "New Customer by Admin",
+			Email:       "newcust@example.com",
+			Phone:       "08987654321",
+			Password:    "password123",
+			Institution: "Inst. X",
+		})
+		if err != nil {
+			t.Fatalf("marshal create customer request: %v", err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/customers", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+
+		if res.Code != http.StatusCreated {
+			t.Fatalf("expected create customer status 201, got %d", res.Code)
+		}
+		if !mockService.createCustomerCalled || mockService.createCustomerReq.Email != "newcust@example.com" {
+			t.Fatalf("unexpected create customer service call: %+v", mockService)
+		}
+	})
+
+	t.Run("UpdateCustomerAccount", func(t *testing.T) {
+		mockService := &MockAdminService{}
+		handler := handlers.NewAdminHandler(mockService)
+		router := gin.New()
+		router.PATCH("/customers/:id", handler.UpdateCustomerAccount)
+
+		newName := "Updated Customer Name"
+		body, err := json.Marshal(dto.CustomerUpdateRequest{
+			FullName: &newName,
+		})
+		if err != nil {
+			t.Fatalf("marshal update customer request: %v", err)
+		}
+		req := httptest.NewRequest(http.MethodPatch, "/customers/123", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected update customer status 200, got %d", res.Code)
+		}
+		if !mockService.updateCustomerCalled || mockService.updateCustomerUserID != 123 {
+			t.Fatalf("unexpected update customer service call: called=%v, id=%d", mockService.updateCustomerCalled, mockService.updateCustomerUserID)
+		}
+		if mockService.updateCustomerReq.FullName == nil || *mockService.updateCustomerReq.FullName != newName {
+			t.Fatalf("unexpected fullname in update request: %+v", mockService.updateCustomerReq.FullName)
+		}
+	})
+
+	t.Run("DeleteCustomerAccount", func(t *testing.T) {
+		mockService := &MockAdminService{}
+		handler := handlers.NewAdminHandler(mockService)
+		router := gin.New()
+		router.DELETE("/customers/:id", handler.DeleteCustomerAccount)
+
+		req := httptest.NewRequest(http.MethodDelete, "/customers/123", nil)
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected delete customer status 200, got %d", res.Code)
+		}
+		if !mockService.deleteCustomerCalled || mockService.deleteCustomerUserID != 123 {
+			t.Fatalf("unexpected delete customer service call: called=%v, id=%d", mockService.deleteCustomerCalled, mockService.deleteCustomerUserID)
 		}
 	})
 }

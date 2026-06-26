@@ -65,9 +65,15 @@ func UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
 		if req.ZipCode != nil {
 			customerUpdates["zip_code"] = *req.ZipCode
 		}
-		if req.Occupation != nil {
-			customerUpdates["occupation"] = *req.Occupation
+		if req.LhuReceiverName != nil {
+			customerUpdates["lhu_receiver_name"] = *req.LhuReceiverName
 		}
+		if req.LhuReceiverContact != nil {
+			customerUpdates["lhu_receiver_contact"] = *req.LhuReceiverContact
+		}
+		// if req.Occupation != nil {
+		// 	customerUpdates["occupation"] = *req.Occupation
+		// }
 
 		err := repositories.UpdateCustomerProfile(userID, customerUpdates)
 		if err == nil {
