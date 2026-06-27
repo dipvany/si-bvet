@@ -39,6 +39,7 @@ func InitDB() error {
 			&models.Complaint{},
 			&models.TestService{},
 			&models.TestRequest{},
+			&models.ActivityLog{},
 		)
 		if err != nil {
 			return err
