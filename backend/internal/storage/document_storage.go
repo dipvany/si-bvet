@@ -336,10 +336,8 @@ func NewUploadStorage(ctx context.Context) (DocumentStorage, error) {
 	// Cek apakah user menggunakan S3-Compatible Storage (AWS, DigitalOcean Spaces, Cloudflare R2, dll)
 	s3Bucket := os.Getenv("S3_BUCKET_NAME")
 	if s3Bucket != "" {
-		// return NewS3DocumentStorage(ctx, s3Bucket) //TODO: Buat implementasi S3 nanti
-		
-		// Note: Saat ini kita fallback ke lokal jika Anda belum membuat implementasi S3-nya
-		fmt.Println("S3 Storage detected in .env, but implementation is pending. Falling back to local storage.")
+		fmt.Println("S3 Storage detected, initializing S3 client...")
+		return NewS3DocumentStorage(ctx, s3Bucket)
 	}
 
 	return NewLocalDocumentStorage(""), nil
@@ -379,4 +377,22 @@ func readServiceAccountCredentials(credentialsFile string) (*serviceAccountCrede
 	}
 
 	return &credentials, nil
+}
+
+func s3Location(bucketName, objectKey string) string {
+	return "s3://" + bucketName + "/" + filepath.ToSlash(objectKey)
+}
+
+func parseS3Location(location string) (string, string, bool) {
+	if !strings.HasPrefix(location, "s3://") {
+		return "", "", false
+	}
+
+	trimmed := strings.TrimPrefix(location, "s3://")
+	parts := strings.SplitN(trimmed, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", false
+	}
+
+	return parts[0], parts[1], true
 }

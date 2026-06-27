@@ -110,6 +110,14 @@ BOOTSTRAP_SUPERADMIN_PHONE=080000000000
 BOOTSTRAP_SUPERADMIN_POSITION=
 BOOTSTRAP_SUPERADMIN_UNIT_LAB=
 BOOTSTRAP_SUPERADMIN_EMPLOYEE_NO=
+
+# S3-Compatible Storage Configuration (e.g., MinIO, AWS S3, Cloudflare R2)
+# Uncomment and fill these to use S3 instead of local/GCS storage.
+# S3_BUCKET_NAME=your-s3-bucket
+# S3_REGION=your-s3-region # e.g., ap-southeast-1
+# S3_ENDPOINT=https://your-s3-endpoint.com # Optional, for non-AWS S3
+# S3_ACCESS_KEY_ID=your-access-key
+# S3_SECRET_ACCESS_KEY=your-secret-key
 ```
 
 Catatan bootstrap superadmin:
