@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
@@ -25,6 +27,7 @@ type AdminServiceInterface interface {
 	CreateCustomerAccount(req dto.CustomerCreateRequest) error
 	UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error
 	DeleteCustomerAccount(userID uint) error
+	ImportCustomerAccounts(file io.Reader) (services.ImportResult, error)
 }
 
 type defaultAdminService struct{}
@@ -67,6 +70,10 @@ func (defaultAdminService) UpdateCustomerAccount(userID uint, req dto.CustomerUp
 
 func (defaultAdminService) DeleteCustomerAccount(userID uint) error {
 	return services.DeleteCustomerAccount(userID)
+}
+
+func (s defaultAdminService) ImportCustomerAccounts(file io.Reader) (services.ImportResult, error) {
+	return services.ImportCustomerAccounts(file)
 }
 
 type AdminHandler struct {
@@ -144,6 +151,41 @@ func (h *AdminHandler) CreateCustomerAccount(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Customer account created successfully",
+	})
+}
+
+func ImportCustomerAccounts(c *gin.Context) {
+	defaultAdminHandler.ImportCustomerAccounts(c)
+}
+
+func (h *AdminHandler) ImportCustomerAccounts(c *gin.Context) {
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "file is required")
+		return
+	}
+
+	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid file type, only .xlsx is allowed")
+		return
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "failed to open file")
+		return
+	}
+	defer file.Close()
+
+	result, err := h.Service.ImportCustomerAccounts(file)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Customer import process finished",
+		"import_result": result,
 	})
 }
 

@@ -419,6 +419,21 @@
           }
         },
         {
+          "name": "Import Customer Accounts",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_superadmin}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": "" }]
+            },
+            "url": "{{base_url}}/superadmin/customers/import",
+            "description": "Import data customer dari file Excel. Field file wajib: file."
+          }
+        },
+        {
           "name": "Create Test Service",
           "request": {
             "method": "POST",
@@ -785,7 +800,8 @@
             "description": "Berikan respon untuk complaint user."
           }
         }
-      ]
+      ],
+      "description": "Endpoint yang dapat diakses oleh role Admin dan Superadmin."
     },
     {
       "name": "05. Customer",
@@ -1028,17 +1044,6 @@
             ],
             "url": "{{base_url}}/customer/feedbacks",
             "description": "Daftar feedback milik customer login."
-          }
-        },
-        {
-          "name": "Get My Complaints",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
-            ],
-            "url": "{{base_url}}/customer/complaints",
-            "description": "Daftar complaint milik customer login."
           }
         }
       ]

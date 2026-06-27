@@ -84,6 +84,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				superAdminGroup.PATCH("/admin-accounts/:id/verify", adminHandler.VerifyUser)
 
 				superAdminGroup.POST("/customers", adminHandler.CreateCustomerAccount)
+				superAdminGroup.POST("/customers/import", adminHandler.ImportCustomerAccounts)
 				superAdminGroup.PATCH("/customers/:id", adminHandler.UpdateCustomerAccount)
 				superAdminGroup.DELETE("/customers/:id", adminHandler.DeleteCustomerAccount)
 

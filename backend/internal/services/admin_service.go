@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"si-bvet/internal/constants"
 	"si-bvet/internal/db"
@@ -10,7 +11,10 @@ import (
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
 	"si-bvet/internal/utils"
+	"strings"
 	"time"
+
+	"github.com/xuri/excelize/v2"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -39,6 +43,53 @@ type ImportResult struct {
 	SuccessCount int      `json:"success_count"`
 	FailureCount int      `json:"failure_count"`
 	Errors       []string `json:"errors"`
+}
+
+func ImportCustomerAccounts(file io.Reader) (ImportResult, error) {
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("failed to open excel file: %w", err)
+	}
+	defer f.Close()
+
+	sheetName := f.GetSheetName(0)
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("failed to get rows from sheet: %w", err)
+	}
+
+	result := ImportResult{}
+	// default password dari .env, jika tidak ada, gunakan "Customer@123"
+	defaultPassword := os.Getenv("DEFAULT_CUSTOMER_PASSWORD")
+	if defaultPassword == "" {
+		defaultPassword = "Customer@123"
+	}
+	
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return ImportResult{}, fmt.Errorf("failed to hash default password: %w", err)
+	}
+
+	// Skip header row
+	for i, row := range rows {
+		if i == 0 {
+			continue
+		}
+
+		rowIndex := i + 1
+		err := processCustomerRow(row, rowIndex, string(hashedPassword))
+		if err != nil {
+			result.FailureCount++
+			result.Errors = append(result.Errors, fmt.Sprintf("Row %d: %v", rowIndex, err))
+		} else {
+			result.SuccessCount++
+		}
+	}
+
+	if result.SuccessCount > 0 || result.FailureCount > 0 {
+		LogSystemActivity(fmt.Sprintf("Import customer selesai. Berhasil: %d, Gagal: %d.", result.SuccessCount, result.FailureCount))
+	}
+	return result, nil
 }
 
 func IsManagedRole(role string) bool {
@@ -222,6 +273,93 @@ func UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error {
 		LogSystemActivity(fmt.Sprintf("Profil akun customer untuk %s (%s) diperbarui", user.FullName, user.Email))
 		return repositories.SaveCustomerProfileTx(tx, &customer)
 	})
+}
+
+func processCustomerRow(row []string, rowIndex int, hashedPassword string) error {
+	// Helper to safely get value from row
+	getCol := func(index int) string {
+		if index < len(row) {
+			return strings.TrimSpace(row[index])
+		}
+		return ""
+	}
+
+	fullName := getCol(0)
+	email := getCol(1)
+
+	if fullName == "" {
+		return errors.New("Nama Akun is empty")
+	}
+	if email == "" {
+		return errors.New("Email Akun is empty")
+	}
+
+	// Check for existing email in a separate transaction to avoid locking
+	existingUser, err := repositories.GetUserByEmail(email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("database error checking email: %w", err)
+	}
+	if existingUser != nil {
+		return errors.New("email already exists")
+	}
+
+	return db.DB.Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		isActive := strings.EqualFold(getCol(9), "aktif")
+
+		user := models.User{
+			FullName:     fullName,
+			Email:        email,
+			Phone:        getCol(2),
+			PasswordHash: hashedPassword,
+			Role:         constants.RoleCustomer,
+			IsVerified:   true,
+			IsActive:     isActive,
+			VerifiedAt:   &now,
+			Institution:  fullName, // As per requirement
+		}
+
+		if err := repositories.CreateUserTx(tx, &user); err != nil {
+			return fmt.Errorf("failed to create user: %w", err)
+		}
+
+		membershipNo := getCol(3)
+		locationParts := parseLocation(getCol(11))
+
+		customer := models.Customer{
+			UserID:             user.ID,
+			Group:              getCol(4),
+			MembershipNo:       membershipNo,
+			IsMembership:       membershipNo != "",
+			PICName:            getCol(5),
+			PICContact:         getCol(6),
+			LhuReceiverName:    getCol(7),
+			LhuReceiverContact: getCol(8),
+			Province:           locationParts[0],
+			City:               locationParts[1],
+			Subdistrict:        locationParts[2],
+			Village:            locationParts[3],
+			Address:            getCol(12),
+			ZipCode:            getCol(13),
+		}
+
+		if err := repositories.CreateCustomerTx(tx, &customer); err != nil {
+			return fmt.Errorf("failed to create customer profile: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func parseLocation(location string) [4]string {
+	var parts [4]string
+	rawParts := strings.Split(location, ",")
+	for i := 0; i < 4; i++ {
+		if i < len(rawParts) {
+			parts[i] = strings.TrimSpace(rawParts[i])
+		}
+	}
+	return parts
 }
 
 func GetManagedAccounts(roleFilter string) ([]models.Admin, error) {

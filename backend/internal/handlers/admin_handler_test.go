@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -89,6 +90,10 @@ type MockAdminService struct {
 	deleteCustomerCalled bool
 	deleteCustomerUserID uint
 	deleteCustomerErr    error
+
+	importCustomerCalled bool
+	importCustomerResult services.ImportResult
+	importCustomerErr    error
 }
 
 var _ handlers.AdminServiceInterface = (*MockAdminService)(nil)
@@ -153,6 +158,12 @@ func (m *MockAdminService) DeleteCustomerAccount(userID uint) error {
 	m.deleteCustomerCalled = true
 	m.deleteCustomerUserID = userID
 	return m.deleteCustomerErr
+}
+
+func (m *MockAdminService) ImportCustomerAccounts(file io.Reader) (services.ImportResult, error) {
+	m.importCustomerCalled = true
+	// We can read the file here to check content if needed for a more complex test
+	return m.importCustomerResult, m.importCustomerErr
 }
 
 func TestAdminHandler(t *testing.T) {
@@ -332,14 +343,14 @@ func TestAdminHandler(t *testing.T) {
 		router.ServeHTTP(res, req)
 
 		if res.Code != http.StatusOK {
-			t.Fatalf("expected all customers status 200, got %d", res.Code)
+			t.Fatalf("expected all customers status 200, got %d. Body: %s", res.Code, res.Body.String())
 		}
 		if !strings.Contains(res.Body.String(), "/uploads/registration-docs/doc.pdf") {
 			t.Fatalf("expected fallback registration_doc in response: %s", res.Body.String())
 		}
 		if !mockService.getAllCalled {
 			t.Fatal("expected GetAllCustomers to be called")
-		}
+		}	
 	})
 
 	t.Run("CreateCustomerAccount", func(t *testing.T) {
@@ -415,6 +426,27 @@ func TestAdminHandler(t *testing.T) {
 		}
 		if !mockService.deleteCustomerCalled || mockService.deleteCustomerUserID != 123 {
 			t.Fatalf("unexpected delete customer service call: called=%v, id=%d", mockService.deleteCustomerCalled, mockService.deleteCustomerUserID)
+		}
+	})
+
+	t.Run("RejectUser", func(t *testing.T) {
+		mockService := &MockAdminService{}
+		handler := handlers.NewAdminHandler(mockService)
+		router := gin.New()
+		router.PATCH("/users/:id/reject", handler.RejectUser)
+
+		req := httptest.NewRequest(http.MethodPatch, "/users/42/reject", nil)
+		res := httptest.NewRecorder()
+		router.ServeHTTP(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("expected reject user status 200, got %d", res.Code)
+		}
+		if !strings.Contains(res.Body.String(), "User verification rejected and deleted") {
+			t.Fatalf("unexpected body: %s", res.Body.String())
+		}
+		if !mockService.rejectCalled || mockService.rejectUserID != 42 {
+			t.Fatalf("unexpected reject user service call: called=%v, id=%d", mockService.rejectCalled, mockService.rejectUserID)
 		}
 	})
 }
