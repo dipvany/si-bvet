@@ -133,6 +133,7 @@ export default function RegisterPage() {
           <p className="text-gray-500 text-sm leading-relaxed mb-8">
             Akun Anda sedang menunggu verifikasi admin.<br />
             Anda akan dihubungi melalui email setelah diverifikasi.
+            Silahkan cek secara berkala kotak masuk atau menu spam email Anda.
           </p>
           <button onClick={() => navigate("/login")}
             className="bg-[#233B6E] hover:bg-[#1a2d56] text-white font-bold px-10 py-3.5 rounded-2xl transition-all">

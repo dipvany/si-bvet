@@ -39,10 +39,10 @@ const STEPS = [
 ];
 
 const STATS = [
-  { val: "SNI ISO", sub: "17025:2017" },
+  { val: "SNI ISO" },
   { val: "KAN",     sub: "Terakreditasi" },
-  { val: "200+",    sub: "Jenis Pengujian" },
-  { val: "15+",     sub: "Tahun Beroperasi" },
+  { val: "150+",    sub: "Jenis Pengujian" },
+  { val: "35+",     sub: "Tahun Beroperasi" },
 ];
 
 const CONTACTS = [
@@ -259,8 +259,8 @@ function About() {
     "Pendaftaran BIMTEK dan magang secara digital",
   ];
   const stats = [
-    { val: "SNI ISO", sub: "17025:2017" }, { val: "KAN", sub: "Terakreditasi" },
-    { val: "15+", sub: "Tahun Beroperasi" }, { val: "100%", sub: "Layanan Digital" },
+    { val: "SNI ISO" }, { val: "KAN", sub: "Terakreditasi" },
+    { val: "35+", sub: "Tahun Beroperasi" }, { val: "100%", sub: "Layanan Digital" },
   ];
   return (
     <section id="tentang" className="py-24 bg-white relative overflow-hidden">

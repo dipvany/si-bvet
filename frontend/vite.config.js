@@ -9,4 +9,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  // Pastikan preview server (Railway) redirect semua path ke index.html
+  preview: {
+    port: 3000,
+    host: '0.0.0.0',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 })
