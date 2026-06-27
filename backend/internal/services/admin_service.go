@@ -35,6 +35,12 @@ type UpdateAdminAccountRequest struct {
 	Role       *string
 }
 
+type ImportResult struct {
+	SuccessCount int      `json:"success_count"`
+	FailureCount int      `json:"failure_count"`
+	Errors       []string `json:"errors"`
+}
+
 func IsManagedRole(role string) bool {
 	return role == constants.RoleAdmin || role == constants.RoleSuperAdmin
 }
@@ -108,6 +114,8 @@ func CreateCustomerAccount(req dto.CustomerCreateRequest) error {
 			MembershipNo: req.MembershipNo,
 			PICName:      req.PICName,
 			PICContact:   req.PICContact,
+			LhuReceiverName:    req.LhuReceiverName,
+			LhuReceiverContact: req.LhuReceiverContact,
 			Province:     req.Province,
 			City:         req.City,
 			Subdistrict:  req.Subdistrict,
@@ -185,6 +193,12 @@ func UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error {
 		}
 		if req.PICContact != nil {
 			customer.PICContact = *req.PICContact
+		}
+		if req.LhuReceiverName != nil {
+			customer.LhuReceiverName = *req.LhuReceiverName
+		}
+		if req.LhuReceiverContact != nil {
+			customer.LhuReceiverContact = *req.LhuReceiverContact
 		}
 		if req.Province != nil {
 			customer.Province = *req.Province

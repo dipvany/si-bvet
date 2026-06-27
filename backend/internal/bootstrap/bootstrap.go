@@ -54,6 +54,7 @@ func NewRouter() *gin.Engine {
 		LHUHandler:          handlers.NewLHUHandlerWithStorage(uploadStorage),
 		TestServiceHandler:  handlers.NewTestServiceHandlerWithDefault(),
 		BillingHandler:      handlers.NewBillingHandlerWithStorage(uploadStorage),
+		ActivityLogHandler:  handlers.NewActivityLogHandler(services.NewActivityLogService()),
 	})
 
 	return r

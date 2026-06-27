@@ -10,8 +10,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetActivityLogsHandler menangani permintaan untuk mengambil log aktivitas.
-func GetActivityLogsHandler(c *gin.Context) {
+// ActivityLogHandler menangani request terkait log aktivitas.
+type ActivityLogHandler struct {
+	Service services.ActivityLogServiceInterface
+}
+
+// NewActivityLogHandler membuat instance baru dari ActivityLogHandler.
+func NewActivityLogHandler(service services.ActivityLogServiceInterface) *ActivityLogHandler {
+	return &ActivityLogHandler{Service: service}
+}
+
+var defaultActivityLogHandler = NewActivityLogHandler(services.NewActivityLogService())
+
+// GetActivityLogs adalah handler untuk mengambil log aktivitas.
+func (h *ActivityLogHandler) GetActivityLogs(c *gin.Context) {
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
 
@@ -36,7 +49,7 @@ func GetActivityLogsHandler(c *gin.Context) {
 		}
 	}
 
-	response, err := services.GetActivityLogs(params)
+	response, err := h.Service.GetActivityLogs(params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve activity logs"})
 		return
@@ -47,4 +60,9 @@ func GetActivityLogsHandler(c *gin.Context) {
 		"data":    response["data"],
 		"meta":    response["meta"],
 	})
+}
+
+// GetActivityLogsHandler adalah fungsi forwarder untuk kompatibilitas.
+func GetActivityLogsHandler(c *gin.Context) {
+	defaultActivityLogHandler.GetActivityLogs(c)
 }

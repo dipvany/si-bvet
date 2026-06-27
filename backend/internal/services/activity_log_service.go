@@ -58,8 +58,20 @@ func LogUserActivity(user *models.User, message, ipAddress, method, endpoint str
 	LogActivity(actor, user.Role, message, actorID, ipAddress, method, endpoint)
 }
 
-// GetActivityLogs memproses logika bisnis untuk mengambil log aktivitas.
-func GetActivityLogs(params repositories.GetActivityLogsParams) (map[string]interface{}, error) {
+// ActivityLogServiceInterface mendefinisikan kontrak untuk service log aktivitas.
+type ActivityLogServiceInterface interface {
+	GetActivityLogs(params repositories.GetActivityLogsParams) (map[string]interface{}, error)
+}
+
+// activityLogService adalah implementasi default dari ActivityLogServiceInterface.
+type activityLogService struct{}
+
+// NewActivityLogService membuat instance baru dari activityLogService.
+func NewActivityLogService() ActivityLogServiceInterface {
+	return &activityLogService{}
+}
+
+func (s *activityLogService) GetActivityLogs(params repositories.GetActivityLogsParams) (map[string]interface{}, error) {
 	logs, total, err := repositories.GetActivityLogs(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get activity logs: %w", err)

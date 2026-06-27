@@ -18,6 +18,7 @@ type Dependencies struct {
 	LHUHandler          *handlers.LHUHandler
 	TestServiceHandler  *handlers.TestServiceHandler
 	BillingHandler      *handlers.BillingHandler
+	ActivityLogHandler  *handlers.ActivityLogHandler
 }
 
 func mustDependency[T any](name string, dep T) T {
@@ -38,6 +39,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 	lhuHandler := mustDependency("lhu handler", deps.LHUHandler)
 	testServiceHandler := mustDependency("test service handler", deps.TestServiceHandler)
 	billingHandler := mustDependency("billing handler", deps.BillingHandler)
+	activityLogHandler := mustDependency("activity log handler", deps.ActivityLogHandler)
 	
 	// serve uploaded files from internal/uploads for both direct and /api-prefixed URLs
 	r.Static("/uploads", "internal/uploads")
@@ -90,7 +92,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 				superAdminGroup.POST("/submissions/samples/template", submissionHandler.UploadSampleTemplate)
 
-				superAdminGroup.GET("/activity-logs", handlers.GetActivityLogsHandler)
+				superAdminGroup.GET("/activity-logs", activityLogHandler.GetActivityLogs)
 			}
 
 			// ADMIN
