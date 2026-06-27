@@ -48,3 +48,6 @@ export const changePassword = (data) =>
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify(data),
   });
+
+// ── Penilaian ────────────────────────────────────────────────────
+export const getAllFeedbacks = () => apiFetch("/admin/feedbacks");
