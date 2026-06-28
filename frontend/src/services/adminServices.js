@@ -1,6 +1,5 @@
 /**
  * adminServices.js  —  role: "admin"
- * Semua call pakai apiFetch (native fetch + Bearer token).
  */
 import { apiFetch } from "./api";
 
@@ -15,8 +14,8 @@ export const rejectUser = (userId) =>
   apiFetch(`/admin/customers/${userId}/reject`, { method: "PATCH" });
 
 // ── Submission ────────────────────────────────────────────────────
-export const getAdminSubmissions = () =>
-  apiFetch("/admin/submissions");
+export const getAdminSubmissions = (params = "") =>
+  apiFetch(`/admin/submissions${params}`);
 
 export const approveSubmission = (id) =>
   apiFetch(`/admin/submissions/${id}/approve`, { method: "PATCH" });
@@ -25,11 +24,41 @@ export const rejectSubmission = (id) =>
   apiFetch(`/admin/submissions/${id}/reject`, { method: "PATCH" });
 
 // ── Billing ───────────────────────────────────────────────────────
+export const createBilling = (submissionId, data) =>
+  apiFetch(`/admin/billings/${submissionId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+export const getBilling = (submissionId) =>
+  apiFetch(`/admin/billings/${submissionId}`);
+
+export const updateBilling = (submissionId, data) =>
+  apiFetch(`/admin/billings/${submissionId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
 export const verifyPayment = (submissionId) =>
   apiFetch(`/admin/billings/${submissionId}/verify`, { method: "PATCH" });
 
 export const rejectPayment = (submissionId) =>
   apiFetch(`/admin/billings/${submissionId}/reject`, { method: "PATCH" });
+
+// ── LHU ──────────────────────────────────────────────────────────
+// GET  /admin/submissions/:id/lhu   — cek / ambil LHU
+export const getLHU = (submissionId) =>
+  apiFetch(`/admin/submissions/${submissionId}/lhu`);
+
+// POST /admin/submissions/:id/lhu   — upload LHU (FormData: no_lhu, file)
+export const uploadLHU = (submissionId, formData) =>
+  apiFetch(`/admin/submissions/${submissionId}/lhu`, {
+    method: "POST",
+    body:   formData,
+    // Jangan set Content-Type — browser isi boundary FormData otomatis
+  });
 
 // ── Profil ────────────────────────────────────────────────────────
 export const getProfile = () =>
@@ -50,4 +79,16 @@ export const changePassword = (data) =>
   });
 
 // ── Penilaian ────────────────────────────────────────────────────
-export const getAllFeedbacks = () => apiFetch("/admin/feedbacks");
+export const getAllFeedbacks = () =>
+  apiFetch("/admin/feedbacks");
+
+// ── Laporan Pengaduan ─────────────────────────────────────────────
+export const getAllComplaints = () =>
+  apiFetch("/admin/complaints");
+
+export const respondComplaint = (id, data) =>
+  apiFetch(`/admin/complaints/${id}/respond`, {
+    method:  "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(data),
+  });

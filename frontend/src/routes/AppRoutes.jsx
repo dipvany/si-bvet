@@ -21,10 +21,10 @@ import AdminLaporanPengaduan       from "../pages/admin/LaporanPengaduan";
 import AdminDetailLaporanPengaduan from "../pages/admin/DetailLaporanPengaduan";
 import AdminPenilaianPengguna      from "../pages/admin/PenilaianPengguna";
 import AdminProfil                 from "../pages/admin/Profil";
+import AdminLaporanHasilUji        from "../pages/admin/LaporanHasilUji";       // ✅ BARU
 /*
   import PengajuanMasuk  from "../pages/admin/PengajuanMasuk";
   import ProsesPengujian from "../pages/admin/ProsesPengujian";
-  import LaporanHasilUji from "../pages/admin/LaporanHasilUji";
 */
 
 // ── Halaman superadmin (role: "superadmin") ───────────────────────
@@ -37,10 +37,10 @@ import SuperAdminKatalog             from "../pages/superAdmin/KatalogPengujian"
 import SuperAdminLaporanPengaduan    from "../pages/superAdmin/LaporanPengaduan";
 import SuperAdminDetailLaporan       from "../pages/superAdmin/DetailLaporanPengaduan";
 import SuperAdminPenilaianPengguna   from "../pages/superAdmin/PenilaianPengguna";
+import SuperAdminLaporanHasilUji     from "../pages/superAdmin/LaporanHasilUji"; // ✅ BARU
 /*
   import SuperAdminPengajuanMasuk  from "../pages/superAdmin/PengajuanMasuk";
   import SuperAdminProsesPengujian from "../pages/superAdmin/ProsesPengujian";
-  import SuperAdminLHU             from "../pages/superAdmin/LaporanHasilUji";
 */
 
 // ── Halaman customer (role: "customer") ───────────────────────────
@@ -53,9 +53,7 @@ import Keranjang          from "../pages/customer/Keranjang";
 import PengajuanSaya      from "../pages/customer/PengajuanSaya";
 import DetailPengajuan    from "../pages/customer/DetailPengajuan";
 import PenilaianKepuasan  from "../pages/customer/PenilaianKepuasan";
-/*
-  import PengajuanUjiSampel from "../pages/customer/PengajuanUjiSampel";
-*/
+import PengajuanUjiSampel from "../pages/customer/PengajuanUjiSampel";
 
 /* ── PrivateRoute ─────────────────────────────────────────────────
    Role dari backend lowercase: "admin" | "superadmin" | "customer"
@@ -75,9 +73,9 @@ export default function AppRoutes() {
     <Routes>
 
       {/* ── Publik ──────────────────────────────────────────────── */}
-      <Route path="/"         element={<LandingPage />} />
-      <Route path="/login"    element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/"                              element={<LandingPage />} />
+      <Route path="/login"                         element={<Login />} />
+      <Route path="/register"                      element={<Register />} />
       <Route path="/forgot-password"               element={<ForgotPassword />} />
       <Route path="/reset-password/:userId/:token" element={<ResetPassword />} />
 
@@ -97,11 +95,11 @@ export default function AppRoutes() {
         <Route path="laporan-pengaduan"            element={<AdminLaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id"        element={<AdminDetailLaporanPengaduan />} />
         <Route path="penilaian-pengguna"           element={<AdminPenilaianPengguna />} />
+        <Route path="lhu"                          element={<AdminLaporanHasilUji />} />  {/* ✅ */}
         <Route path="profil"                       element={<AdminProfil />} />
         {/*
           <Route path="pengajuan-masuk"            element={<PengajuanMasuk />} />
           <Route path="proses-pengujian"           element={<ProsesPengujian />} />
-          <Route path="laporan-hasil-uji"          element={<LaporanHasilUji />} />
         */}
       </Route>
 
@@ -123,11 +121,11 @@ export default function AppRoutes() {
         <Route path="laporan-pengaduan"            element={<SuperAdminLaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id"        element={<SuperAdminDetailLaporan />} />
         <Route path="penilaian-pengguna"           element={<SuperAdminPenilaianPengguna />} />
+        <Route path="lhu"                          element={<SuperAdminLaporanHasilUji />} />  {/* ✅ */}
         <Route path="profil"                       element={<SuperAdminProfil />} />
         {/*
           <Route path="pengajuan-masuk"            element={<SuperAdminPengajuanMasuk />} />
           <Route path="proses-pengujian"           element={<SuperAdminProsesPengujian />} />
-          <Route path="laporan-hasil-uji"          element={<SuperAdminLHU />} />
         */}
       </Route>
 
@@ -146,13 +144,11 @@ export default function AppRoutes() {
         <Route path="katalog-pengujian"            element={<KatalogPengujian />} />
         <Route path="katalog-pengujian/lab/:unit"  element={<KatalogPerLab />} />
         <Route path="keranjang"                    element={<Keranjang />} />
+        <Route path="pengajuan-uji-sampel"         element={<PengajuanUjiSampel />} />
         <Route path="pengajuan-saya"               element={<PengajuanSaya />} />
         <Route path="pengajuan-saya/:id"           element={<DetailPengajuan />} />
         <Route path="penilaian/:id"                element={<PenilaianKepuasan />} />
         <Route path="pengaduan"                    element={<CustomerPengaduan />} />
-        {/*
-          <Route path="pengajuan-uji-sampel"       element={<PengajuanUjiSampel />} />
-        */}
       </Route>
 
       {/* ── Fallback ─────────────────────────────────────────────── */}

@@ -96,7 +96,7 @@ export default function CustomerBeranda() {
       const res  = await getMySubmissions();
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal memuat data.");
-      const submissions = json.data ?? json.submissions ?? [];
+      const submissions = json.data?.data ?? json.data ?? json.submissions ?? [];
       setStats(buildStats(submissions));
     } catch (err) {
       setError(err.message ?? "Gagal memuat data dashboard.");
@@ -175,42 +175,6 @@ export default function CustomerBeranda() {
         ))}
       </div>
 
-      {/* Shortcut CTA */}
-      {!loading && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <p className="text-sm font-bold text-[#233B6E] mb-3">Aksi Cepat</p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => navigate("/customer/pengajuan-uji-sampel")}
-              className="flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
-                text-white text-sm font-semibold px-4 py-2.5 rounded-xl
-                transition-colors"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="12" y1="18" x2="12" y2="12"/>
-                <line x1="9" y1="15" x2="15" y2="15"/>
-              </svg>
-              Buat Pengajuan Baru
-            </button>
-            <button
-              onClick={() => navigate("/customer/pengajuan-saya")}
-              className="flex items-center gap-2 bg-[#EEF0F8] hover:bg-[#dde0f0]
-                text-[#233B6E] text-sm font-semibold px-4 py-2.5 rounded-xl
-                transition-colors"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
-              Lihat Pengajuan Saya
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

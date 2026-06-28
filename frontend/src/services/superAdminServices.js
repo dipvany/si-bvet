@@ -129,3 +129,6 @@ export const changePassword = (data) =>
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify(data),
   });
+
+// ── Activity Logs ────────────────────────────────────────────────
+export const getActivityLogs = () => apiFetch("/superadmin/activity-logs");

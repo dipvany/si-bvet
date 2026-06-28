@@ -201,7 +201,7 @@ export default function AdminProfil() {
   );
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Profil Saya</h1>
 
       {/* Avatar card */}

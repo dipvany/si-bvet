@@ -423,6 +423,8 @@ export default function ManajemenAkun() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return accounts.filter(a => {
+      // Hanya tampilkan akun dengan role "admin", bukan "superAdmin"
+      if (a.role === "superAdmin" || a.role === "superadmin") return false;
       const matchSearch = !q ||
         a.email?.toLowerCase().includes(q) ||
         a.fullname?.toLowerCase().includes(q) ||
