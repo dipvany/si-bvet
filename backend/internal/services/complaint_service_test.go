@@ -222,7 +222,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			err = db.DB.First(&updated, complaint.ID).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 			gomega.Expect(updated.AdminResponse).To(gomega.Equal("We have resolved your issue"))
-			gomega.Expect(updated.Status).To(gomega.Equal("open")) // Note: UpdateComplaintResponse doesn't change status
+			gomega.Expect(updated.Status).To(gomega.Equal("responded"))
 		})
 
 		ginkgo.It("should return error when complaint not found", func() {
@@ -311,7 +311,7 @@ var _ = ginkgo.Describe("Complaint Service", func() {
 			var updatedComplaint models.Complaint
 			err = db.DB.First(&updatedComplaint, complaintID).Error
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(updatedComplaint.Status).To(gomega.Equal("open")) // Status is not changed by UpdateComplaintResponse
+			gomega.Expect(updatedComplaint.Status).To(gomega.Equal("responded"))
 			gomega.Expect(updatedComplaint.AdminResponse).To(gomega.Equal("Thank you for reporting"))
 		})
 	})

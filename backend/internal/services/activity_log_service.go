@@ -11,16 +11,12 @@ import (
 
 const activityLogPrefix = "[SYSTEM LOG]"
 
-// LogActivity memformat dan mencetak log aktivitas generik ke konsol.
-// Sekarang juga menyimpannya ke database.
 func LogActivity(actor, role, message string, actorID *uint, ipAddress, method, endpoint string) {
 	// Membersihkan newline dan spasi berlebih untuk menjaga format satu baris
 	cleanMessage := strings.ReplaceAll(strings.TrimSpace(message), "\n", " ")
 
-	// 1. Cetak ke konsol (perilaku lama tetap dipertahankan)
 	log.Printf("%s %s (%s) — %s", activityLogPrefix, strings.ToUpper(actor), strings.ToLower(role), cleanMessage)
 
-	// 2. Simpan ke database
 	activityLog := &models.ActivityLog{
 		Timestamp: time.Now(),
 		Actor:     actor,

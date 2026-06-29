@@ -3,12 +3,14 @@ package services_test
 import (
 	"errors"
 	"os"
+	"si-bvet/internal/db"
 	"time"
 
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
 	"si-bvet/internal/utils"
 
+	"github.com/glebarez/sqlite"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"golang.org/x/crypto/bcrypt"
@@ -61,6 +63,19 @@ func (m *MockUserRepository) SaveUser(user *models.User) error {
 }
 
 var _ = ginkgo.Describe("AuthService", func() {
+	var gdb *gorm.DB
+
+	ginkgo.BeforeEach(func() {
+		// Setup in-memory SQLite database for logging
+		var err error
+		gdb, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		db.DB = gdb
+
+		// Migrate necessary models for logging
+		err = db.DB.AutoMigrate(&models.ActivityLog{})
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	})
 
 	// ============================================================================
 	// REGISTER USER TESTS
