@@ -230,21 +230,33 @@ function Services() {
             <div className="w-2 h-1 rounded-full bg-[#D3D6DB]" />
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
+
+        {/* Slider horizontal — semua ukuran layar */}
+        <div className="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory
+          [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SERVICES.map((s, i) => (
             <div key={i} onClick={() => navigate("/login")}
-              className="card-hover bg-white rounded-2xl border border-[#D3D6DB]/50 shadow-sm overflow-hidden cursor-pointer group">
+              className="card-hover bg-white rounded-2xl border border-[#D3D6DB]/50 shadow-sm overflow-hidden cursor-pointer group
+                flex-shrink-0 w-[75vw] sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] snap-start">
               <div className="h-1.5 bg-[#F5C400]" />
-              <div className="p-7">
-                <div className="w-14 h-14 rounded-xl bg-[#233B6E] text-white flex items-center justify-center mb-6 group-hover:bg-[#F5C400] group-hover:text-[#233B6E] transition-colors duration-300">{s.icon}</div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className="text-lg font-bold text-[#233B6E] leading-snug">{s.title}</h3>
-                  <span className="text-4xl font-black text-[#D3D6DB]/70 leading-none flex-shrink-0">{String(i + 1).padStart(2, "0")}</span>
+              <div className="p-6">
+                <div className="w-12 h-12 rounded-xl bg-[#233B6E] text-white flex items-center justify-center mb-5
+                  group-hover:bg-[#F5C400] group-hover:text-[#233B6E] transition-colors duration-300">
+                  {s.icon}
                 </div>
-                <p className="text-sm text-[#415F9D] leading-relaxed">{s.desc}</p>
-                <div className="mt-6 flex items-center gap-1.5 text-[#233B6E] text-xs font-bold tracking-wide uppercase">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="text-base font-bold text-[#233B6E] leading-snug">{s.title}</h3>
+                  <span className="text-3xl font-black text-[#D3D6DB]/70 leading-none flex-shrink-0">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <p className="text-xs text-[#415F9D] leading-relaxed">{s.desc}</p>
+                <div className="mt-5 flex items-center gap-1.5 text-[#233B6E] text-xs font-bold tracking-wide uppercase">
                   <span>Akses Layanan</span>
-                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="arrow w-3.5 h-3.5"><path d="M2 7h10M8 3l4 4-4 4"/></svg>
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" className="arrow w-3.5 h-3.5">
+                    <path d="M2 7h10M8 3l4 4-4 4"/>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -382,7 +394,13 @@ function Location() {
         </div>
         <div className="grid lg:grid-cols-5 gap-8 items-start">
           <div className="lg:col-span-3 rounded-2xl overflow-hidden border border-[#D3D6DB] shadow-md" style={{ height: 380 }}>
-            <iframe title="Lokasi BVET" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3971.5!2d105.2511189!3d-5.3755229!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e40dacf0e89c8a3%3A0x7451406d81990719!2sBalai+Veteriner+Lampung!5e0!3m2!1sid!2sid!4v1620000000000!5m2!1sid!2sid" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+            <iframe
+              title="Lokasi BVET"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3971.5!2d105.2511189!3d-5.3755229!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e40dacf0e89c8a3%3A0x7451406d81990719!2sBalai+Veteriner+Lampung!5e0!3m2!1sid!2sid!4v1620000000000!5m2!1sid!2sid"
+              width="100%" height="100%" style={{ border: 0 }}
+              allowFullScreen loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
           <div className="lg:col-span-2 flex flex-col gap-3">
             {CONTACTS.map(c => (
@@ -421,8 +439,12 @@ function Footer() {
             <p className="text-white/55 text-sm leading-relaxed max-w-xs">Portal digital resmi Balai Veteriner Lampung untuk layanan pengujian laboratorium veteriner yang cepat, transparan, dan terpercaya.</p>
             <div className="mt-6 flex gap-2.5">
               {socials.map(s => (
-                <a key={s.title} href="#" aria-label={s.title} className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#F5C400]/20 text-white/60 hover:text-[#F5C400] flex items-center justify-center transition-all">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d={s.d}/></svg>
+                <a key={s.title} href="#" aria-label={s.title}
+                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-[#F5C400]/20 text-white/60 hover:text-[#F5C400] flex items-center justify-center transition-all">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+                    strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <path d={s.d}/>
+                  </svg>
                 </a>
               ))}
             </div>
@@ -431,7 +453,10 @@ function Footer() {
           <div>
             <h4 className="text-white text-sm font-bold uppercase tracking-widest mb-5">Tautan</h4>
             <ul className="space-y-2.5">
-              {[...NAV, { label: "Login", href: "/login", route: true }, { label: "Daftar", href: "/register", route: true }].map(l => (
+              {[...NAV,
+                { label: "Login",  href: "/login",    route: true },
+                { label: "Daftar", href: "/register", route: true }
+              ].map(l => (
                 <li key={l.label}>
                   {l.route
                     ? <Link to={l.href} className="text-white/55 hover:text-[#F5C400] text-sm transition-colors flex items-center gap-2"><span className="w-1 h-1 rounded-full bg-[#F5C400]/40 flex-shrink-0" />{l.label}</Link>
@@ -451,6 +476,7 @@ function Footer() {
               <li>Senin – Jumat: 07.30 – 16.00 WIB</li>
             </ul>
           </div>
+
         </div>
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/35">
           <p>© {new Date().getFullYear()} Balai Veteriner Lampung — Kementerian Pertanian RI. Hak cipta dilindungi.</p>

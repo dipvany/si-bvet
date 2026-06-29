@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { approveSubmission, rejectSubmission } from "../../services/adminServices";
+import { apiFetch } from "../../services/api";
+import { resolveFileUrl } from "../../utils/fileUrl";
 
 /**
- * DetailPengajuanMasuk — hanya untuk melihat detail + approve/reject.
- * Billing dan proses selanjutnya ada di menu Proses Pengujian.
+ * DetailPengajuanMasuk — lihat detail + approve/reject.
+ * Tidak ada alur proses — cukup verifikasi pengajuan.
+ * Setelah approve → otomatis masuk Proses Pengujian (status: kaji_ulang).
  */
 
 const STATUS_CONFIG = {
@@ -73,14 +76,32 @@ function SectionCard({ title, accent = "#233B6E", children }) {
   );
 }
 
-// Alur status setelah disetujui
-const STATUS_STEPS = [
-  { key: "pending_verification", label: "Menunggu Verifikasi", icon: "📋" },
-  { key: "reviewing",            label: "Kaji Ulang",          icon: "🔍" },
-  { key: "awaiting_payment",     label: "Menunggu Pembayaran", icon: "💳" },
-  { key: "in_process",           label: "Proses Pengujian",    icon: "🔬" },
-  { key: "done",                 label: "Pengujian Selesai",   icon: "✅" },
-];
+function FileIcon({ ext }) {
+  const isPdf = ext === "pdf";
+  const isImg = ["jpg","jpeg","png","gif","webp"].includes(ext);
+  if (isPdf) return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-red-500">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/>
+    </svg>
+  );
+  if (isImg) return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-500">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </svg>
+  );
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-gray-400">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg>
+  );
+}
 
 export default function DetailPengajuanMasuk() {
   const navigate  = useNavigate();
@@ -88,9 +109,28 @@ export default function DetailPengajuanMasuk() {
   const { state } = useLocation();
 
   const [submission, setSubmission] = useState(state?.submission ?? null);
-  const [loading, setLoading]       = useState(false);
-  const [error,   setError]         = useState("");
-  const [success, setSuccess]       = useState("");
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState("");
+  const [success,    setSuccess]    = useState("");
+  const [docs,       setDocs]       = useState([]);
+  const [docsLoading,setDocsLoading]= useState(false);
+
+  // Fetch attachment docs
+  useEffect(() => {
+    if (!id) return;
+    setDocsLoading(true);
+    apiFetch(`/admin/submissions/${id}`)
+      .then(r => r.json())
+      .then(d => {
+        const raw = d.data ?? d;
+        // attachment_doc bisa berupa string path, array of paths, atau array of objects
+        const att = raw.attachment_doc ?? raw.attachments ?? raw.documents ?? [];
+        if (Array.isArray(att)) setDocs(att);
+        else if (typeof att === "string" && att) setDocs([att]);
+      })
+      .catch(() => {})
+      .finally(() => setDocsLoading(false));
+  }, [id]);
 
   if (!submission) return (
     <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -99,13 +139,13 @@ export default function DetailPengajuanMasuk() {
     </div>
   );
 
-  const status          = submission.process_status;
-  const isPending       = status === "pending_verification";
-  const isRejected      = status === "rejected";
-  const sudahDiproses   = !isPending && !isRejected;
+  const status        = submission.process_status;
+  const isPending     = status === "pending_verification";
+  const isRejected    = status === "rejected";
+  const sudahDiproses = !isPending && !isRejected;
 
   const handleApprove = async () => {
-    if (!window.confirm("Setujui pengajuan ini? Data akan masuk ke menu Proses Pengujian dengan status Kaji Ulang.")) return;
+    if (!window.confirm("Setujui pengajuan ini? Data akan otomatis masuk ke menu Proses Pengujian dengan status Kaji Ulang.")) return;
     setLoading(true); setError(""); setSuccess("");
     try {
       const res  = await approveSubmission(id);
@@ -129,9 +169,6 @@ export default function DetailPengajuanMasuk() {
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
-
-  const statusOrder = STATUS_STEPS.map(s => s.key);
-  const currentIdx  = statusOrder.indexOf(status);
 
   return (
     <div className="space-y-5 max-w-3xl">
@@ -161,9 +198,10 @@ export default function DetailPengajuanMasuk() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="h-1 bg-[#233B6E]" />
           <div className="px-5 py-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tindakan</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tindakan Verifikasi</p>
             <p className="text-xs text-gray-400 mb-3">
               Tinjau detail pengajuan di bawah, kemudian setujui atau tolak.
+              Jika disetujui, pengajuan otomatis masuk ke <strong>Proses Pengujian</strong> dengan status <strong>Kaji Ulang</strong>.
             </p>
             <div className="flex flex-wrap gap-3">
               <button onClick={handleApprove} disabled={loading}
@@ -195,7 +233,7 @@ export default function DetailPengajuanMasuk() {
         </div>
       )}
 
-      {/* Sudah diproses — info saja */}
+      {/* Sudah diproses */}
       {sudahDiproses && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3
           text-sm text-blue-700 flex items-center gap-2">
@@ -203,7 +241,7 @@ export default function DetailPengajuanMasuk() {
             strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          Pengajuan ini sudah disetujui dan sedang diproses. Kelola lanjutan di menu <strong className="mx-1">Proses Pengujian</strong>.
+          Pengajuan ini sudah disetujui. Kelola lanjutan di menu <strong className="mx-1">Proses Pengujian</strong>.
         </div>
       )}
 
@@ -235,42 +273,42 @@ export default function DetailPengajuanMasuk() {
         <InfoRow label="Catatan"          value={submission.notes} />
       </SectionCard>
 
-      {/* Timeline */}
-      <SectionCard title="Alur Proses Pengajuan" accent="#8B5CF6">
-        <div className="py-2 space-y-0">
-          {STATUS_STEPS.map((step, idx) => {
-            const stepIdx   = statusOrder.indexOf(step.key);
-            const isPast    = stepIdx < currentIdx;
-            const isCurrent = step.key === status;
-            return (
-              <div key={step.key} className="flex items-start gap-3">
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0
-                    ${isCurrent ? "bg-[#233B6E] text-white shadow ring-4 ring-[#233B6E]/20"
-                      : isPast ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
-                    {isPast ? "✓" : step.icon}
-                  </div>
-                  {idx < STATUS_STEPS.length - 1 && (
-                    <div className={`w-0.5 h-6 mt-1 ${isPast ? "bg-green-300" : "bg-gray-200"}`} />
-                  )}
-                </div>
-                <div className="pb-2 pt-1.5 flex-1">
-                  <p className={`text-sm font-semibold
-                    ${isCurrent ? "text-[#233B6E]" : isPast ? "text-green-600" : "text-gray-400"}`}>
-                    {step.label}
-                  </p>
-                  {isCurrent && <p className="text-xs text-gray-400 mt-0.5">Status saat ini</p>}
-                </div>
-              </div>
-            );
-          })}
-          {isRejected && (
-            <div className="flex items-center gap-3 mt-1">
-              <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-sm flex-shrink-0">✗</div>
-              <p className="text-sm font-semibold text-red-600">Ditolak</p>
-            </div>
-          )}
-        </div>
+      {/* Dokumen Pendukung */}
+      <SectionCard title="Dokumen Pendukung" accent="#0EA5E9">
+        {docsLoading ? (
+          <div className="flex items-center gap-2 py-4 text-gray-400 text-sm">
+            <Spinner sm /> Memuat dokumen...
+          </div>
+        ) : docs.length === 0 ? (
+          <p className="text-sm text-gray-400 py-3">Tidak ada dokumen pendukung yang diupload.</p>
+        ) : (
+          <div className="space-y-2 py-1">
+            {docs.map((doc, i) => {
+              const path    = typeof doc === "string" ? doc : (doc.path ?? doc.file_path ?? doc.url ?? "");
+              const url     = resolveFileUrl(path);
+              const fname   = path.split("/").pop() || `Dokumen ${i + 1}`;
+              const ext     = fname.split(".").pop().toLowerCase();
+              return (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl
+                    bg-gray-50 hover:bg-[#EEF0F8] border border-gray-100
+                    hover:border-[#233B6E]/20 transition-colors group">
+                  <FileIcon ext={ext} />
+                  <span className="text-sm text-gray-700 font-medium flex-1 min-w-0 truncate
+                    group-hover:text-[#233B6E]">
+                    {fname}
+                  </span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    className="w-4 h-4 text-gray-300 group-hover:text-[#233B6E] flex-shrink-0">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </SectionCard>
     </div>
   );
