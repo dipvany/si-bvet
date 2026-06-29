@@ -43,32 +43,55 @@ func (h *SubmissionHandler) CreateSubmission(c *gin.Context) {
 	contentType := strings.ToLower(c.GetHeader("Content-Type"))
 	if strings.HasPrefix(contentType, "multipart/form-data") {
 		if err := c.ShouldBind(&req); err != nil {
+			if !strings.Contains(err.Error(), "unsupported field type") {
+				utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
+
+		// Re-bind form fields without file to ensure all other data is captured
+		if err := c.ShouldBind(&req); err != nil && !strings.Contains(err.Error(), "unsupported field type") {
 			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		fileHeader, err := c.FormFile("file")
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, "file is required for bulk submission")
+		// Handle bulk sample import file
+		sampleFileHeader, err := c.FormFile("file")
+		if err == nil && sampleFileHeader != nil {
+			file, err := sampleFileHeader.Open()
+			if err != nil {
+				utils.ErrorResponse(c, http.StatusBadRequest, "failed to open uploaded sample template file")
+				return
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			importedSamples, err := h.Service.ImportSamplesFromTemplate(0, file)
+			if err != nil {
+				utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+				return
+			}
+			req.Samples = importedSamples.Samples
+		} else if err != nil && err != http.ErrMissingFile {
+			utils.ErrorResponse(c, http.StatusBadRequest, "invalid sample template file")
 			return
 		}
 
-		file, err := fileHeader.Open()
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, "failed to open uploaded file")
+		// Handle attachment_doc file
+		attachmentFileHeader, err := c.FormFile("attachment_doc")
+		if err == nil && attachmentFileHeader != nil {
+			filePath, err := h.fileStorage.SaveSubmissionAttachment(c.Request.Context(), attachmentFileHeader)
+			if err != nil {
+				utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save attachment document")
+				return
+			}
+			req.AttachmentDoc = filePath
+		} else if err != nil && err != http.ErrMissingFile {
+			utils.ErrorResponse(c, http.StatusBadRequest, "invalid attachment document file")
 			return
 		}
-		defer func() {
-			_ = file.Close()
-		}()
 
-		importedSamples, err := h.Service.ImportSamplesFromTemplate(0, file)
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		req.Samples = importedSamples.Samples
 	} else {
 		if err := c.ShouldBindJSON(&req); err != nil {
 			utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
