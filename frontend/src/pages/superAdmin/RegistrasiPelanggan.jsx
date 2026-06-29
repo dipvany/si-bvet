@@ -138,20 +138,6 @@ export default function RegistrasiPelanggan() {
     }
   };
 
-  const handleExport = () => {
-    const headers = ["No", "Nama", "Email", "Institusi", "Status"];
-    const rows = filtered.map((c, i) => [
-      i + 1, c.fullname ?? "", c.email ?? "",
-      c.institution ?? "", getStatusKey(c),
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = "registrasi-pelanggan.csv"; a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const filtered = useMemo(() => {
     const base = allCustomers.filter(c => {
       const status = getStatusKey(c);
@@ -304,18 +290,6 @@ export default function RegistrasiPelanggan() {
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
                 Impor Data
-              </button>
-              <button onClick={handleExport}
-                className="flex items-center gap-1.5 bg-[#233B6E] hover:bg-[#1a2d56]
-                  text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm
-                  transition-colors whitespace-nowrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Ekspor Data
               </button>
             </div>
           </div>

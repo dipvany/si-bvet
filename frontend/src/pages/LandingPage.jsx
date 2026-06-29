@@ -29,6 +29,11 @@ const SERVICES = [
     desc: "Layanan permohonan informasi publik secara digital.",
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>,
   },
+  {
+    title: "Pengaduan",
+    desc: "Sampaikan pengaduan atau keluhan terkait layanan BVET secara langsung dan transparan.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  },
 ];
 
 const STEPS = [
