@@ -45,8 +45,10 @@ function formatTime(val) {
 }
 
 function getInitials(name) {
-  if (!name) return "?";
-  return name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase();
+  if (!name || name === "—") return "?";
+  // Ambil huruf pertama dari tiap kata (maks 2 kata)
+  const initials = name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+  return initials || "?";
 }
 
 // Ambil label deskripsi dari berbagai kemungkinan field
@@ -55,7 +57,20 @@ function getDesc(log) {
 }
 
 function getUserName(log) {
-  return log.user?.fullname ?? log.user?.name ?? log.user_name ?? log.username ?? log.performed_by ?? "—";
+  // Coba semua kemungkinan field nama dari response API
+  return (
+    log.actor_name ??
+    log.actor ??
+    log.user?.fullname ??
+    log.user?.name ??
+    log.user_fullname ??
+    log.user_name ??
+    log.username ??
+    log.performed_by ??
+    log.admin?.fullname ??
+    log.admin?.name ??
+    null
+  );
 }
 
 function DonutChart({ value, max, color, size = 64 }) {
@@ -151,7 +166,17 @@ function ActivityLogSection({ logs, loading, error }) {
               const time     = formatTime(
                 log.created_at ?? log.timestamp ?? log.time ?? log.date
               );
-              const initials = getInitials(name);
+              // actor: nama yang ditampilkan, fallback ke "Sistem" jika tidak ada
+              const actor    = log.actor ?? name ?? "Sistem";
+              const initials = getInitials(actor);
+              const method   = log.method ?? log.http_method ?? null;
+              const endpoint = log.endpoint ?? log.path ?? log.url ?? null;
+
+              const methodColor = (
+                { GET: "bg-blue-100 text-blue-700", POST: "bg-green-100 text-green-700",
+                  PATCH: "bg-yellow-100 text-yellow-700", PUT: "bg-yellow-100 text-yellow-700",
+                  DELETE: "bg-red-100 text-red-600" }[method?.toUpperCase()] ?? "bg-gray-100 text-gray-600"
+              );
 
               return (
                 <div key={log.id ?? i}
@@ -170,10 +195,29 @@ function ActivityLogSection({ logs, loading, error }) {
 
                   {/* Konten */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
+                    {/* Nama actor */}
+                    <p className="text-sm font-semibold text-gray-800 truncate">{actor}</p>
+
+                    {/* Deskripsi aktivitas */}
                     <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2">
                       {desc}
                     </p>
+
+                    {/* Method + Endpoint */}
+                    {(method || endpoint) && (
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {method && (
+                          <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${methodColor}`}>
+                            {method.toUpperCase()}
+                          </span>
+                        )}
+                        {endpoint && (
+                          <span className="text-[10px] font-mono text-gray-400 truncate max-w-[220px]">
+                            {endpoint}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Waktu */}

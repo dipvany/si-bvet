@@ -5,8 +5,11 @@
 import { apiFetch } from "./api";
 
 // ── Dashboard ─────────────────────────────────────────────────────
-export const getDashboard        = () => apiFetch("/dashboard");
-export const getAdminSubmissions = () => apiFetch("/admin/submissions");
+export const getDashboard = () => apiFetch("/dashboard");
+
+// FIX: tambah params agar bisa kirim ?page=1&per_page=20 dari PengajuanMasuk
+export const getAdminSubmissions = (params = "") =>
+  apiFetch(`/admin/submissions${params}`);
 
 // ── Registrasi Customer ───────────────────────────────────────────
 export const getUnverifiedCustomers = () =>
@@ -18,27 +21,6 @@ export const verifyUser = (id) =>
 export const rejectUser = (id) =>
   apiFetch(`/admin/customers/${id}/reject`, { method: "PATCH" });
 
-// ── Manajemen Akun Admin ──────────────────────────────────────────
-export const getAllAdminAccounts = () =>
-  apiFetch("/superadmin/admin-accounts");
-
-export const createAdminAccount = (data) =>
-  apiFetch("/superadmin/admin-accounts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-export const updateAdminAccount = (userId, data) =>
-  apiFetch(`/superadmin/admin-accounts/${userId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-export const deleteAdminAccount = (userId) =>
-  apiFetch(`/superadmin/admin-accounts/${userId}`, { method: "DELETE" });
-
 // ── Submission ────────────────────────────────────────────────────
 export const approveSubmission = (id) =>
   apiFetch(`/admin/submissions/${id}/approve`, { method: "PATCH" });
@@ -49,9 +31,9 @@ export const rejectSubmission = (id) =>
 // ── Billing ───────────────────────────────────────────────────────
 export const createBilling = (submissionId, data) =>
   apiFetch(`/admin/billings/${submissionId}`, {
-    method: "POST",
+    method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body:    JSON.stringify(data),
   });
 
 export const getBilling = (submissionId) =>
@@ -59,9 +41,9 @@ export const getBilling = (submissionId) =>
 
 export const updateBilling = (submissionId, data) =>
   apiFetch(`/admin/billings/${submissionId}`, {
-    method: "PATCH",
+    method:  "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body:    JSON.stringify(data),
   });
 
 export const verifyPayment = (submissionId) =>
@@ -71,45 +53,66 @@ export const rejectPayment = (submissionId) =>
   apiFetch(`/admin/billings/${submissionId}/reject`, { method: "PATCH" });
 
 // ── LHU ──────────────────────────────────────────────────────────
-export const uploadLHU = (submissionId, formData) =>
-  apiFetch(`/admin/submissions/${submissionId}/lhu`, {
-    method: "POST",
-    body: formData,
-    // Jangan set Content-Type — browser otomatis isi boundary FormData
-  });
-
 export const getLHU = (submissionId) =>
   apiFetch(`/admin/submissions/${submissionId}/lhu`);
 
-// ── Katalog / Test Services ───────────────────────────────────────
-export const getTestServices   = ()         => apiFetch("/admin/test-services");
-export const createTestService = (data)     =>
-  apiFetch("/admin/test-services", {
+export const uploadLHU = (submissionId, formData) =>
+  apiFetch(`/admin/submissions/${submissionId}/lhu`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body:   formData,
   });
+
+// ── Manajemen Akun Admin ──────────────────────────────────────────
+export const getAllAdminAccounts = () =>
+  apiFetch("/superadmin/admin-accounts");
+
+export const createAdminAccount = (data) =>
+  apiFetch("/superadmin/admin-accounts", {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(data),
+  });
+
+export const updateAdminAccount = (userId, data) =>
+  apiFetch(`/superadmin/admin-accounts/${userId}`, {
+    method:  "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify(data),
+  });
+
+export const deleteAdminAccount = (userId) =>
+  apiFetch(`/superadmin/admin-accounts/${userId}`, { method: "DELETE" });
+
+// ── Katalog / Test Services ───────────────────────────────────────
+export const getTestServices = () =>
+  apiFetch("/admin/test-services");
+
 export const updateTestService = (id, data) =>
   apiFetch(`/admin/test-services/${id}`, {
-    method: "PATCH",
+    method:  "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body:    JSON.stringify(data),
   });
+
 export const deleteTestService = (id) =>
   apiFetch(`/admin/test-services/${id}`, { method: "DELETE" });
 
-// ── Feedback & Complaints ─────────────────────────────────────────
-export const getAllFeedbacks   = ()         => apiFetch("/admin/feedbacks");
-export const getAllComplaints  = ()         => apiFetch("/admin/complaints");
+// ── Penilaian ────────────────────────────────────────────────────
+export const getAllFeedbacks = () =>
+  apiFetch("/admin/feedbacks");
+
+// ── Laporan Pengaduan ─────────────────────────────────────────────
+export const getAllComplaints = () =>
+  apiFetch("/admin/complaints");
+
 export const respondComplaint = (id, data) =>
   apiFetch(`/admin/complaints/${id}/respond`, {
-    method: "PATCH",
+    method:  "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body:    JSON.stringify(data),
   });
 
-// ── Profil (endpoint shared GET/PATCH /profile) ───────────────────
-// Response: { profile: { id, fullname, email, phone, role, institution, ... } }
+// ── Profil ────────────────────────────────────────────────────────
 export const getProfile = () =>
   apiFetch("/profile");
 
@@ -118,11 +121,8 @@ export const updateProfile = (data) =>
     method:  "PATCH",
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify(data),
-    // field yang diterima: fullname, phone, institution, (dan customer fields bila role customer)
   });
 
-// ── Ganti Kata Sandi (PATCH /auth/change-password) ───────────────
-// Body wajib: { current_password, new_password }
 export const changePassword = (data) =>
   apiFetch("/auth/change-password", {
     method:  "PATCH",
@@ -130,5 +130,14 @@ export const changePassword = (data) =>
     body:    JSON.stringify(data),
   });
 
-// ── Activity Logs ────────────────────────────────────────────────
+// ── Template Sampel (pengajuan massal) ───────────────────────────
+// POST /superadmin/submissions/samples/template
+// Upload template Excel yang akan diunduh customer di Step 2
+export const uploadSampleTemplate = (formData) =>
+  apiFetch("/superadmin/submissions/samples/template", {
+    method: "POST",
+    body:   formData,
+    // Jangan set Content-Type — browser isi boundary FormData otomatis
+  });
+
 export const getActivityLogs = () => apiFetch("/superadmin/activity-logs");
