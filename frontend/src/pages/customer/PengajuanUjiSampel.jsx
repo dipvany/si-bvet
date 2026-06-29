@@ -325,8 +325,35 @@ function MultiSelectPengujian({ selected, onChange, cartItems }) {
   );
 }
 
-/* ─── WilayahSelect — provinsi hardcode, kab/kec/kel fetch API ─── */
-const WILAYAH_API = "https://emsifa.github.io/api-wilayah-indonesia/api";
+/* ─── WilayahSelect — provinsi dari refData, kab/kec/kel fetch API ─── */
+// Gunakan 2 API sebagai fallback agar lebih reliable
+const WILAYAH_APIS = [
+  "https://emsifa.github.io/api-wilayah-indonesia/api",
+  "https://ibnux.github.io/data-indonesia",
+];
+
+async function fetchWilayah(path, altPath) {
+  // Coba primary API dulu
+  try {
+    const r = await fetch(`${WILAYAH_APIS[0]}/${path}`);
+    if (r.ok) {
+      const d = await r.json();
+      const arr = Array.isArray(d) ? d : (d.data ?? []);
+      if (arr.length > 0) return arr;
+    }
+  } catch {}
+  // Fallback ke secondary API
+  try {
+    const r = await fetch(`${WILAYAH_APIS[1]}/${altPath ?? path}`);
+    if (r.ok) {
+      const d = await r.json();
+      // ibnux format: [{id, nama}] - normalize ke {code/id, name}
+      const arr = Array.isArray(d) ? d : [];
+      return arr.map(x => ({ code: x.id ?? x.code, name: x.nama ?? x.name }));
+    }
+  } catch {}
+  return [];
+}
 
 function WilayahSelect({ step3, setStep3 }) {
   const [regencies,  setRegencies]  = useState([]);
@@ -335,40 +362,37 @@ function WilayahSelect({ step3, setStep3 }) {
   const [loadingReg, setLoadingReg] = useState(false);
   const [loadingDist,setLoadingDist]= useState(false);
   const [loadingVil, setLoadingVil] = useState(false);
+  const [errReg,  setErrReg]  = useState("");
+  const [errDist, setErrDist] = useState("");
+  const [errVil,  setErrVil]  = useState("");
   const [provId,  setProvId]  = useState("");
   const [regId,   setRegId]   = useState("");
   const [distId,  setDistId]  = useState("");
 
   useEffect(() => {
     if (!provId) { setRegencies([]); setDistricts([]); setVillages([]); return; }
-    setLoadingReg(true);
+    setLoadingReg(true); setErrReg("");
     setRegencies([]); setDistricts([]); setVillages([]);
-    fetch(`${WILAYAH_API}/regencies/${provId}.json`)
-      .then(r => r.json())
-      .then(d => setRegencies(Array.isArray(d) ? d : (d.data ?? [])))
-      .catch(() => {})
+    fetchWilayah(`regencies/${provId}.json`, `kabupaten/${provId}.json`)
+      .then(d => { setRegencies(d); if (!d.length) setErrReg("Gagal memuat data kabupaten."); })
       .finally(() => setLoadingReg(false));
   }, [provId]);
 
   useEffect(() => {
     if (!regId) { setDistricts([]); setVillages([]); return; }
-    setLoadingDist(true);
+    setLoadingDist(true); setErrDist("");
     setDistricts([]); setVillages([]);
-    fetch(`${WILAYAH_API}/districts/${regId}.json`)
-      .then(r => r.json())
-      .then(d => setDistricts(Array.isArray(d) ? d : (d.data ?? [])))
-      .catch(() => {})
+    fetchWilayah(`districts/${regId}.json`, `kecamatan/${regId}.json`)
+      .then(d => { setDistricts(d); if (!d.length) setErrDist("Gagal memuat data kecamatan."); })
       .finally(() => setLoadingDist(false));
   }, [regId]);
 
   useEffect(() => {
     if (!distId) { setVillages([]); return; }
-    setLoadingVil(true);
+    setLoadingVil(true); setErrVil("");
     setVillages([]);
-    fetch(`${WILAYAH_API}/villages/${distId}.json`)
-      .then(r => r.json())
-      .then(d => setVillages(Array.isArray(d) ? d : (d.data ?? [])))
-      .catch(() => {})
+    fetchWilayah(`villages/${distId}.json`, `kelurahan/${distId}.json`)
+      .then(d => { setVillages(d); if (!d.length) setErrVil("Gagal memuat data kelurahan."); })
       .finally(() => setLoadingVil(false));
   }, [distId]);
 
@@ -454,15 +478,24 @@ function WilayahSelect({ step3, setStep3 }) {
         </div>
       </div>
 
-      <WDD label="Kabupaten/Kota" required value={step3.city}
-        onChange={handleReg} opts={regencies} loading={loadingReg}
-        disabled={!provId} placeholder="Pilih kabupaten/kota"/>
-      <WDD label="Kecamatan" required value={step3.subdistrict}
-        onChange={handleDist} opts={districts} loading={loadingDist}
-        disabled={!regId} placeholder="Pilih kecamatan"/>
-      <WDD label="Kelurahan/Desa" required value={step3.village}
-        onChange={handleVil} opts={villages} loading={loadingVil}
-        disabled={!distId} placeholder="Pilih kelurahan/desa"/>
+      <div>
+        <WDD label="Kabupaten/Kota" required value={step3.city}
+          onChange={handleReg} opts={regencies} loading={loadingReg}
+          disabled={!provId} placeholder="Pilih kabupaten/kota"/>
+        {errReg && <p className="text-xs text-red-500 mt-1">{errReg}</p>}
+      </div>
+      <div>
+        <WDD label="Kecamatan" required value={step3.subdistrict}
+          onChange={handleDist} opts={districts} loading={loadingDist}
+          disabled={!regId} placeholder="Pilih kecamatan"/>
+        {errDist && <p className="text-xs text-red-500 mt-1">{errDist}</p>}
+      </div>
+      <div>
+        <WDD label="Kelurahan/Desa" required value={step3.village}
+          onChange={handleVil} opts={villages} loading={loadingVil}
+          disabled={!distId} placeholder="Pilih kelurahan/desa"/>
+        {errVil && <p className="text-xs text-red-500 mt-1">{errVil}</p>}
+      </div>
     </>
   );
 }
@@ -630,7 +663,7 @@ export default function PengajuanUjiSampel() {
         sex: s.sex, age: s.age ? Number(s.age) : undefined, unit_age: s.unit_age,
         owner: s.owner, sampling: s.sampling, location_type: s.location_type,
         location_smpl: s.location_smpl, is_vaccinated: s.is_vaccinated,
-        test_services: s.test_services?.map(t => t.id),
+        tests:            s.test_services?.map(t => ({ test_service_id: t.id })),
       }))));
       docFiles.forEach(f => fd.append("attachment_doc", f));
 
@@ -1072,6 +1105,45 @@ export default function PengajuanUjiSampel() {
                 </svg>
                 Tambah Sampel
               </button>
+
+              {/* ── Estimasi Harga ── */}
+              {(() => {
+                const allServices = samples.flatMap(s => s.test_services ?? []);
+                if (allServices.length === 0) return null;
+                const totalSamples = samples.reduce((a, s) => a + (Number(s.total_sample) || 1), 0);
+                const uniqueServices = [...new Map(allServices.map(t => [t.id, t])).values()];
+                const subtotal = allServices.reduce((a, t) => a + (Number(t.price) || 0), 0);
+                const totalEst = subtotal * totalSamples;
+                const rupiah = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n ?? 0);
+                return (
+                  <div className="border border-[#233B6E]/20 rounded-2xl bg-[#EEF0F8] p-4 space-y-3">
+                    <p className="text-sm font-bold text-[#233B6E] flex items-center gap-2">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                        strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
+                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      </svg>
+                      Estimasi Biaya Pengujian
+                    </p>
+                    <div className="space-y-1.5">
+                      {uniqueServices.map(t => (
+                        <div key={t.id} className="flex justify-between text-xs text-gray-600">
+                          <span className="truncate max-w-[60%]">{t.test_name}</span>
+                          <span className="font-medium text-[#233B6E]">{rupiah(t.price)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t border-[#233B6E]/20 pt-2 flex justify-between text-sm">
+                      <span className="text-gray-500">
+                        {uniqueServices.length} pengujian × {totalSamples} sampel
+                      </span>
+                      <span className="font-bold text-[#233B6E]">{rupiah(totalEst)}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      * Estimasi belum termasuk biaya tambahan. Tagihan resmi akan dikirim setelah verifikasi.
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
