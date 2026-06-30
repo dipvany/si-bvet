@@ -21,7 +21,7 @@ import (
 
 type SubmissionServiceInterface interface {
 	Create(userID uint, req dto.SubmissionRequest) (models.Submission, error)
-	GetByUser(userID uint) ([]models.Submission, error)
+	GetSubmissionsByUser(userID uint) ([]models.Submission, error)
 	GetByUserPaginated(userID uint, page int, perPage int) ([]models.Submission, int64, error)
 	GetAll() ([]models.Submission, error)
 	GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error)
@@ -57,7 +57,7 @@ func (s *SubmissionService) Create(userID uint, req dto.SubmissionRequest) (mode
 	return submission, nil
 }
 
-func (s *SubmissionService) GetByUser(userID uint) ([]models.Submission, error) {
+func (s *SubmissionService) GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
 	return GetSubmissionsByUser(userID)
 }
 

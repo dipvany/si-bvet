@@ -548,3 +548,19 @@ func buildPaginationMeta(page, perPage int, total int64) gin.H {
 		"total_pages": totalPages,
 	}
 }
+
+func (h *SubmissionHandler) GetSubmissionByID(c *gin.Context) {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "invalid submission id")
+		return
+	}
+
+	submission, err := h.Service.GetSubmissionsByUser(id)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+		return
+	}
+
+	utils.DataResponse(c, http.StatusOK, "Submission retrieved successfully", submission)
+}
