@@ -196,6 +196,10 @@ func (m *MockSubmissionService) ImportSamplesFromTemplate(submissionID uint, fil
 	}, nil
 }
 
+func (m *MockSubmissionService) GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
+	return nil, nil
+}
+
 type MockTemplateStorage struct {
 	saveResult   string
 	saveErr      error
