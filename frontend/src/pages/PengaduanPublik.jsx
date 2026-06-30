@@ -48,7 +48,7 @@ function TextAreaSection({ label, value, onChange, placeholder }) {
 
 export default function PengaduanPublik() {
   const [form, setForm] = useState({
-    fullname: "", email: "",
+    fullname: "", email: "", id_number: "", phone: "",
     date_of_complaint: "", subjects: "", description: "",
   });
   const [attachment, setAttachment] = useState(null);
@@ -63,12 +63,14 @@ export default function PengaduanPublik() {
   const validate = () => {
     if (!form.fullname)          return "Nama lengkap/perusahaan wajib diisi.";
     if (!form.email)             return "Email wajib diisi (agar kami dapat menghubungi Anda).";
+    if (!form.id_number)         return "NIK/No. Identitas wajib diisi.";
+    if (!form.phone)             return "No. Telepon wajib diisi.";
     if (!form.date_of_complaint) return "Tanggal melapor wajib diisi.";
     if (!form.subjects)          return "Subjek pengaduan wajib diisi.";
     if (!form.description)       return "Uraian pengaduan wajib diisi.";
+    if (!attachment)             return "Dokumen pendukung wajib diunggah.";
     if (!agreed)                 return "Anda harus menyetujui pernyataan di bawah.";
     return null;
-    // Catatan: attachment OPSIONAL sesuai dokumentasi API publik.
   };
 
   const handleSubmit = async (e) => {
@@ -82,6 +84,8 @@ export default function PengaduanPublik() {
       const fd = new FormData();
       fd.append("fullname",           form.fullname);
       fd.append("email",              form.email);
+      fd.append("id_number",          form.id_number);
+      fd.append("phone",              form.phone);
       fd.append("subjects",           form.subjects);
       fd.append("description",        form.description);
       fd.append("date_of_complaint",  form.date_of_complaint); // format YYYY-MM-DD
@@ -107,7 +111,7 @@ export default function PengaduanPublik() {
 
   const resetForm = () => {
     setSuccess(false);
-    setForm({ fullname:"", email:"", date_of_complaint:"", subjects:"", description:"" });
+    setForm({ fullname:"", email:"", id_number:"", phone:"", date_of_complaint:"", subjects:"", description:"" });
     setAttachment(null);
     setAgreed(false);
     setError("");
@@ -115,10 +119,10 @@ export default function PengaduanPublik() {
 
   /* ── Header sederhana (tanpa sidebar, karena halaman publik) ── */
   const PageHeader = () => (
-    <div className="bg-[#233B6E] py-5">
-      <div className="max-w-2xl mx-auto px-5 flex items-center gap-3">
+    <div className="bg-[#233B6E] h-[68px] flex items-center">
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 w-full flex items-center">
         <Link to="/" className="flex items-center gap-3">
-          <img src={logo} alt="SI-BVET" className="h-9 w-auto object-contain" />
+          <img src={logo} alt="SI-BVET" className="h-10 w-auto object-contain" />
           <div className="flex flex-col leading-tight">
             <span className="text-white font-bold text-sm">SI-BVET Lampung</span>
             <span className="text-white/55 text-[10px]">Laboratorium Balai Veteriner Lampung</span>
@@ -133,7 +137,7 @@ export default function PengaduanPublik() {
     return (
       <div className="min-h-screen bg-[#F0F2F8]">
         <PageHeader />
-        <div className="max-w-2xl mx-auto px-5 py-10">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-10">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center
               justify-center mx-auto mb-5">
@@ -170,17 +174,17 @@ export default function PengaduanPublik() {
   return (
     <div className="min-h-screen bg-[#F0F2F8]">
       <PageHeader />
-      <div className="max-w-2xl mx-auto px-5 py-8 space-y-5">
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8 space-y-5">
 
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[#233B6E]">Pengaduan</h1>
-          <Link to="/" className="text-sm font-semibold text-[#233B6E] hover:underline flex items-center gap-1.5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+        <div className="flex items-center gap-3">
+          <Link to="/"
+            className="p-2 rounded-lg hover:bg-[#EEF0F8] text-[#233B6E] transition-colors flex-shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+              strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
               <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
             </svg>
-            Kembali
           </Link>
+          <h1 className="text-xl font-bold text-[#233B6E]">Pengaduan</h1>
         </div>
 
         <p className="text-sm text-[#415F9D] leading-relaxed">
@@ -213,6 +217,16 @@ export default function PengaduanPublik() {
                 placeholder="Masukkan email aktif Anda" />
             </Field>
 
+            <Field label="NIK / No. Identitas">
+              <TextInput value={form.id_number} onChange={set("id_number")}
+                placeholder="Masukkan NIK atau No. Identitas Anda" />
+            </Field>
+
+            <Field label="No. Telepon">
+              <TextInput type="tel" value={form.phone} onChange={set("phone")}
+                placeholder="Masukkan No. Telepon aktif Anda" />
+            </Field>
+
             <Field label="Tanggal Melapor">
               <input type="date" value={form.date_of_complaint}
                 onChange={set("date_of_complaint")}
@@ -238,7 +252,7 @@ export default function PengaduanPublik() {
             {/* Lampiran — opsional sesuai dokumentasi API */}
             <div className="flex flex-col gap-1.5">
               <span className="text-sm text-[#415F9D] font-medium">
-                Lampiran Bukti <span className="text-gray-400 text-xs">(opsional)</span>
+                Lampiran Bukti<span className="text-red-500 ml-0.5">*</span>
               </span>
               <button type="button" onClick={() => fileRef.current.click()}
                 className="w-full border border-dashed border-gray-300 rounded-xl
@@ -254,7 +268,7 @@ export default function PengaduanPublik() {
                 </svg>
                 {attachment
                   ? <span className="text-gray-700">{attachment.name}</span>
-                  : "Pilih file bukti pendukung (jika ada)..."
+                  : "Pilih file bukti pendukung..."
                 }
               </button>
               <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png"

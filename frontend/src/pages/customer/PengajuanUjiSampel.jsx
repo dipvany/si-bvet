@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
-import { getCart, clearCart } from "../../utils/cart";
+import { getCart, removeFromCart } from "../../utils/cart";
 import {
   TYPE_SERVICE, PURPOSE, SAMPLE_MODELS, UNIT_AGES, VACCINATED,
   PRESERVATIVES, PACKAGES, SEXES_LIST, LOCATION_TYPES,
@@ -685,7 +685,14 @@ export default function PengajuanUjiSampel() {
         throw new Error(d.error ?? d.message ?? "Gagal mengirim pengajuan.");
       }
 
-      clearCart();
+      // Hapus dari keranjang hanya pengujian yang benar-benar dipakai di pengajuan ini
+      const usedTestIds = new Set();
+      samples.forEach(s => {
+        (s.test_services ?? []).forEach(t => usedTestIds.add(t.id));
+      });
+      usedTestIds.forEach(id => removeFromCart(id));
+      window.dispatchEvent(new Event("cart-updated"));
+
       navigate("/customer/pengajuan-saya");
     } catch (e) {
       setError(e.message);

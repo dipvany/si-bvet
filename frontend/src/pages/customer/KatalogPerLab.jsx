@@ -3,6 +3,27 @@ import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import { addToCart, removeFromCart, isInCart } from "../../utils/cart";
 import logo from "../../assets/logo.png";
+import virologiImg     from "../../assets/virologi.png";
+import parasitologiImg from "../../assets/parasitologi.png";
+import bioteknologiImg from "../../assets/bioteknologi.png";
+import patologiImg     from "../../assets/patologi.png";
+import bakteriologiImg from "../../assets/bakteriologi.png";
+import kesmavetImg     from "../../assets/kesmavet.png";
+
+const UNIT_IMAGES = [
+  { keyword: "virologi",     img: virologiImg     },
+  { keyword: "parasitologi", img: parasitologiImg },
+  { keyword: "bioteknologi", img: bioteknologiImg },
+  { keyword: "patologi",     img: patologiImg     },
+  { keyword: "bakteriologi", img: bakteriologiImg },
+  { keyword: "kesmavet",     img: kesmavetImg     },
+];
+
+const getUnitImage = (unitName = "") => {
+  const lower = unitName.toLowerCase();
+  const match = UNIT_IMAGES.find(u => lower.includes(u.keyword));
+  return match ? match.img : logo;
+};
 
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
@@ -107,11 +128,10 @@ function ServiceCard({ service, onSelect, onCartChange }) {
       className="bg-white rounded-xl border-2 border-[#233B6E]/20
         hover:border-[#233B6E]/60 hover:shadow-md transition-all
         cursor-pointer overflow-hidden group">
-      <div className="w-full h-20 bg-[#EEF0F8] flex items-center justify-center
-        group-hover:bg-[#233B6E]/10 transition-colors p-2">
-        <img src={logo} alt="BVET"
-          className="h-12 w-auto object-contain opacity-50
-            group-hover:opacity-80 transition-opacity" />
+      <div className="w-full h-20 bg-[#EEF0F8] overflow-hidden">
+        <img src={getUnitImage(service.unit_lab)} alt={service.unit_lab ?? "BVET"}
+          className="w-full h-full object-cover
+            group-hover:scale-105 transition-transform duration-300" />
       </div>
       <div className="p-2">
         <p className="text-[11px] font-bold text-[#233B6E] leading-snug

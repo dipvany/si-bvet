@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { getUser } from "../utils/auth";
+import { getUser , getRoleLabel } from "../utils/auth";
 import { getCartCount } from "../utils/cart";
 
 export default function AppNavbar({ onMenuClick }) {
@@ -98,8 +98,8 @@ export default function AppNavbar({ onMenuClick }) {
               truncate max-w-[120px]">
               {user?.fullname ?? "Pengguna"}
             </span>
-            <span className="text-[10px] text-gray-400 capitalize">
-              {user?.role ?? ""}
+            <span className="text-[10px] text-gray-400">
+              {getRoleLabel(user?.role)}
             </span>
           </div>
         </Link>
