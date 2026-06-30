@@ -235,7 +235,7 @@ function Services() {
         <div className="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory
           [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SERVICES.map((s, i) => (
-            <div key={i} onClick={() => navigate("/login")}
+            <div key={i} onClick={() => navigate(s.title === "Pengaduan" ? "/pengaduan" : "/login")}
               className="card-hover bg-white rounded-2xl border border-[#D3D6DB]/50 shadow-sm overflow-hidden cursor-pointer group
                 flex-shrink-0 w-[75vw] sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] snap-start">
               <div className="h-1.5 bg-[#F5C400]" />

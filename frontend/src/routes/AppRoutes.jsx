@@ -6,6 +6,7 @@ import Register       from "../pages/auth/Register";
 import LandingPage    from "../pages/LandingPage";
 import ForgotPassword from "../pages/auth/LupaSandi";
 import ResetPassword  from "../pages/auth/ResetSandi";
+import PengaduanPublik from "../pages/PengaduanPublik";
 
 import AdminLayout      from "../layouts/AdminLayout";
 import SuperAdminLayout from "../layouts/SuperAdminLayout";
@@ -17,7 +18,7 @@ import RegistrasiPelanggan         from "../pages/admin/RegistrasiPelanggan";
 import DetailPelanggan             from "../pages/admin/DetailPelanggan";
 import AdminPengajuanMasuk         from "../pages/admin/PengajuanMasuk";
 import AdminDetailPengajuan        from "../pages/admin/DetailPengajuanMasuk";
-import AdminProsesPengujian        from "../pages/admin/ProsesPengujian";
+// import AdminProsesPengujian        from "../pages/admin/ProsesPengujian"; // file belum ada
 import AdminLaporanHasilUji        from "../pages/admin/LaporanHasilUji";
 import AdminLaporanPengaduan       from "../pages/admin/LaporanPengaduan";
 import AdminDetailLaporanPengaduan from "../pages/admin/DetailLaporanPengaduan";
@@ -42,7 +43,7 @@ import SuperAdminProfil              from "../pages/superAdmin/Profil";
 // ── Customer ──────────────────────────────────────────────────────
 import CustomerBeranda    from "../pages/customer/Beranda";
 import CustomerProfil     from "../pages/customer/Profil";
-import CustomerPengaduan  from "../pages/customer/Pengaduan";
+import CustomerPengaduan  from "../pages/PengaduanPublik";
 import KatalogPengujian   from "../pages/customer/KatalogPengujian";
 import KatalogPerLab      from "../pages/customer/KatalogPerLab";
 import Keranjang          from "../pages/customer/Keranjang";
@@ -68,6 +69,7 @@ export default function AppRoutes() {
       <Route path="/register"                      element={<Register />} />
       <Route path="/forgot-password"               element={<ForgotPassword />} />
       <Route path="/reset-password/:userId/:token" element={<ResetPassword />} />
+      <Route path="/pengaduan"                     element={<PengaduanPublik />} />
 
       {/* Admin */}
       <Route path="/admin" element={<PrivateRoute allowedRoles={["admin"]}><AdminLayout /></PrivateRoute>}>
@@ -77,7 +79,7 @@ export default function AppRoutes() {
         <Route path="registrasi-pelanggan/:id"     element={<DetailPelanggan />} />
         <Route path="pengajuan-masuk"              element={<AdminPengajuanMasuk />} />
         <Route path="pengajuan-masuk/detail/:id"   element={<AdminDetailPengajuan />} />
-        <Route path="proses-pengujian"             element={<AdminProsesPengujian />} />
+        {/* <Route path="proses-pengujian"             element={<AdminProsesPengujian />} /> */}
         <Route path="laporan-hasil-uji"            element={<AdminLaporanHasilUji />} />
         <Route path="laporan-pengaduan"            element={<AdminLaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id"        element={<AdminDetailLaporanPengaduan />} />

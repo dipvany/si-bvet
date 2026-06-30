@@ -14,39 +14,49 @@ const rupiah = (n) =>
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
 
-/* ── Timeline step icon ── */
+/* ── Timeline step icon ──
+   Urutan & jenis icon disesuaikan dengan makna label timeline:
+     1. Pengajuan dibuat    → dokumen (file)
+     2. Diverifikasi admin  → centang (check)
+     3. Menunggu pembayaran → kartu/billing
+     4. Sedang diproses lab → tabung reaksi (mikroskop/lab), BUKAN panah checklist
+     5. LHU tersedia        → dokumen selesai (file-check)
+     6. Berikan Penilaian   → bintang (rating)
+*/
 const STEP_ICONS = [
-  // 1. Sampel Diajukan
+  // 1. Pengajuan dibuat — dokumen
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
     <polyline points="14 2 14 8 20 8"/>
   </svg>,
-  // 2. Sampel Diverifikasi
+  // 2. Diverifikasi admin — centang
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
     <polyline points="22 4 12 14.01 9 11.01"/>
   </svg>,
-  // 3. Dikaji Ulang
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-    strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <polyline points="1 4 1 10 7 10"/>
-    <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
-  </svg>,
-  // 4. Pengujian Dibayarkan
+  // 3. Menunggu pembayaran — kartu/billing
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
     <line x1="1" y1="10" x2="23" y2="10"/>
   </svg>,
-  // 5. Pengujian Selesai
+  // 4. Sedang diproses lab — tabung reaksi
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <path d="M9 11l3 3L22 4"/>
-    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L15 8.5V2"/>
+    <path d="M9 2h6"/>
+    <path d="M6 14h12"/>
   </svg>,
-  // 6. Berikan Penilaian
+  // 5. LHU tersedia — dokumen selesai
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <path d="M9 15l2 2 4-4"/>
+  </svg>,
+  // 6. Berikan Penilaian — bintang
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -54,49 +64,76 @@ const STEP_ICONS = [
 ];
 
 /* ── Timeline component ── */
-function Timeline({ timeline, currentStep }) {
+function Timeline({ timeline, currentStep, isCompleted, hasRated }) {
+  // Tambahkan step ke-6 "Berikan Penilaian" secara manual — API tracking
+  // hanya mengembalikan 5 step (sampai LHU tersedia), padahal alur produk
+  // punya 1 step tambahan setelah itu.
+  const fullSteps = [
+    ...timeline,
+    {
+      step:   timeline.length + 1,
+      label:  "Berikan Penilaian",
+      status: hasRated
+        ? "completed"
+        : isCompleted
+          ? "current"
+          : "pending",
+    },
+  ];
+
   return (
     <div className="w-full overflow-x-auto pb-2">
-      <div className="flex items-start min-w-max gap-0">
-        {timeline.map((step, i) => {
-          const isDone    = step.status === "completed" || step.status === "done";
-          const isCurrent = step.status === "current";
-          const isLast    = i === timeline.length - 1;
+      <div className="flex justify-center min-w-[560px] mx-auto">
+        {fullSteps.map((step, i) => {
+          const isDone     = step.status === "completed" || step.status === "done";
+          const isCurrent  = step.status === "current";
+          const isLast     = i === fullSteps.length - 1;
+          // Garis SEBELUM step ini sudah dilewati kalau step ini sendiri
+          // sudah done ATAU sedang current (artinya step sebelumnya pasti selesai)
+          const lineBeforeDone = isDone || isCurrent;
 
           return (
-            <div key={step.step} className="flex items-start">
-              {/* Step */}
-              <div className="flex flex-col items-center w-24">
-                {/* Circle */}
-                <div className={`w-10 h-10 rounded-full flex items-center
-                  justify-center border-2 flex-shrink-0 transition-all
-                  ${isDone
-                    ? "bg-[#233B6E] border-[#233B6E] text-white"
-                    : isCurrent
-                      ? "bg-white border-[#233B6E] text-[#233B6E]"
-                      : "bg-white border-gray-300 text-gray-300"}`}>
-                  {STEP_ICONS[i] ?? (
-                    <span className="text-xs font-bold">{step.step}</span>
-                  )}
-                </div>
-                {/* Label */}
-                <p className={`text-[10px] text-center mt-2 leading-tight px-1
-                  font-medium
-                  ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
-                  {step.label}
-                </p>
-                {/* Tanggal */}
-                {step.date && (
-                  <p className="text-[9px] text-gray-400 mt-0.5 text-center">
-                    {formatDate(step.date)}
-                  </p>
+            <div key={step.step}
+              className={`relative flex flex-col items-center
+                ${isLast ? "flex-shrink-0 w-[110px]" : "flex-1 max-w-[120px]"}`}>
+
+              {/* Garis konektor — absolute, melintang penuh di tengah tinggi lingkaran,
+                  ditumpuk DI BELAKANG lingkaran (z-0) supaya nyambung mulus tanpa celah.
+                  Separuh kiri nyambung ke step sebelumnya, separuh kanan ke step berikutnya. */}
+              {i > 0 && (
+                <div className={`absolute top-6 right-1/2 w-1/2 h-1 z-0
+                  ${lineBeforeDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
+              )}
+              {!isLast && (
+                <div className={`absolute top-6 left-1/2 w-1/2 h-1 z-0
+                  ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
+              )}
+
+              {/* Circle — z-10 supaya selalu di atas garis, solid filled saat selesai/aktif */}
+              <div className={`relative z-10 w-12 h-12 rounded-full flex items-center
+                justify-center flex-shrink-0 transition-all
+                ${isDone
+                  ? "bg-[#233B6E] text-white shadow-sm"
+                  : isCurrent
+                    ? "bg-white border-2 border-[#233B6E] text-[#233B6E] ring-4 ring-[#233B6E]/10"
+                    : "bg-white border-2 border-gray-200 text-gray-300"}`}>
+                {STEP_ICONS[i] ?? (
+                  <span className="text-xs font-bold">{step.step}</span>
                 )}
               </div>
 
-              {/* Connector line */}
-              {!isLast && (
-                <div className={`h-0.5 w-8 mt-5 flex-shrink-0
-                  ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
+              {/* Label */}
+              <p className={`relative z-10 text-[11px] text-center mt-2.5 leading-tight px-1
+                font-semibold bg-white
+                ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
+                {step.label}
+              </p>
+
+              {/* Tanggal */}
+              {step.date && (
+                <p className="relative z-10 text-[10px] text-gray-400 mt-0.5 text-center bg-white">
+                  {formatDate(step.date)}
+                </p>
               )}
             </div>
           );
@@ -152,6 +189,7 @@ export default function DetailPengajuan() {
   const [comment, setComment]       = useState("");
   const [feedbackSaving, setFeedbackSaving] = useState(false);
   const [feedbackMsg, setFeedbackMsg]       = useState("");
+  const [hasRated, setHasRated]             = useState(false);
 
   // LHU download
   const [downloading, setDownloading] = useState(false);
@@ -247,6 +285,7 @@ export default function DetailPengajuan() {
         throw new Error(d.error ?? "Gagal mengirim penilaian.");
       }
       setFeedbackMsg("✓ Terima kasih atas penilaian Anda!");
+      setHasRated(true);
     } catch (e) {
       setFeedbackMsg(`✗ ${e.message}`);
     } finally {
@@ -270,19 +309,10 @@ export default function DetailPengajuan() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-5xl mx-auto space-y-5">
 
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/customer/pengajuan-saya")}
-          className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-            strokeLinecap="round" className="w-5 h-5">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        <h1 className="text-xl font-bold text-[#233B6E]">Riwayat Pengajuan Saya</h1>
-      </div>
+      {/* Header — tanpa icon back, sudah ada tombol Kembali di dalam card */}
+      <h1 className="text-xl font-bold text-[#233B6E]">Riwayat Pengajuan Saya</h1>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600
@@ -312,7 +342,12 @@ export default function DetailPengajuan() {
 
           {/* Timeline */}
           {timeline.length > 0 && (
-            <Timeline timeline={timeline} currentStep={submission?.current_step} />
+            <Timeline
+              timeline={timeline}
+              currentStep={submission?.current_step}
+              isCompleted={isCompleted}
+              hasRated={hasRated}
+            />
           )}
 
           {/* Info pengajuan */}
@@ -323,8 +358,8 @@ export default function DetailPengajuan() {
               { label: "No. Tiket",       val: submission?.no_ticket ?? "-" },
               { label: "Jenis Layanan",   val: submission?.type_service ?? "-" },
               { label: "Tujuan Uji",      val: submission?.purpose_of_test ?? "-" },
-              { label: "Pengambil Sampel",val: submission?.sample_taker ?? "-" },
               { label: "Jumlah Sampel",   val: submission?.samples_count ?? "-" },
+              // FIX: "Pengambil Sampel" dihapus — field ini tidak lagi ada di form
             ].map(r => (
               <div key={r.label}>
                 <p className="text-xs text-gray-400">{r.label}</p>

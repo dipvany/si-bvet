@@ -128,9 +128,9 @@ function StepBar({ step }) {
 function Field({ label, required, hint, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-[#233B6E]">
+      <span className="text-sm font-semibold text-[#233B6E]">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+      </span>
       {children}
       {hint && <p className="text-[11px] text-gray-400">{hint}</p>}
     </div>
@@ -325,15 +325,13 @@ function MultiSelectPengujian({ selected, onChange, cartItems }) {
   );
 }
 
-/* ─── WilayahSelect — provinsi dari refData, kab/kec/kel fetch API ─── */
-// Gunakan 2 API sebagai fallback agar lebih reliable
+/* ─── WilayahSelect — provinsi hardcode, kab/kec/kel fetch API ─── */
 const WILAYAH_APIS = [
   "https://emsifa.github.io/api-wilayah-indonesia/api",
   "https://ibnux.github.io/data-indonesia",
 ];
 
 async function fetchWilayah(path, altPath) {
-  // Coba primary API dulu
   try {
     const r = await fetch(`${WILAYAH_APIS[0]}/${path}`);
     if (r.ok) {
@@ -342,12 +340,10 @@ async function fetchWilayah(path, altPath) {
       if (arr.length > 0) return arr;
     }
   } catch {}
-  // Fallback ke secondary API
   try {
     const r = await fetch(`${WILAYAH_APIS[1]}/${altPath ?? path}`);
     if (r.ok) {
       const d = await r.json();
-      // ibnux format: [{id, nama}] - normalize ke {code/id, name}
       const arr = Array.isArray(d) ? d : [];
       return arr.map(x => ({ code: x.id ?? x.code, name: x.nama ?? x.name }));
     }
@@ -501,7 +497,7 @@ function WilayahSelect({ step3, setStep3 }) {
 }
 
 /* ─── NavButtons ─── */
-function NavButtons({ step, onBack, onNext, onSubmit, submitting }) {
+function NavButtons({ step, onBack, onNext }) {
   return (
     <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
       <p className="text-xs text-gray-400 italic">
@@ -517,27 +513,13 @@ function NavButtons({ step, onBack, onNext, onSubmit, submitting }) {
             Kembali
           </button>
         )}
-        {step < 3
-          ? <button onClick={onNext}
-              className="flex items-center gap-1.5 bg-[#233B6E] hover:bg-[#1a2d56]
-                text-white text-sm font-bold px-5 py-2 rounded-xl transition-all">
-              Lanjut
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" className="w-4 h-4"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          : <button onClick={onSubmit} disabled={submitting}
-              className="flex items-center gap-1.5 bg-[#233B6E] hover:bg-[#1a2d56]
-                text-white text-sm font-bold px-6 py-2 rounded-xl transition-all
-                disabled:opacity-60 disabled:cursor-not-allowed">
-              {submitting
-                ? <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                    </svg>Mengirim...</>
-                : "Ajukan"
-              }
-            </button>
-        }
+        <button onClick={onNext}
+          className="flex items-center gap-1.5 bg-[#233B6E] hover:bg-[#1a2d56]
+            text-white text-sm font-bold px-5 py-2 rounded-xl transition-all">
+          {step === 3 ? "Lanjut ke Pratinjau" : "Lanjut"}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" className="w-4 h-4"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
     </div>
   );
@@ -554,9 +536,10 @@ export default function PengajuanUjiSampel() {
   const [error, setError]             = useState("");
   const [submitting, setSubmitting]   = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [docFiles, setDocFiles]       = useState([]);
 
-  /* Step 1 */
+  const [docFiles, setDocFiles] = useState([]);
+
+  /* Step 1 — sample_taker dihapus sesuai permintaan */
   const [step1, setStep1] = useState({
     type_service: "", purpose_of_test: "", date_of_send: "",
     courier_name: "", courier_contact: "", diagnosis_required: false, notes: "",
@@ -646,32 +629,62 @@ export default function PengajuanUjiSampel() {
   const handleSubmit = async () => {
     setSubmitting(true); setError("");
     try {
+      // ✅ Kirim sebagai multipart/form-data — bukan raw JSON.
+      // Field "samples" (array of object) di-stringify jadi satu field
+      // teks JSON di dalam form. File dokumen pendukung dikirim sebagai
+      // field "attachment_doc" asli (bisa lebih dari satu file).
+      // PENTING: jangan set Content-Type manual — browser otomatis
+      // mengisi header multipart/form-data dengan boundary yang benar
+      // saat body berupa instance FormData.
+      const samplesPayload = samples.map(s => ({
+        sample_code_cust: s.sample_code_cust,
+        sample_model:     s.sample_model,
+        total_sample:     Number(s.total_sample) || 1,
+        specimen_group:   s.specimen_group,
+        specimen_type:    s.specimen_type,
+        species:          s.species,
+        batch:            s.batch,
+        preservative:     s.preservative,
+        packaging:        s.packaging,
+        production_date:  s.production_date,
+        expired_date:     s.expired_date,
+        sex:              s.sex,
+        age:              s.age ? Number(s.age) : undefined,
+        unit_age:         s.unit_age,
+        owner:            s.owner,
+        sampling:         s.sampling,
+        sampling_infra:   s.sampling_infra,
+        location_type:    s.location_type,
+        location_smpl:    s.location_smpl,
+        is_vaccinated:    s.is_vaccinated,
+        volume:           s.volume,
+        condition:        s.condition,
+        tests:            s.test_services?.map(t => ({ test_service_id: t.id })),
+      }));
+
       const fd = new FormData();
-      fd.append("type_service",       step1.type_service);
-      fd.append("purpose_of_test",    step1.purpose_of_test);
-      fd.append("date_of_send",       step1.date_of_send);
+      fd.append("type_service",    step1.type_service);
+      fd.append("purpose_of_test", step1.purpose_of_test);
+      fd.append("date_of_send",    step1.date_of_send);
       if (step1.courier_name)    fd.append("courier_name",    step1.courier_name);
       if (step1.courier_contact) fd.append("courier_contact", step1.courier_contact);
       fd.append("diagnosis_required", String(step1.diagnosis_required));
       if (step1.notes) fd.append("notes", step1.notes);
       fd.append("samples_count", String(samples.reduce((a, s) => a + (Number(s.total_sample) || 1), 0)));
-      fd.append("samples", JSON.stringify(samples.map(s => ({
-        sample_code_cust: s.sample_code_cust, sample_model: s.sample_model,
-        specimen_group: s.specimen_group, specimen_type: s.specimen_type,
-        species: s.species, preservative: s.preservative, packaging: s.packaging,
-        production_date: s.production_date, expired_date: s.expired_date,
-        sex: s.sex, age: s.age ? Number(s.age) : undefined, unit_age: s.unit_age,
-        owner: s.owner, sampling: s.sampling, location_type: s.location_type,
-        location_smpl: s.location_smpl, is_vaccinated: s.is_vaccinated,
-        tests:            s.test_services?.map(t => ({ test_service_id: t.id })),
-      }))));
+      fd.append("samples", JSON.stringify(samplesPayload));
+
+      // Dokumen pendukung — file asli, bisa lebih dari satu
       docFiles.forEach(f => fd.append("attachment_doc", f));
 
-      const res = await apiFetch("/customer/submissions", { method: "POST", body: fd });
+      const res = await apiFetch("/customer/submissions", {
+        method: "POST",
+        body:   fd, // jangan set headers Content-Type — biarkan browser yang isi
+      });
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error ?? d.message ?? "Gagal mengirim pengajuan.");
       }
+
       clearCart();
       navigate("/customer/pengajuan-saya");
     } catch (e) {
@@ -826,7 +839,7 @@ export default function PengajuanUjiSampel() {
               rounded-xl px-4 py-3 mb-5">{error}</div>
           )}
 
-          {/* STEP 1 */}
+          {/* STEP 1 — ✅ FIX: Field "Pengambil Sampel" dan "Dokumen Pendukung" dihapus */}
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="font-bold text-[#233B6E]">1. Formulir Data Pengajuan</h2>
@@ -866,8 +879,8 @@ export default function PengajuanUjiSampel() {
                     outline-none resize-none transition placeholder-gray-400
                     focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]"/>
               </Field>
-              <Field label="Dokumen Pendukung"
-                hint="PDF/JPG/PNG, maks 5MB per file">
+
+              <Field label="Dokumen Pendukung" hint="PDF/JPG/PNG, maks 5MB per file">
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 border border-dashed border-gray-300
                     rounded-xl px-4 py-3 cursor-pointer hover:border-[#233B6E] text-gray-400 text-sm transition">
@@ -876,23 +889,47 @@ export default function PengajuanUjiSampel() {
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                       <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
-                    <span>Pilih file dokumen pendukung...</span>
+                    <span>
+                      {docFiles.length > 0
+                        ? `${docFiles.length} file dipilih — klik untuk tambah lagi`
+                        : "Pilih file dokumen pendukung..."}
+                    </span>
                     <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden"
-                      onChange={e => { setDocFiles(p => [...p, ...Array.from(e.target.files)]); e.target.value = ""; }}/>
+                      onChange={e => {
+                        const newFiles = Array.from(e.target.files);
+                        if (newFiles.length === 0) return;
+                        setDocFiles(p => [...p, ...newFiles]);
+                        e.target.value = "";
+                      }}/>
                   </label>
-                  {docFiles.map((f, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-[#F6F7FB]
-                      rounded-lg px-3 py-2 text-sm">
-                      <span className="text-[#233B6E] font-medium truncate">{f.name}</span>
-                      <button onClick={() => setDocFiles(p => p.filter((_, i) => i !== idx))}
-                        className="text-red-400 hover:text-red-600 ml-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                          strokeLinecap="round" className="w-4 h-4">
-                          <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                      </button>
+                  {docFiles.length > 0 && (
+                    <div className="space-y-1.5">
+                      {docFiles.map((f, idx) => (
+                        <div key={`${f.name}-${f.size}-${idx}`} className="flex items-center justify-between bg-[#F6F7FB]
+                          rounded-lg px-3 py-2 text-sm">
+                          <span className="text-[#233B6E] font-medium truncate flex items-center gap-2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                              strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 flex-shrink-0">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            {f.name}
+                            <span className="text-gray-400 font-normal text-xs flex-shrink-0">
+                              ({(f.size / 1024).toFixed(0)} KB)
+                            </span>
+                          </span>
+                          <button type="button"
+                            onClick={() => setDocFiles(p => p.filter((_, i) => i !== idx))}
+                            className="text-red-400 hover:text-red-600 ml-2 flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                              strokeLinecap="round" className="w-4 h-4">
+                              <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </Field>
             </div>
@@ -1182,8 +1219,7 @@ export default function PengajuanUjiSampel() {
             </div>
           )}
 
-          <NavButtons step={step} onBack={handleBack} onNext={handleNext}
-            onSubmit={handleSubmit} submitting={submitting}/>
+          <NavButtons step={step} onBack={handleBack} onNext={handleNext}/>
         </div>
       </div>
     </div>

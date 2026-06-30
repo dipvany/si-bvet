@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
+import { parseSubmissionList } from "../../utils/parseList";
 
 const PER_PAGE = 10;
 
@@ -57,9 +58,12 @@ export default function PengajuanSaya() {
     try {
       const res  = await apiFetch("/customer/submissions/my");
       const data = await res.json();
-      setSubmissions(Array.isArray(data) ? data : data.submissions ?? []);
-    } catch {
-      setError("Gagal memuat data pengajuan.");
+      if (!res.ok) throw new Error(data.error ?? "Gagal memuat data pengajuan.");
+      // BUG FIX: pakai helper parseSubmissionList agar robust terhadap
+      // berbagai bentuk response (array langsung / dibungkus "data" / dll)
+      setSubmissions(parseSubmissionList(data));
+    } catch (err) {
+      setError(err.message ?? "Gagal memuat data pengajuan.");
     } finally {
       setLoading(false);
     }
