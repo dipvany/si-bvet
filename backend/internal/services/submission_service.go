@@ -423,6 +423,7 @@ func buildSubmission(userID uint, req dto.SubmissionRequest) models.Submission {
 		SamplesCount:  len(req.Samples),
 		Notes:         req.Notes,
 		ProcessStatus: "pending_verification",
+		AttachmentDoc: req.AttachmentDoc,
 	}
 }
 

@@ -208,6 +208,10 @@ func (m *MockTemplateStorage) SaveRegistrationDocument(ctx context.Context, file
 	return "", nil
 }
 
+func (m *MockTemplateStorage) SaveSubmissionAttachment(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
+	return "", nil
+}
+
 func (m *MockTemplateStorage) SaveBillingProof(ctx context.Context, fileHeader *multipart.FileHeader) (string, error) {
 	return "", nil
 }
