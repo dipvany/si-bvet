@@ -556,7 +556,7 @@ func (h *SubmissionHandler) GetSubmissionByID(c *gin.Context) {
 		return
 	}
 
-	submission, err := h.Service.GetSubmissionsByUser(id)
+	submission, err := h.Service.GetSubmissionByID(id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, err.Error())
 		return

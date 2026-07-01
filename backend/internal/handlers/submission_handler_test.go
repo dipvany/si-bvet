@@ -64,6 +64,13 @@ type MockSubmissionService struct {
 	getAllPaginatedResp   []models.Submission
 	getAllPaginatedTotal  int64
 	getAllPaginatedErr    error
+
+	getByIDCalled bool
+	getByIDID     uint
+	getByIDResult models.Submission
+	getByIDErr    error
+
+	getSubmissionByUserErr error
 }
 
 var _ services.SubmissionServiceInterface = (*MockSubmissionService)(nil)
@@ -110,8 +117,8 @@ func (m *MockSubmissionService) Create(userID uint, req dto.SubmissionRequest) (
 	return submission, nil
 }
 
-func (m *MockSubmissionService) GetByUser(userID uint) ([]models.Submission, error) {
-	return nil, nil
+func (m *MockSubmissionService) GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
+	return nil, m.getSubmissionByUserErr
 }
 
 func (m *MockSubmissionService) GetByUserPaginated(userID uint, page, perPage int) ([]models.Submission, int64, error) {
@@ -120,6 +127,13 @@ func (m *MockSubmissionService) GetByUserPaginated(userID uint, page, perPage in
 	m.getByUserPaginatedPage = page
 	m.getByUserPaginatedPerPage = perPage
 	return m.getByUserPaginatedResp, m.getByUserPaginatedTotal, m.getByUserPaginatedErr
+}
+
+func (m *MockSubmissionService) GetSubmissionByID(submissionID uint) (models.Submission, error) {
+	m.getByIDCalled = true
+	m.getByIDID = submissionID
+
+	return m.getByIDResult, m.getByIDErr
 }
 
 func (m *MockSubmissionService) GetAll() ([]models.Submission, error) {
@@ -194,10 +208,6 @@ func (m *MockSubmissionService) ImportSamplesFromTemplate(submissionID uint, fil
 		}},
 		TotalSamples: 1,
 	}, nil
-}
-
-func (m *MockSubmissionService) GetSubmissionsByUser(userID uint) ([]models.Submission, error) {
-	return nil, nil
 }
 
 type MockTemplateStorage struct {
