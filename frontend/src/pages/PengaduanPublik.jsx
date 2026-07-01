@@ -86,7 +86,7 @@ export default function PengaduanPublik() {
       fd.append("email",              form.email);
       fd.append("id_number",          form.id_number);
       fd.append("phone",              form.phone);
-      fd.append("subjects",           form.subjects);
+      fd.append("suggestion",          form.subjects);       // backend pakai field "suggestion"
       fd.append("description",        form.description);
       fd.append("date_of_complaint",  form.date_of_complaint); // format YYYY-MM-DD
       if (attachment) fd.append("attachment", attachment);     // opsional
@@ -119,8 +119,8 @@ export default function PengaduanPublik() {
 
   /* ── Header sederhana (tanpa sidebar, karena halaman publik) ── */
   const PageHeader = () => (
-    <div className="bg-[#233B6E] h-[68px] flex items-center">
-      <div className="max-w-4xl mx-auto px-5 sm:px-8 w-full flex items-center">
+    <div className="bg-[#233B6E] h-[68px] flex items-center px-5 sm:px-8">
+      <div className="w-full flex items-center">
         <Link to="/" className="flex items-center gap-3">
           <img src={logo} alt="SI-BVET" className="h-10 w-auto object-contain" />
           <div className="flex flex-col leading-tight">
@@ -188,8 +188,7 @@ export default function PengaduanPublik() {
         </div>
 
         <p className="text-sm text-[#415F9D] leading-relaxed">
-          Sampaikan pengaduan atau keluhan terkait layanan BVET. Anda tidak perlu
-          memiliki akun untuk mengirimkan pengaduan ini — pastikan email yang Anda
+          Sampaikan pengaduan atau keluhan terkait layanan BVET Lampung. Pastikan email yang Anda
           isi aktif agar kami dapat menindaklanjuti.
         </p>
 

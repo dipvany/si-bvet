@@ -178,6 +178,20 @@ export default function DetailPengajuan() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
 
+  // Tinjauan sampel — dibaca dari cache lokal yang disimpan saat submit di
+  // PengajuanUjiSampel.jsx. API belum punya endpoint GET untuk detail
+  // sampel submission yang sudah tersimpan, jadi ini hanya tersedia kalau
+  // pengajuan dibuat dari browser/perangkat yang sama.
+  const [tinjauan, setTinjauan] = useState(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`tinjauan_sampel_${id}`);
+      if (raw) setTinjauan(JSON.parse(raw));
+    } catch {
+      setTinjauan(null);
+    }
+  }, [id]);
+
   // Billing upload
   const [proofFile, setProofFile]   = useState(null);
   const [uploading, setUploading]   = useState(false);
@@ -194,19 +208,52 @@ export default function DetailPengajuan() {
   // LHU download
   const [downloading, setDownloading] = useState(false);
 
-  const isCompleted = submission?.process_status === "completed";
-  const isWaitingPayment = submission?.process_status === "waiting_payment";
+  // FIX: status asli dari backend adalah "done" & "awaiting_payment"
+  // (lihat admin/ProsesPengujian.jsx & dokumentasi API), bukan "completed"
+  // & "waiting_payment". Karena salah, kolom upload bukti bayar dan
+  // bagian LHU/penilaian tidak pernah muncul walau status sudah sesuai.
+  const isCompleted = submission?.process_status === "done";
+  const isWaitingPayment = submission?.process_status === "awaiting_payment";
 
   useEffect(() => { fetchAll(); }, [id]);
 
   const fetchAll = async () => {
     setLoading(true); setError("");
     try {
-      // Tracking timeline
+      // Tracking timeline — endpoint ini cuma balikin {submission_id,
+      // current_step, current_status, timeline}, TIDAK ada no_epi,
+      // no_ticket, type_service, dst. Jadi jangan dipakai sebagai
+      // sumber data submission utama.
       const tRes  = await apiFetch(`/customer/submissions/${id}/tracking`);
       const tData = await tRes.json();
       setTimeline(tData.data?.timeline ?? []);
-      if (!submission) setSubmission(tData.data);
+
+      // Detail submission (no_epi, no_ticket, samples, dst) — endpoint ini
+      // tidak ada di dokumentasi resmi customer, tapi mengikuti pola yang
+      // sudah dipakai di sisi admin (GET /admin/submissions/{id}). Kalau
+      // backend memang belum punya rute ini untuk customer, kita fallback
+      // ke data dari state navigasi / cache pratinjau lokal seperti semula.
+      if (!submission) {
+        try {
+          const dRes = await apiFetch(`/customer/submissions/${id}`);
+          if (dRes.ok) {
+            const dJson = await dRes.json();
+            const full  = dJson.data ?? dJson;
+            if (full && typeof full === "object" && (full.no_ticket || full.samples)) {
+              setSubmission(full);
+              if (Array.isArray(full.samples) && full.samples.length) {
+                setTinjauan({ samples: full.samples });
+              }
+            } else {
+              setSubmission(tData.data);
+            }
+          } else {
+            setSubmission(tData.data);
+          }
+        } catch {
+          setSubmission(tData.data);
+        }
+      }
 
       // Billing
       try {
@@ -373,6 +420,53 @@ export default function DetailPengajuan() {
             <div className="bg-[#F6F7FB] rounded-xl p-4 text-sm text-gray-600">
               <p className="text-xs font-semibold text-gray-400 mb-1">Catatan</p>
               {submission.notes}
+            </div>
+          )}
+
+          {/* ── TINJAUAN SAMPEL ── */}
+          {tinjauan && (
+            <div className="border-t border-gray-100 pt-5 space-y-3">
+              <div>
+                <h3 className="font-bold text-[#233B6E] text-sm">
+                  Tinjauan Sampel yang Diajukan
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Salinan pratinjau saat pengajuan dibuat ({tinjauan.samples?.length ?? 0} sampel)
+                </p>
+              </div>
+              <div className="space-y-2">
+                {(tinjauan.samples ?? []).map((s, i) => (
+                  <div key={i} className="bg-[#F6F7FB] rounded-xl p-3 text-sm">
+                    <p className="font-bold text-[#233B6E] mb-2">
+                      Sampel {i + 1}: {s.sample_code_cust || "-"}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { label: "Model Sampel",   val: s.sample_model },
+                        { label: "Species/Hewan",  val: s.species },
+                        { label: "Jenis Spesimen", val: s.specimen_type },
+                        { label: "Pengawet",       val: s.preservative },
+                      ].map(r => (
+                        <div key={r.label}>
+                          <p className="text-[11px] text-gray-400">{r.label}</p>
+                          <p className="font-medium text-[#233B6E]">{r.val || "-"}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {s.test_services?.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {s.test_services.map(t => (
+                          <span key={t.id}
+                            className="bg-[#233B6E]/10 text-[#233B6E] text-[10px]
+                              font-bold px-2 py-0.5 rounded-full">
+                            {t.test_name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

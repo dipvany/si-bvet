@@ -18,7 +18,7 @@ import RegistrasiPelanggan         from "../pages/admin/RegistrasiPelanggan";
 import DetailPelanggan             from "../pages/admin/DetailPelanggan";
 import AdminPengajuanMasuk         from "../pages/admin/PengajuanMasuk";
 import AdminDetailPengajuan        from "../pages/admin/DetailPengajuanMasuk";
-// import AdminProsesPengujian        from "../pages/admin/ProsesPengujian"; // file belum ada
+import AdminProsesPengujian        from "../pages/admin/ProsesPengujian";
 import AdminLaporanHasilUji        from "../pages/admin/LaporanHasilUji";
 import AdminLaporanPengaduan       from "../pages/admin/LaporanPengaduan";
 import AdminDetailLaporanPengaduan from "../pages/admin/DetailLaporanPengaduan";
@@ -79,7 +79,7 @@ export default function AppRoutes() {
         <Route path="registrasi-pelanggan/:id"     element={<DetailPelanggan />} />
         <Route path="pengajuan-masuk"              element={<AdminPengajuanMasuk />} />
         <Route path="pengajuan-masuk/detail/:id"   element={<AdminDetailPengajuan />} />
-        {/* <Route path="proses-pengujian"             element={<AdminProsesPengujian />} /> */}
+        <Route path="proses-pengujian"             element={<AdminProsesPengujian />} />
         <Route path="laporan-hasil-uji"            element={<AdminLaporanHasilUji />} />
         <Route path="laporan-pengaduan"            element={<AdminLaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id"        element={<AdminDetailLaporanPengaduan />} />

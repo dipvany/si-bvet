@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import { getCart, removeFromCart } from "../../utils/cart";
+import { parseSubmissionList } from "../../utils/Parselist";
 import {
   TYPE_SERVICE, PURPOSE, SAMPLE_MODELS, UNIT_AGES, VACCINATED,
   PRESERVATIVES, PACKAGES, SEXES_LIST, LOCATION_TYPES,
@@ -692,6 +693,31 @@ export default function PengajuanUjiSampel() {
       });
       usedTestIds.forEach(id => removeFromCart(id));
       window.dispatchEvent(new Event("cart-updated"));
+
+      // ── Simpan cache "Tinjauan Sampel" ──
+      // CATATAN: API (POST /customer/submissions) hanya membalas
+      // { message: "Submission created successfully" } — tidak ada id
+      // submission baru, dan tidak ada satupun endpoint GET yang
+      // mengembalikan detail sampel dari submission yang sudah tersimpan.
+      // Supaya pratinjau ini tetap bisa dilihat lagi di halaman Detail
+      // Pengajuan, kita ambil submission terbaru milik user (asumsi id
+      // terbesar = baru saja dibuat) lalu cache data pratinjaunya secara
+      // lokal di browser. Kalau gagal (mis. backend down), submit tetap
+      // dianggap berhasil — cache ini cuma pemanis tampilan.
+      try {
+        const myRes  = await apiFetch("/customer/submissions/my");
+        const myJson = await myRes.json();
+        const mine   = parseSubmissionList(myJson);
+        if (mine.length) {
+          const newest = mine.reduce((a, b) => (b.id > a.id ? b : a));
+          localStorage.setItem(
+            `tinjauan_sampel_${newest.id}`,
+            JSON.stringify({ step1, samples, savedAt: Date.now() })
+          );
+        }
+      } catch {
+        // Cache gagal disimpan, tidak fatal — lanjut saja.
+      }
 
       navigate("/customer/pengajuan-saya");
     } catch (e) {

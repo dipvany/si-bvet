@@ -5,13 +5,17 @@ import { parseSubmissionList } from "../../utils/parseList";
 
 const PER_PAGE = 10;
 
+// FIX: key di bawah disamakan dengan enum process_status yang sebenarnya
+// dipakai backend (lihat admin/ProsesPengujian.jsx & dokumentasi API).
+// Sebelumnya pakai "waiting_payment"/"completed"/"revision" yang tidak
+// pernah cocok dengan data asli, jadi badge selalu fallback ke label abu-abu.
 const STATUS_CONFIG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
-  waiting_payment:      { label: "Proses Pembayaran",   bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500"   },
+  reviewing:            { label: "Kaji Ulang",          bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
+  awaiting_payment:     { label: "Menunggu Pembayaran", bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500"   },
   in_process:           { label: "Sedang Diproses",     bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
-  completed:            { label: "Selesai",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
+  done:                 { label: "Selesai",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
   rejected:             { label: "Ditolak",             bg: "bg-red-100",    text: "text-red-600",    dot: "bg-red-500"    },
-  revision:             { label: "Perlu Revisi",        bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
 };
 
 function StatusBadge({ status }) {

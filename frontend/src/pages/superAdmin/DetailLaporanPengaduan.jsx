@@ -10,7 +10,6 @@ const formatDate = (iso) => {
   });
 };
 
-/* ── Read-only field row ── */
 function FieldRow({ label, value }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
@@ -24,7 +23,6 @@ function FieldRow({ label, value }) {
   );
 }
 
-/* ── Read-only textarea ── */
 function TextAreaRow({ label, value }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -37,9 +35,9 @@ function TextAreaRow({ label, value }) {
 }
 
 export default function DetailLaporanPengaduan() {
-  const { id }       = useParams();
-  const location     = useLocation();
-  const navigate     = useNavigate();
+  const { id }   = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [complaint, setComplaint] = useState(location.state?.complaint ?? null);
   const [loading, setLoading]     = useState(!location.state?.complaint);
@@ -49,18 +47,23 @@ export default function DetailLaporanPengaduan() {
   const [success, setSuccess]     = useState("");
 
   useEffect(() => {
-    if (!complaint) fetchDetail();
-    else setResponse(complaint.admin_response ?? "");
-  }, []);
+    // Selalu fetch ulang dari backend supaya status "Sudah Ditanggapi"
+    // tidak pernah hilang meski user bolak-balik halaman. Kalau hanya
+    // mengandalkan location.state, data yang ditampilkan adalah snapshot
+    // lama dari list dan status "resolved" tidak ikut terbawa.
+    fetchDetail();
+  }, [id]);
 
   const fetchDetail = async () => {
     setLoading(true);
     try {
-      // Fallback: ambil semua lalu filter by id
       const res  = await apiFetch("/admin/complaints");
       const data = await res.json();
       const found = (data.complaints ?? []).find(c => String(c.id) === String(id));
-      if (found) { setComplaint(found); setResponse(found.admin_response ?? ""); }
+      if (found) {
+        setComplaint(found);
+        setResponse(found.admin_response ?? "");
+      }
     } catch {
       setError("Gagal memuat detail pengaduan.");
     } finally {
@@ -82,7 +85,9 @@ export default function DetailLaporanPengaduan() {
         throw new Error(d.error ?? "Gagal mengirim tanggapan.");
       }
       setSuccess("Tanggapan berhasil dikirim.");
-      setComplaint(p => ({ ...p, admin_response: response, status: "resolved" }));
+      // Re-fetch dari backend agar status "resolved" persisten dan
+      // tidak hilang saat user kembali ke halaman ini.
+      await fetchDetail();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -90,18 +95,16 @@ export default function DetailLaporanPengaduan() {
     }
   };
 
-  // Parse fields dari description (format: "Nama: ...\nAlamat: ...\nNIK: ...\n\n...")
-  const parseField = (text, key) =>
-    text?.match(new RegExp(`${key}: ([^\\n]+)`))?.[1]?.trim() ?? "";
+  // Anggap "sudah ditanggapi" jika status resolved ATAU admin_response terisi.
+  // Ini fallback kalau backend tidak selalu mengembalikan status: "resolved"
+  // tapi admin_response sudah ada nilainya.
+  const isResolved = complaint?.status === "resolved" || !!complaint?.admin_response;
 
-  const desc        = complaint?.description ?? "";
-  const nama        = complaint?.user?.fullname  ?? parseField(desc, "Nama");
-  const alamat      = complaint?.user?.address   ?? parseField(desc, "Alamat");
-  const nik         = complaint?.user?.nik        ?? parseField(desc, "NIK");
-  const saran       = desc.includes("\n\n") ? desc.split("\n\n").slice(1).join("\n\n") : desc;
-  const docUrl      = complaint?.attachment_path
+  const docUrl = complaint?.attachment_path
     ? resolveFileUrl(complaint.attachment_path)
     : null;
+
+  const subjectsValue = complaint?.suggestion ?? "";
 
   if (loading) {
     return (
@@ -119,18 +122,40 @@ export default function DetailLaporanPengaduan() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="space-y-5">
 
-      {/* Header dengan tombol back */}
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate("/superadmin/laporan-pengaduan")}
+        <button onClick={() => navigate("/admin/laporan-pengaduan")}
           className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
-        <h1 className="text-xl font-bold text-[#233B6E]">Detail Laporan Pengaduan</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-[#233B6E]">Detail Laporan Pengaduan</h1>
+          {isResolved ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold
+              uppercase tracking-wider bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Sudah Ditanggapi
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold
+              uppercase tracking-wider bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              Belum Ditanggapi
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -138,37 +163,26 @@ export default function DetailLaporanPengaduan() {
 
         <div className="p-6 space-y-5">
 
-          {/* Alert */}
           {error   && <div className="bg-red-50 border border-red-200 text-red-600
             text-sm rounded-xl px-4 py-3">{error}</div>}
           {success && <div className="bg-green-50 border border-green-200 text-green-600
             text-sm rounded-xl px-4 py-3">{success}</div>}
 
-          {/* Data identitas */}
-          <FieldRow label="Nama Lengkap/Perusahaan" value={nama} />
-          <FieldRow label="Alamat Lengkap"           value={alamat} />
-          <FieldRow label="Nomor Induk Kependudukan (NIK)" value={nik} />
+          <FieldRow label="Nama Lengkap/Perusahaan"        value={complaint?.fullname} />
+          <FieldRow label="Email"                           value={complaint?.email} />
+          <FieldRow label="Nomor Induk Kependudukan (NIK)" value={complaint?.id_number} />
+          <FieldRow label="No. Telepon"                     value={complaint?.phone} />
           <FieldRow label="Tanggal Melapor"
             value={formatDate(complaint?.date_of_complaint)} />
 
           <div className="border-t border-gray-100 pt-2" />
 
-          {/* Isi pengaduan */}
-          <TextAreaRow
-            label="Pelayanan Yang Tidak Sesuai Standar"
-            value={complaint?.subjects}
-          />
-          <TextAreaRow
-            label="Saran dan Gagasan"
-            value={saran}
-          />
+          <TextAreaRow label="Subjek Pengaduan" value={subjectsValue} />
+          <TextAreaRow label="Uraian Pengaduan" value={complaint?.description} />
 
-          {/* Lampiran */}
           {docUrl && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-sm text-[#415F9D] font-medium">
-                Lampiran Bukti
-              </span>
+              <span className="text-sm text-[#415F9D] font-medium">Lampiran Bukti</span>
               <a href={docUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-[#233B6E] text-sm
                   font-semibold hover:underline">
@@ -183,16 +197,9 @@ export default function DetailLaporanPengaduan() {
             </div>
           )}
 
-          {/* Tanggapan admin */}
           <div className="border-t border-gray-100 pt-4 space-y-2">
             <span className="text-sm text-[#415F9D] font-semibold">
               Tanggapan Admin
-              {complaint?.status === "resolved" && (
-                <span className="ml-2 text-[10px] font-bold uppercase tracking-wider
-                  bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                  Sudah Ditanggapi
-                </span>
-              )}
             </span>
             <textarea
               value={response}
@@ -208,7 +215,6 @@ export default function DetailLaporanPengaduan() {
         </div>
       </div>
 
-      {/* Tombol Kirim Tanggapan */}
       <div className="flex justify-end">
         <button onClick={handleRespond} disabled={saving}
           className="flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -226,7 +232,7 @@ export default function DetailLaporanPengaduan() {
             </>
           ) : (
             <>
-              Kirim Tanggapan
+              {isResolved ? "Perbarui Tanggapan" : "Kirim Tanggapan"}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                 className="w-4 h-4">

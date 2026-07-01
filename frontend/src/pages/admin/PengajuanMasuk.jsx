@@ -13,6 +13,7 @@ import { getAdminSubmissions } from "../../services/adminServices";
 /* ── Status config ───────────────────────────────────────────────── */
 const STATUS_CONFIG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
+  approved:             { label: "Disetujui",            bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
   awaiting_payment:     { label: "Menunggu Pembayaran", bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500"   },
   in_process:           { label: "Sedang Diproses",     bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
   processed:            { label: "Selesai Diproses",    bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500" },
