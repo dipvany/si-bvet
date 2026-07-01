@@ -152,7 +152,7 @@ export default function DetailPengajuanMasuk() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal menyetujui.");
       setSuccess("Pengajuan berhasil disetujui. Data masuk ke Proses Pengujian (Kaji Ulang).");
-      setSubmission(p => ({ ...p, process_status: "reviewing" }));
+      setSubmission(p => ({ ...p, process_status: "approved" }));
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
