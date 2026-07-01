@@ -22,6 +22,7 @@ import (
 type SubmissionServiceInterface interface {
 	Create(userID uint, req dto.SubmissionRequest) (models.Submission, error)
 	GetSubmissionsByUser(userID uint) ([]models.Submission, error)
+	GetSubmissionByID(submissionID uint) (models.Submission, error)
 	GetByUserPaginated(userID uint, page int, perPage int) ([]models.Submission, int64, error)
 	GetAll() ([]models.Submission, error)
 	GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error)
@@ -67,6 +68,10 @@ func (s *SubmissionService) GetByUserPaginated(userID uint, page int, perPage in
 
 func (s *SubmissionService) GetAll() ([]models.Submission, error) {
 	return GetAllSubmissions()
+}
+
+func (s *SubmissionService) GetSubmissionByID(submissionID uint) (models.Submission, error) {
+	return repositories.GetSubmissionByIDWithRelations(submissionID)
 }
 
 func (s *SubmissionService) GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error) {
