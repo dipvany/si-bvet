@@ -34,6 +34,6 @@ export const getDashboardPath = (role) => ({
 
 export const getRoleLabel = (role) => ({
   customer:   "Pelanggan",
-  admin:      "Admin",
-  superadmin: "Super Admin",
+  admin:      "Petugas Lab",
+  superadmin: "Admin Lab",
 }[(role ?? "").toLowerCase()] ?? role);

@@ -9,6 +9,7 @@ import {
   rejectPayment,
 } from "../../services/superAdminServices";
 import { apiFetch } from "../../services/api";
+import { resolveFileUrl } from "../../utils/fileUrl";
 
 /**
  * ProsesPengujian — kelola alur proses pengujian setelah pengajuan disetujui.
@@ -22,10 +23,11 @@ import { apiFetch } from "../../services/api";
 
 /* ── Shared helpers ─────────────────────────────────────────────── */
 const STATUS_CONFIG = {
-  reviewing:        { label: "Kaji Ulang",          bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500",  order: 0 },
+  approved:         { label: "Disetujui",        bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500",  order: 0 },
   awaiting_payment: { label: "Menunggu Pembayaran", bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   order: 1 },
   in_process:       { label: "Proses Pengujian",    bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", order: 2 },
-  done:             { label: "Pengujian Selesai",   bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500",  order: 3 },
+  processed:        { label: "Selesai Diproses",    bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500",  order: 3 },
+  done:             { label: "Pengujian Selesai",   bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500",  order: 4 },
 };
 
 // Endpoint update status submission (misal: PATCH /admin/submissions/:id/status)
@@ -112,7 +114,7 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
   const [billForm, setBillForm] = useState({ ebilling_code: "", total_amount: "", no_registration: "", no_epi: "" });
 
   const status           = sub.process_status;
-  const isReviewing      = status === "reviewing";
+  const isReviewing      = status === "approved";
   const isAwaitingPay    = status === "awaiting_payment";
   const isInProcess      = status === "in_process";
   const isDone           = status === "done";
@@ -311,12 +313,35 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
                   <InfoRow label="Total Tagihan"   value={rupiah(billing.total_amount)} />
                   <InfoRow label="No. Registrasi"  value={billing.no_registration} />
                   <InfoRow label="No. EPI"         value={billing.no_epi} />
+                  {/* FIX: bukti pembayaran yang diunggah customer (field proof_payment)
+                      sebelumnya tidak pernah ditampilkan, jadi admin/superadmin
+                      tidak punya cara melihat bukti sebelum verifikasi. */}
+                  <div className="flex gap-3 py-2.5">
+                    <span className="text-xs text-gray-400 w-36 flex-shrink-0">Bukti Pembayaran</span>
+                    <span className="text-sm font-medium flex-1">
+                      {billing.proof_payment ? (
+                        <a href={resolveFileUrl(billing.proof_payment)} target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-[#233B6E] font-semibold hover:underline">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                            strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                          Lihat Bukti Pembayaran
+                        </a>
+                      ) : (
+                        <span className="text-orange-500">Belum diunggah pelanggan</span>
+                      )}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-blue-600">Belum ada data tagihan.</p>
               )}
               <div className="flex flex-wrap gap-2">
-                <button onClick={handleVerifyPayment} disabled={actionLoad}
+                <button onClick={handleVerifyPayment} disabled={actionLoad || !billing?.proof_payment}
+                  title={!billing?.proof_payment ? "Pelanggan belum mengunggah bukti pembayaran" : undefined}
                   className="flex items-center gap-2 bg-green-600 hover:bg-green-700
                     text-white font-bold text-sm px-4 py-2.5 rounded-xl
                     disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
@@ -381,7 +406,7 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Alur Proses</p>
             <div className="flex items-center gap-1 flex-wrap">
               {[
-                { key: "reviewing",        label: "Kaji Ulang"    },
+                { key: "approved",         label: "Disetujui"     },
                 { key: "awaiting_payment", label: "Pembayaran"    },
                 { key: "in_process",       label: "Pengujian"     },
                 { key: "done",             label: "Selesai"       },
@@ -427,7 +452,7 @@ export default function ProsesPengujian() {
   const [selected,    setSelected]    = useState(null);
 
   // Status yang masuk ke Proses Pengujian (sudah diverifikasi dari Pengajuan Masuk)
-  const ACTIVE_STATUSES = ["reviewing", "awaiting_payment", "in_process", "done"];
+  const ACTIVE_STATUSES = ["approved", "awaiting_payment", "in_process", "processed", "done"];
 
   useEffect(() => { fetchData(page); }, [page]);
 

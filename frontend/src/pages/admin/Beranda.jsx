@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAdminSubmissions, getUnverifiedCustomers } from "../../services/adminServices";
+import { getAdminSubmissions, getUnverifiedCustomers, getAllComplaints } from "../../services/adminServices";
 
 const CARD_CONFIG = [
   { label: "Total Pengajuan Masuk", key: "total",                color: "#F5C400" },
@@ -45,6 +45,7 @@ function StatCard({ label, value, total, color, loading }) {
 
 export default function AdminBeranda() {
   const [stats,      setStats]      = useState({ total: 0, pending_verification: 0, waiting_payment: 0, in_process: 0, completed: 0 });
+  const [complaints, setComplaints]  = useState({ total: 0, belum: 0 });
   const [unverified, setUnverified] = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState("");
@@ -78,6 +79,16 @@ export default function AdminBeranda() {
         if (!Array.isArray(unv)) unv = [];
       } catch (e) {
         console.warn("Unverified fetch error:", e.message);
+      }
+
+      try {
+        const cmpRes  = await getAllComplaints();
+        const cmpData = await cmpRes.json();
+        const cmpList = cmpData.complaints ?? [];
+        const belum   = cmpList.filter(c => c.status !== "resolved" && !c.admin_response).length;
+        setComplaints({ total: cmpList.length, belum });
+      } catch (e) {
+        console.warn("Complaints fetch error:", e.message);
       }
 
       const counts = { total: submissions.length, pending_verification: 0, waiting_payment: 0, in_process: 0, completed: 0 };
@@ -128,12 +139,24 @@ export default function AdminBeranda() {
         </div>
       )}
 
-      {/* Stat cards — sama persis layout superadmin */}
+      {/* Stat cards pengajuan */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
         {CARD_CONFIG.map(c => (
           <StatCard key={c.key} label={c.label} value={stats[c.key] ?? 0}
             total={stats.total || 1} color={c.color} loading={loading}/>
         ))}
+      </div>
+
+      {/* Stat pengaduan */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+          Pengaduan Masuk
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <StatCard label="Total Pengaduan"   value={complaints.total} total={Math.max(complaints.total, 1)} color="#A78BFA" loading={loading}/>
+          <StatCard label="Belum Ditanggapi"  value={complaints.belum} total={Math.max(complaints.total, 1)} color="#F97316" loading={loading}/>
+          <StatCard label="Sudah Ditanggapi"  value={complaints.total - complaints.belum} total={Math.max(complaints.total, 1)} color="#22C55E" loading={loading}/>
+        </div>
       </div>
     </div>
   );

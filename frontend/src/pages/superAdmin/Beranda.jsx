@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAdminSubmissions, getActivityLogs } from "../../services/superAdminServices";
+import { getAdminSubmissions, getActivityLogs, getAllComplaints } from "../../services/superAdminServices";
 
 const CARD_CONFIG = [
   { key: "total",                label: "Total Pengajuan Masuk", color: "#F5C400" },
@@ -253,6 +253,7 @@ export default function SuperAdminBeranda() {
     waiting_payment: 0, in_process: 0, completed: 0,
   });
   const [logs, setLogs]         = useState([]);
+  const [complaints, setComplaints] = useState({ total: 0, belum: 0 });
   const [loading, setLoading]   = useState(true);
   const [logLoading, setLogLoading] = useState(true);
   const [error, setError]       = useState("");
@@ -261,6 +262,7 @@ export default function SuperAdminBeranda() {
   useEffect(() => {
     fetchStats();
     fetchLogs();
+    fetchComplaints();
   }, []);
 
   const fetchStats = async () => {
@@ -304,6 +306,18 @@ export default function SuperAdminBeranda() {
     }
   };
 
+  const fetchComplaints = async () => {
+    try {
+      const res  = await getAllComplaints();
+      const data = await res.json();
+      const list = data.complaints ?? [];
+      const belum = list.filter(c => c.status !== "resolved" && !c.admin_response).length;
+      setComplaints({ total: list.length, belum });
+    } catch (e) {
+      console.warn("Complaints fetch error:", e.message);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Beranda</h1>
@@ -325,6 +339,18 @@ export default function SuperAdminBeranda() {
           <StatCard key={c.key} label={c.label} value={stats[c.key] ?? 0}
             total={stats.total || 1} color={c.color} loading={loading}/>
         ))}
+      </div>
+
+      {/* Stat pengaduan */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+          Pengaduan Masuk
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <StatCard label="Total Pengaduan"  value={complaints.total} total={Math.max(complaints.total, 1)} color="#A78BFA" loading={loading}/>
+          <StatCard label="Belum Ditanggapi" value={complaints.belum} total={Math.max(complaints.total, 1)} color="#F97316" loading={loading}/>
+          <StatCard label="Sudah Ditanggapi" value={complaints.total - complaints.belum} total={Math.max(complaints.total, 1)} color="#22C55E" loading={loading}/>
+        </div>
       </div>
 
       {/* Log aktivitas */}

@@ -218,7 +218,7 @@ export default function AdminProfil() {
           <p className="text-sm text-gray-400 mt-0.5 truncate">{email}</p>
           <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
             <span className="text-[10px] font-bold uppercase tracking-wider
-              bg-[#EEF0F8] text-[#415F9D] rounded-full px-3 py-1">Admin</span>
+              bg-[#EEF0F8] text-[#415F9D] rounded-full px-3 py-1">Petugas Lab</span>
             {position && (
               <span className="text-[10px] font-bold uppercase tracking-wider
                 bg-gray-100 text-gray-600 rounded-full px-3 py-1">{position}</span>

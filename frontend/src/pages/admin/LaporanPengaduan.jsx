@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
-import StatusBadge from "../../components/StatusBadge";
 
 const PER_PAGE = 10;
 
@@ -25,6 +24,43 @@ function PaginationBtn({ children, active, disabled, onClick }) {
   );
 }
 
+function isResolved(c) {
+  return c.status === "resolved" || !!c.admin_response;
+}
+
+function StatusBadge({ complaint }) {
+  if (isResolved(complaint)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold
+        uppercase tracking-wider bg-green-100 text-green-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Ditanggapi
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold
+      uppercase tracking-wider bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full whitespace-nowrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Belum
+    </span>
+  );
+}
+
+const TAB_CONFIG = [
+  { key: "semua",       label: "Semua" },
+  { key: "belum",       label: "Belum Ditanggapi" },
+  { key: "ditanggapi",  label: "Sudah Ditanggapi" },
+];
+
 export default function LaporanPengaduan() {
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
@@ -32,6 +68,7 @@ export default function LaporanPengaduan() {
   const [error, setError]           = useState("");
   const [search, setSearch]         = useState("");
   const [sort, setSort]             = useState("terbaru");
+  const [activeTab, setActiveTab]   = useState("semua");
   const [page, setPage]             = useState(1);
 
   useEffect(() => { fetchData(); }, []);
@@ -49,19 +86,32 @@ export default function LaporanPengaduan() {
     }
   };
 
+  const counts = useMemo(() => ({
+    semua:      complaints.length,
+    belum:      complaints.filter(c => !isResolved(c)).length,
+    ditanggapi: complaints.filter(c =>  isResolved(c)).length,
+  }), [complaints]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    const base = complaints.filter(c =>
-      !q ||
-      c.user?.fullname?.toLowerCase().includes(q) ||
-      c.user?.email?.toLowerCase().includes(q) ||
-      c.subjects?.toLowerCase().includes(q)
-    );
+    const base = complaints.filter(c => {
+      const matchSearch =
+        !q ||
+        c.fullname?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.subjects?.toLowerCase().includes(q) ||
+        c.suggestion?.toLowerCase().includes(q);
+      const matchTab =
+        activeTab === "semua" ||
+        (activeTab === "ditanggapi" &&  isResolved(c)) ||
+        (activeTab === "belum"      && !isResolved(c));
+      return matchSearch && matchTab;
+    });
     return [...base].sort((a, b) => {
       if (sort === "terlama") return new Date(a.date_of_complaint) - new Date(b.date_of_complaint);
       return new Date(b.date_of_complaint) - new Date(a.date_of_complaint);
     });
-  }, [complaints, search, sort]);
+  }, [complaints, search, sort, activeTab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -79,12 +129,32 @@ export default function LaporanPengaduan() {
         </div>
       )}
 
+      {/* Tab filter — mirip gaya "Daftar Akun Registrasi" */}
+      <div className="flex flex-wrap gap-2">
+        {TAB_CONFIG.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <button key={tab.key}
+              onClick={() => { setActiveTab(tab.key); setPage(1); }}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold
+                border transition-colors
+                ${active
+                  ? "bg-[#233B6E] text-white border-[#233B6E]"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
+              {tab.label}
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center
+                ${active ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                {counts[tab.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
         {/* Toolbar */}
-        <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap
-          items-center gap-2">
-          {/* Search */}
+        <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[180px]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round"
@@ -93,17 +163,13 @@ export default function LaporanPengaduan() {
             </svg>
             <input value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Cari nama atau subjek..."
+              placeholder="Cari nama, email, atau subjek..."
               className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm
                 outline-none bg-[#F6F7FB]
                 focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]" />
           </div>
-
-          {/* Urutkan */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
-              Urutkan:
-            </span>
+            <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Urutkan:</span>
             <div className="relative">
               <select value={sort}
                 onChange={e => { setSort(e.target.value); setPage(1); }}
@@ -128,7 +194,7 @@ export default function LaporanPengaduan() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {["No.", "Nama", "NIK", "Tanggal Melapor", "Detail"].map(h => (
+                {["No.", "Nama", "Email", "NIK", "Tanggal Melapor", "Status", "Detail"].map(h => (
                   <th key={h}
                     className="px-4 py-3 text-left text-xs font-semibold
                       text-gray-500 uppercase tracking-wide whitespace-nowrap">
@@ -139,21 +205,18 @@ export default function LaporanPengaduan() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center">
-                  <span className="flex items-center justify-center gap-2
-                    text-gray-400 text-sm">
+                <tr><td colSpan={7} className="px-4 py-12 text-center">
+                  <span className="flex items-center justify-center gap-2 text-gray-400 text-sm">
                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10"
                         stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                     </svg>
                     Memuat data...
                   </span>
                 </td></tr>
               ) : paginated.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center
-                  text-gray-400 text-sm">
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-400 text-sm">
                   {search ? "Tidak ada hasil pencarian." : "Belum ada data pengaduan."}
                 </td></tr>
               ) : paginated.map((c, i) => (
@@ -161,19 +224,15 @@ export default function LaporanPengaduan() {
                   <td className="px-4 py-3 text-gray-400 text-xs">
                     {(page - 1) * PER_PAGE + i + 1}.
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-800">
-                    {c.user?.fullname ?? c.description?.split("\n")[0]?.replace("Nama: ","") ?? "-"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {c.user?.nik ?? c.description?.match(/NIK: ([^\n]+)/)?.[1] ?? "-"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {formatDate(c.date_of_complaint)}
-                  </td>
+                  <td className="px-4 py-3 font-medium text-gray-800">{c.fullname ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.email ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.id_number ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-600">{formatDate(c.date_of_complaint)}</td>
+                  <td className="px-4 py-3"><StatusBadge complaint={c} /></td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => navigate(
-                        `/superadmin/laporan-pengaduan/${c.id}`,
+                        `/admin/laporan-pengaduan/${c.id}`,
                         { state: { complaint: c } }
                       )}
                       className="inline-flex items-center gap-1.5 text-[#233B6E]
@@ -202,22 +261,16 @@ export default function LaporanPengaduan() {
           <div className="flex items-center gap-1">
             <PaginationBtn disabled={page === 1} onClick={() => setPage(p => p - 1)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" className="w-3 h-3">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
+                strokeLinecap="round" className="w-3 h-3"><path d="M15 18l-6-6 6-6"/></svg>
             </PaginationBtn>
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))
               .map(n => (
-                <PaginationBtn key={n} active={n === page} onClick={() => setPage(n)}>
-                  {n}
-                </PaginationBtn>
+                <PaginationBtn key={n} active={n === page} onClick={() => setPage(n)}>{n}</PaginationBtn>
               ))}
             <PaginationBtn disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" className="w-3 h-3">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
+                strokeLinecap="round" className="w-3 h-3"><path d="M9 18l6-6-6-6"/></svg>
             </PaginationBtn>
           </div>
         </div>
