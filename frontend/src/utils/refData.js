@@ -1,7 +1,7 @@
 // Data referensi dari template Excel SI-BVET
 
-export const TYPE_SERVICE  = ["Reguler", "Cito", "Surveilans"];
-export const PURPOSE       = ["Surveilans", "Diagnosa", "Monitoring", "Penelitian", "Ekspor", "Impor", "Lainnya"];
+export const TYPE_SERVICE  = ["Aktif", "Pasif"];
+export const PURPOSE       = ["Surveilans", "Diagnosa", "Monitoring", "Penelitian", "Lainnya"];
 export const SAMPLE_MODELS = ["Mamalia", "Unggas", "Rabies", "Model Lain"];
 export const UNIT_AGES     = ["hari", "minggu", "bulan", "tahun"];
 export const VACCINATED    = ["Ya", "Tidak", "Tidak Diketahui"];
