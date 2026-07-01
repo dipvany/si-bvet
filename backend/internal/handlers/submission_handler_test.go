@@ -355,6 +355,70 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(mockService.createReq.Samples[0].SampleCodeCust).To(gomega.Equal("SMPL-BULK-001"))
 			gomega.Expect(mockService.createReq.Samples[0].TotalSample).To(gomega.Equal(int64(2)))
 		})
+
+		ginkgo.It("creates submission with multipart samples json when file is not provided", func() {
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			gomega.Expect(writer.WriteField("type_service", "Reguler")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("purpose_of_test", "Surveilans")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("sample_taker", "Petugas Lapangan")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("notes", "Multipart samples json")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("samples", `[[{"sample_code_cust":"SMPL-JSON-001","sample_model":"Serum","total_sample":3,"tests":[{"test_service_id":2}]}]]`)).To(gomega.Succeed())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			router.POST("/submissions", withUserID(42), handler.CreateSubmission)
+			req := httptest.NewRequest(http.MethodPost, "/submissions", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(mockService.importCalled).To(gomega.BeFalse())
+			gomega.Expect(mockService.createCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.createReq.Samples).To(gomega.HaveLen(1))
+			gomega.Expect(mockService.createReq.Samples[0].SampleCodeCust).To(gomega.Equal("SMPL-JSON-001"))
+			gomega.Expect(mockService.createReq.Samples[0].TotalSample).To(gomega.Equal(int64(3)))
+		})
+
+		ginkgo.It("prioritizes template file over multipart samples json when both are provided", func() {
+			f := excelize.NewFile()
+			sheet := f.GetSheetName(0)
+			f.SetCellValue(sheet, "A1", "sample_code_cust")
+			f.SetCellValue(sheet, "B1", "sample_model")
+			f.SetCellValue(sheet, "C1", "total_sample")
+			f.SetCellValue(sheet, "D1", "test_service_ids")
+			f.SetCellValue(sheet, "A2", "SMPL-BULK-001")
+			f.SetCellValue(sheet, "B2", "Swab")
+			f.SetCellValue(sheet, "C2", "2")
+			f.SetCellValue(sheet, "D2", "1")
+
+			buf := new(bytes.Buffer)
+			gomega.Expect(f.Write(buf)).To(gomega.Succeed())
+
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+			gomega.Expect(writer.WriteField("type_service", "Reguler")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("purpose_of_test", "Surveilans")).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("samples", `[[{"sample_code_cust":"SMPL-JSON-OVERRIDE","sample_model":"Serum","total_sample":9}]](http://_vscodecontentref_/6)`)).To(gomega.Succeed())
+			part, err := writer.CreateFormFile("file", "bulk-template.xlsx")
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			_, err = part.Write(buf.Bytes())
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(writer.Close()).To(gomega.Succeed())
+
+			router.POST("/submissions", withUserID(42), handler.CreateSubmission)
+			req := httptest.NewRequest(http.MethodPost, "/submissions", body)
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+			w = httptest.NewRecorder()
+
+			router.ServeHTTP(w, req)
+
+			gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+			gomega.Expect(mockService.importCalled).To(gomega.BeTrue())
+			gomega.Expect(mockService.createReq.Samples).To(gomega.HaveLen(1))
+			gomega.Expect(mockService.createReq.Samples[0].SampleCodeCust).To(gomega.Equal("SMPL-BULK-001"))
+		})
 	})
 
 	ginkgo.Describe("UpdateSubmission", func() {

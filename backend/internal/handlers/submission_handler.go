@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -55,6 +56,17 @@ func (h *SubmissionHandler) CreateSubmission(c *gin.Context) {
 			return
 		}
 
+		// Parse samples from multipart text field first.
+		// If template file is also sent, template import will override this value.
+		if samplesRaw := strings.TrimSpace(c.PostForm("samples")); samplesRaw != "" {
+			var samples []dto.SampleInput
+			if err := json.Unmarshal([]byte(samplesRaw), &samples); err != nil {
+				utils.ErrorResponse(c, http.StatusBadRequest, "invalid samples payload")
+				return
+			}
+			req.Samples = samples
+		}
+
 		// Handle bulk sample import file
 		sampleFileHeader, err := c.FormFile("file")
 		if err == nil && sampleFileHeader != nil {
@@ -72,6 +84,7 @@ func (h *SubmissionHandler) CreateSubmission(c *gin.Context) {
 				utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 				return
 			}
+			// File import has the highest priority when both are provided.
 			req.Samples = importedSamples.Samples
 		} else if err != nil && err != http.ErrMissingFile {
 			utils.ErrorResponse(c, http.StatusBadRequest, "invalid sample template file")
