@@ -4,11 +4,11 @@ import { approveSubmission, rejectSubmission } from "../../services/superAdminSe
 import { apiFetch } from "../../services/api";
 import { resolveFileUrl } from "../../utils/fileUrl";
 
-/**
- * DetailPengajuanMasuk — lihat detail + approve/reject.
- * Tidak ada alur proses — cukup verifikasi pengajuan.
- * Setelah approve → otomatis masuk Proses Pengujian (status: kaji_ulang).
- */
+const formatDate = (iso) => {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleDateString("id-ID",
+    { day: "2-digit", month: "2-digit", year: "numeric" });
+};
 
 const STATUS_CONFIG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
@@ -58,7 +58,7 @@ function Alert({ type, msg, onClose }) {
 function InfoRow({ label, value }) {
   return (
     <div className="flex gap-3 py-2.5 border-b border-gray-50 last:border-0">
-      <span className="text-xs text-gray-400 w-40 flex-shrink-0 pt-0.5">{label}</span>
+      <span className="text-xs text-gray-400 w-44 flex-shrink-0 pt-0.5">{label}</span>
       <span className="text-sm font-medium text-gray-800 flex-1 min-w-0 break-words">{value ?? "-"}</span>
     </div>
   );
@@ -110,27 +110,31 @@ export default function DetailPengajuanMasuk() {
 
   const [submission, setSubmission] = useState(state?.submission ?? null);
   const [loading,    setLoading]    = useState(false);
+  const [fetching,   setFetching]   = useState(true);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
-  const [docs,       setDocs]       = useState([]);
-  const [docsLoading,setDocsLoading]= useState(false);
 
-  // Fetch attachment docs
+  // Fetch data lengkap dari backend (samples + user_info + billing + lhu)
   useEffect(() => {
     if (!id) return;
-    setDocsLoading(true);
+    setFetching(true);
     apiFetch(`/admin/submissions/${id}`)
       .then(r => r.json())
       .then(d => {
         const raw = d.data ?? d;
-        // attachment_doc bisa berupa string path, array of paths, atau array of objects
-        const att = raw.attachment_doc ?? raw.attachments ?? raw.documents ?? [];
-        if (Array.isArray(att)) setDocs(att);
-        else if (typeof att === "string" && att) setDocs([att]);
+        if (raw && typeof raw === "object" && raw.id) setSubmission(raw);
       })
       .catch(() => {})
-      .finally(() => setDocsLoading(false));
+      .finally(() => setFetching(false));
   }, [id]);
+
+  if (fetching && !submission) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="flex items-center gap-2 text-gray-400 text-sm">
+        <Spinner /> Memuat detail pengajuan...
+      </div>
+    </div>
+  );
 
   if (!submission) return (
     <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -143,6 +147,17 @@ export default function DetailPengajuanMasuk() {
   const isPending     = status === "pending_verification";
   const isRejected    = status === "rejected";
   const sudahDiproses = !isPending && !isRejected;
+
+  // Data pelanggan dari relasi user_info
+  const userInfo = submission.user_info ?? {};
+  const customer = userInfo.customer ?? {};
+
+  // Samples dari relasi
+  const samples = Array.isArray(submission.samples) ? submission.samples : [];
+
+  // Dokumen lampiran
+  const att  = submission.attachment_doc ?? "";
+  const docs = Array.isArray(att) ? att : (att ? [att] : []);
 
   const handleApprove = async () => {
     if (!window.confirm("Setujui pengajuan ini? Data akan otomatis masuk ke menu Proses Pengujian dengan status Kaji Ulang.")) return;
@@ -171,7 +186,7 @@ export default function DetailPengajuanMasuk() {
   };
 
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-start gap-3">
         <button onClick={() => navigate(-1)}
@@ -193,7 +208,7 @@ export default function DetailPengajuanMasuk() {
       <Alert type="error"   msg={error}   onClose={() => setError("")} />
       <Alert type="success" msg={success} onClose={() => setSuccess("")} />
 
-      {/* Tombol Aksi — hanya saat pending_verification */}
+      {/* Tombol Aksi */}
       {isPending && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="h-1 bg-[#233B6E]" />
@@ -233,7 +248,6 @@ export default function DetailPengajuanMasuk() {
         </div>
       )}
 
-      {/* Sudah diproses */}
       {sudahDiproses && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3
           text-sm text-blue-700 flex items-center gap-2">
@@ -245,7 +259,6 @@ export default function DetailPengajuanMasuk() {
         </div>
       )}
 
-      {/* Ditolak */}
       {isRejected && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3
           text-sm text-red-600 flex items-center gap-2">
@@ -257,58 +270,129 @@ export default function DetailPengajuanMasuk() {
         </div>
       )}
 
-      {/* Info Pengajuan */}
-      <SectionCard title="Informasi Pengajuan">
-        <InfoRow label="No. Tiket"        value={submission.no_ticket} />
-        <InfoRow label="User ID"          value={`#${submission.user_id}`} />
-        <InfoRow label="Jenis Layanan"    value={submission.type_service} />
-        <InfoRow label="Tujuan Pengujian" value={submission.purpose_of_test} />
-        <InfoRow label="Jumlah Sampel"    value={submission.samples_count} />
-        <InfoRow label="Pengambil Sampel" value={submission.sample_taker} />
-        <InfoRow label="No. Registrasi"   value={submission.no_registration} />
-        <InfoRow label="No. EPI"          value={submission.no_epi} />
-        <InfoRow label="Tanggal Kirim"    value={submission.date_of_send} />
-        <InfoRow label="Tanggal Terima"   value={submission.date_of_receive} />
-        <InfoRow label="ID iSIKHNAS"      value={submission.id_isikhnas} />
-        <InfoRow label="Catatan"          value={submission.notes} />
-      </SectionCard>
+      {/* ── STEP 1: Data Pengajuan ── */}
+      <SectionCard title="Step 1 — Data Pengajuan">
+        <InfoRow label="No. Tiket"              value={submission.no_ticket} />
+        <InfoRow label="No. Registrasi"         value={submission.no_registration} />
+        <InfoRow label="No. EPI"                value={submission.no_epi} />
+        <InfoRow label="Jenis Layanan"          value={submission.type_service} />
+        <InfoRow label="Tujuan Pengujian"       value={submission.purpose_of_test} />
+        <InfoRow label="Tanggal Kirim"          value={formatDate(submission.date_of_send)} />
+        <InfoRow label="Tanggal Terima"         value={formatDate(submission.date_of_receive)} />
+        <InfoRow label="Nama Kurir"             value={submission.courier_name} />
+        <InfoRow label="Kontak Kurir"           value={submission.courier_contact} />
+        <InfoRow label="No. Surat Pelanggan"    value={submission.cust_letter_no} />
+        <InfoRow label="ID iSIKHNAS"            value={submission.id_isikhnas} />
+        <InfoRow label="No. Agenda"             value={submission.agenda_no} />
+        <InfoRow label="Perlu Diagnosa"         value={submission.diagnosis_required ? "Ya" : "Tidak"} />
+        <InfoRow label="Jumlah Sampel"          value={submission.samples_count} />
+        {submission.notes && <InfoRow label="Catatan" value={submission.notes} />}
 
-      {/* Dokumen Pendukung */}
-      <SectionCard title="Dokumen Pendukung" accent="#0EA5E9">
-        {docsLoading ? (
-          <div className="flex items-center gap-2 py-4 text-gray-400 text-sm">
-            <Spinner sm /> Memuat dokumen...
-          </div>
-        ) : docs.length === 0 ? (
-          <p className="text-sm text-gray-400 py-3">Tidak ada dokumen pendukung yang diupload.</p>
-        ) : (
-          <div className="space-y-2 py-1">
-            {docs.map((doc, i) => {
-              const path    = typeof doc === "string" ? doc : (doc.path ?? doc.file_path ?? doc.url ?? "");
-              const url     = resolveFileUrl(path);
-              const fname   = path.split("/").pop() || `Dokumen ${i + 1}`;
-              const ext     = fname.split(".").pop().toLowerCase();
-              return (
-                <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl
-                    bg-gray-50 hover:bg-[#EEF0F8] border border-gray-100
-                    hover:border-[#233B6E]/20 transition-colors group">
-                  <FileIcon ext={ext} />
-                  <span className="text-sm text-gray-700 font-medium flex-1 min-w-0 truncate
-                    group-hover:text-[#233B6E]">
-                    {fname}
-                  </span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                    strokeLinecap="round" strokeLinejoin="round"
-                    className="w-4 h-4 text-gray-300 group-hover:text-[#233B6E] flex-shrink-0">
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
-                    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
-                </a>
-              );
-            })}
+        {/* Dokumen lampiran */}
+        {docs.length > 0 && (
+          <div className="pt-3 mt-1 border-t border-gray-50">
+            <p className="text-xs text-gray-400 mb-2">Dokumen Pendukung</p>
+            <div className="space-y-2">
+              {docs.map((doc, i) => {
+                const path  = typeof doc === "string" ? doc : (doc.path ?? doc.file_path ?? doc.url ?? "");
+                const url   = resolveFileUrl(path);
+                const fname = path.split("/").pop() || `Dokumen ${i + 1}`;
+                const ext   = fname.split(".").pop().toLowerCase();
+                return (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl
+                      bg-gray-50 hover:bg-[#EEF0F8] border border-gray-100
+                      hover:border-[#233B6E]/20 transition-colors group">
+                    <FileIcon ext={ext} />
+                    <span className="text-sm text-gray-700 font-medium flex-1 min-w-0 truncate group-hover:text-[#233B6E]">
+                      {fname}
+                    </span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                      strokeLinecap="round" strokeLinejoin="round"
+                      className="w-4 h-4 text-gray-300 group-hover:text-[#233B6E] flex-shrink-0">
+                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                  </a>
+                );
+              })}
+            </div>
           </div>
         )}
+      </SectionCard>
+
+      {/* ── STEP 2: Data Sampel ── */}
+      <SectionCard title={`Step 2 — Data Sampel (${samples.length} sampel)`} accent="#7C3AED">
+        {samples.length === 0 ? (
+          <p className="text-sm text-gray-400 py-3">Tidak ada data sampel.</p>
+        ) : samples.map((s, i) => (
+          <div key={s.id ?? i} className="mb-4 last:mb-0 pb-4 last:pb-0 border-b border-gray-50 last:border-0">
+            <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-2">
+              Sampel {i + 1}: {s.sample_code_cust || "-"}
+            </p>
+            <div className="grid grid-cols-2 gap-x-6">
+              {[
+                { label: "Kode Sampel Pelanggan", val: s.sample_code_cust },
+                { label: "Model Sampel",          val: s.sample_model },
+                { label: "Kelompok Spesimen",     val: s.specimen_group },
+                { label: "Jenis Spesimen",        val: s.specimen_type },
+                { label: "Species/Hewan",         val: s.species },
+                { label: "Pengawet",              val: s.preservative },
+                { label: "Kemasan",               val: s.packaging },
+                { label: "Tanggal Produksi",      val: formatDate(s.production_date) },
+                { label: "Tanggal Kadaluarsa",    val: formatDate(s.expired_date) },
+                { label: "Jenis Kelamin",         val: s.sex },
+                { label: "Umur",                  val: s.age ? `${s.age} ${s.unit_age ?? ""}`.trim() : "-" },
+                { label: "Pemilik",               val: s.owner },
+                { label: "Jenis Pengujian",       val: s.test_type },
+                { label: "Tipe Lokasi",           val: s.location_type },
+                { label: "Lokasi Sampel",         val: s.location_smpl },
+                { label: "Sudah Vaksin",          val: s.is_vaccinated },
+                { label: "Volume",                val: s.volume },
+                { label: "Kondisi",               val: s.condition },
+                { label: "Total Sampel",          val: s.total_sample },
+              ].map(r => (
+                <div key={r.label} className="flex gap-2 py-1.5 border-b border-gray-50 last:border-0">
+                  <span className="text-xs text-gray-400 w-44 flex-shrink-0 pt-0.5">{r.label}</span>
+                  <span className="text-sm font-medium text-gray-800">{r.val || "-"}</span>
+                </div>
+              ))}
+            </div>
+            {/* Jenis Pengujian yang diminta */}
+            {Array.isArray(s.test_requests) && s.test_requests.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs text-gray-400 mb-1.5">Pengujian Diminta</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {s.test_requests.map((tr, j) => (
+                    <span key={tr.id ?? j}
+                      className="bg-[#233B6E]/10 text-[#233B6E] text-[11px] font-bold px-2.5 py-1 rounded-full">
+                      {tr.test_service?.test_name ?? tr.test_service?.name ?? `Test #${tr.test_service_id}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </SectionCard>
+
+      {/* ── STEP 3: Data Pelanggan ── */}
+      <SectionCard title="Step 3 — Data Pelanggan" accent="#0EA5E9">
+        <InfoRow label="Nama Lengkap"       value={userInfo.fullname} />
+        <InfoRow label="Email"              value={userInfo.email} />
+        <InfoRow label="No. Telepon"        value={userInfo.phone} />
+        <InfoRow label="Institusi"          value={userInfo.institution} />
+        <InfoRow label="Nama PIC"           value={customer.pic_name} />
+        <InfoRow label="Kontak PIC"         value={customer.pic_contact} />
+        <InfoRow label="Penerima LHU"       value={customer.lhu_receiver_name} />
+        <InfoRow label="Kontak Penerima LHU" value={customer.lhu_receiver_contact} />
+        <InfoRow label="Alamat"             value={customer.address} />
+        <InfoRow label="Provinsi"           value={customer.province} />
+        <InfoRow label="Kota"               value={customer.city} />
+        <InfoRow label="Kecamatan"          value={customer.subdistrict} />
+        <InfoRow label="Kelurahan"          value={customer.village} />
+        <InfoRow label="Kode Pos"           value={customer.zip_code} />
+        <InfoRow label="Membership"         value={customer.is_membership ? `Ya (${customer.membership_no || "-"})` : "Tidak"} />
       </SectionCard>
     </div>
   );

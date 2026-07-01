@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 import { apiFetch } from "../../services/api";
-import { getCart, removeFromCart } from "../../utils/cart";
+import { getCart, removeFromCart, addToCart } from "../../utils/cart";
 import { parseSubmissionList } from "../../utils/parseList";
 import {
   TYPE_SERVICE,
@@ -85,61 +86,116 @@ const downloadTemplate = async () => {
   URL.revokeObjectURL(url);
 };
 
+/* ─── Konversi baris array ke objek sampel ─── */
+const rowToSample = (r, cartItems = []) => {
+  // Kolom 13 = "Jenis Uji" — bisa berisi 1 atau beberapa nama dipisah koma/titik koma
+  const rawUji = String(r[13] ?? "").trim();
+  const test_services = rawUji
+    ? rawUji
+        .split(/[,;]+/)
+        .map((name) => name.trim().toLowerCase())
+        .flatMap((keyword) =>
+          cartItems.filter((c) =>
+            c.test_name?.toLowerCase().includes(keyword),
+          ),
+        )
+        // hilangkan duplikat berdasarkan id
+        .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
+    : [];
+
+  return {
+    sample_code_cust: String(r[0] ?? "").trim(),
+    sample_model:     String(r[1] ?? "").trim(),
+    specimen_group:   String(r[2] ?? "").trim(),
+    specimen_type:    String(r[3] ?? "").trim(),
+    species:          String(r[4] ?? "").trim(),
+    preservative:     String(r[5] ?? "").trim(),
+    packaging:        String(r[6] ?? "").trim(),
+    production_date:  String(r[7] ?? "").trim(),
+    expired_date:     String(r[8] ?? "").trim(),
+    sex:              String(r[9] ?? "").trim(),
+    age:              String(r[10] ?? "").trim(),
+    unit_age:         String(r[11] ?? "bulan").trim() || "bulan",
+    owner:            String(r[12] ?? "").trim(),
+    location_type:    String(r[14] ?? "").trim(),
+    location_smpl:    String(r[15] ?? "").trim(),
+    is_vaccinated:    String(r[16] ?? "Tidak Diketahui").trim() || "Tidak Diketahui",
+    test_services,
+    sampling:         "",
+  };
+};
+
 /* ─── Parse CSV ─── */
-const parseCSV = (file, callback) => {
+const parseCSV = (file, cartItems, callback) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const lines = e.target.result.split("\n").filter((l) => l.trim());
-      if (lines.length < 2) {
-        callback(null, "File kosong.");
-        return;
-      }
+      if (lines.length < 2) { callback(null, "File kosong."); return; }
       const rows = lines
         .slice(1)
         .map((line) => {
           const cols = [];
-          let cur = "",
-            inQ = false;
+          let cur = "", inQ = false;
           for (const ch of line) {
             if (ch === '"') inQ = !inQ;
-            else if (ch === "," && !inQ) {
-              cols.push(cur.trim());
-              cur = "";
-            } else cur += ch;
+            else if (ch === "," && !inQ) { cols.push(cur.trim()); cur = ""; }
+            else cur += ch;
           }
           cols.push(cur.trim());
           return cols;
         })
-        .filter((r) => r[0]);
-      callback(
-        rows.map((r) => ({
-          sample_code_cust: r[0] ?? "",
-          sample_model: r[1] ?? "",
-          specimen_group: r[2] ?? "",
-          specimen_type: r[3] ?? "",
-          species: r[4] ?? "",
-          preservative: r[5] ?? "",
-          packaging: r[6] ?? "",
-          production_date: r[7] ?? "",
-          expired_date: r[8] ?? "",
-          sex: r[9] ?? "",
-          age: r[10] ?? "",
-          unit_age: r[11] ?? "bulan",
-          owner: r[12] ?? "",
-          location_type: r[14] ?? "",
-          location_smpl: r[15] ?? "",
-          is_vaccinated: r[16] ?? "Tidak Diketahui",
-          test_services: [],
-          sampling: "",
-        })),
-        null,
-      );
+        .filter((r) => r[0] && String(r[0]).trim());
+      callback(rows.map((r) => rowToSample(r, cartItems)), null);
     } catch (err) {
-      callback(null, "Gagal membaca: " + err.message);
+      callback(null, "Gagal membaca CSV: " + err.message);
     }
   };
   reader.readAsText(file, "UTF-8");
+};
+
+/* ─── Parse XLSX / XLS ─── */
+const parseXLSX = (file, cartItems, callback) => {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const workbook = XLSX.read(e.target.result, { type: "array", cellDates: true });
+      const sheet    = workbook.Sheets[workbook.SheetNames[0]];
+      const allRows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+      if (allRows.length < 2) { callback(null, "File kosong atau hanya berisi header."); return; }
+      const dataRows = allRows
+        .slice(1)
+        .filter((r) => r[0] !== undefined && String(r[0]).trim() !== "");
+      if (dataRows.length === 0) { callback(null, "Tidak ada data sampel di file."); return; }
+      callback(dataRows.map((r) => rowToSample(r, cartItems)), null);
+    } catch (err) {
+      callback(null, "Gagal membaca XLSX: " + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+const parseFile = (file, cartItems, callback) => {
+  const ext = file.name.split(".").pop().toLowerCase();
+  // Fetch semua layanan dari katalog supaya bisa cocokkan nama dari Excel
+  // (tidak hanya yang ada di keranjang)
+  apiFetch("/customer/test-services")
+    .then((res) => res.json())
+    .then((data) => {
+      const allServices = data.test_services ?? data.services ?? data ?? [];
+      // gabungkan katalog + cart, hilangkan duplikat
+      const merged = [
+        ...allServices,
+        ...cartItems.filter((c) => !allServices.some((s) => s.id === c.id)),
+      ];
+      if (ext === "xlsx" || ext === "xls") parseXLSX(file, merged, callback);
+      else parseCSV(file, merged, callback);
+    })
+    .catch(() => {
+      // kalau gagal fetch katalog, fallback ke cart saja
+      if (ext === "xlsx" || ext === "xls") parseXLSX(file, cartItems, callback);
+      else parseCSV(file, cartItems, callback);
+    });
 };
 
 /* ─── StepBar ─── */
@@ -894,7 +950,7 @@ function NavButtons({ step, onBack, onNext }) {
 ═══════════════════════════════════════════════════════ */
 export default function PengajuanUjiSampel() {
   const navigate = useNavigate();
-  const cartItems = getCart();
+  const [cartItems, setCartItems] = useState(() => getCart());
 
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
@@ -1604,16 +1660,32 @@ export default function PengajuanUjiSampel() {
                         const file = e.target.files[0];
                         if (!file) return;
                         setParseMsg("Membaca file...");
-                        parseCSV(file, (parsed, err) => {
+                        parseFile(file, cartItems, (parsed, err) => {
                           if (err) {
                             setParseMsg("✗ " + err);
                             return;
                           }
+                          // Kumpulkan semua pengujian unik dari hasil parse
+                          const allFromFile = parsed.flatMap((s) => s.test_services ?? []);
+                          const unique = [...new Map(allFromFile.map((t) => [t.id, t])).values()];
+
+                          // Tambah ke cart dan update state cartItems sekaligus
+                          // supaya chip langsung tampil tanpa perlu klik lagi
+                          unique.forEach((svc) => addToCart(svc));
+                          if (unique.length > 0) setCartItems(getCart());
+
                           setSamples(
                             parsed.length > 0 ? parsed : [{ ...EMPTY_SAMPLE }],
                           );
+
+                          const addedCount = unique.filter(
+                            (svc) => !cartItems.some((c) => c.id === svc.id)
+                          ).length;
                           setParseMsg(
-                            `✓ ${parsed.length} sampel berhasil diimpor.`,
+                            `✓ ${parsed.length} sampel berhasil diimpor.` +
+                            (addedCount > 0
+                              ? ` (${addedCount} pengujian otomatis ditambah ke keranjang)`
+                              : ""),
                           );
                         });
                         e.target.value = "";
