@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"si-bvet/internal/dto"
+	"si-bvet/internal/models"
 	"si-bvet/internal/services"
 	"si-bvet/internal/storage"
 	"si-bvet/internal/utils"
@@ -180,6 +181,154 @@ func (h *SubmissionHandler) ApproveSubmission(c *gin.Context) {
 
 	utils.MessageResponse(c, http.StatusOK, "Submission approved")
 
+}
+
+func (h *SubmissionHandler) GetSubmissionByIDForCustomer(c *gin.Context) {
+    userID, err := GetUserID(c)
+    if err != nil {
+        RespondUserIDError(c, err)
+        return
+    }
+
+    id, err := GetUintParam(c, "id")
+    if err != nil {
+        utils.ErrorResponse(c, http.StatusBadRequest, "invalid submission id")
+        return
+    }
+
+    submission, err := h.Service.GetSubmissionByIDForUser(id, userID)
+    if err != nil {
+        if err.Error() == "unauthorized" {
+            utils.ErrorResponse(c, http.StatusForbidden, err.Error())
+            return
+        }
+
+        if strings.Contains(strings.ToLower(err.Error()), "record not found") {
+            utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+            return
+        }
+
+        utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+        return
+    }
+
+    utils.DataResponse(c, http.StatusOK, "Submission retrieved successfully", buildCustomerSubmissionDetailResponse(submission))
+}
+
+func buildCustomerSubmissionDetailResponse(submission models.Submission) dto.SubmissionCustomerDetailResponse {
+    resp := dto.SubmissionCustomerDetailResponse{
+        ID:                submission.ID,
+        NoRegistration:    submission.NoRegistration,
+        NoEpi:             submission.NoEpi,
+        NoTicket:          submission.NoTicket,
+        TypeService:       submission.TypeService,
+        PurposeOfTest:     submission.PurposeOfTest,
+        DateOfSend:        submission.DateOfSend,
+        DateOfReceive:     submission.DateOfReceive,
+        SampleTaker:       submission.SampleTaker,
+        IDIsikhnas:        submission.IDIsikhnas,
+        DiagnosisRequired: submission.DiagnosisRequired,
+        AgendaNo:          submission.AgendaNo,
+        CustLetterNo:      submission.CustLetterNo,
+        CourierName:       submission.CourierName,
+        CourierContact:    submission.CourierContact,
+        Notes:             submission.Notes,
+        SamplesCount:      submission.SamplesCount,
+        ProcessStatus:     submission.ProcessStatus,
+        AttachmentDoc:     submission.AttachmentDoc,
+        CreatedAt:         submission.CreatedAt,
+        UpdatedAt:         submission.UpdatedAt,
+    }
+
+    if len(submission.Samples) > 0 {
+        resp.Samples = make([]dto.SubmissionCustomerSampleResponse, 0, len(submission.Samples))
+        for _, sample := range submission.Samples {
+            resp.Samples = append(resp.Samples, buildCustomerSampleResponse(sample))
+        }
+    }
+
+    if submission.Billing != nil {
+        resp.Billing = &dto.SubmissionCustomerBillingResponse{
+            ID:            submission.Billing.ID,
+            EBillingCode:  submission.Billing.EBillingCode,
+            TotalAmount:   submission.Billing.TotalAmount,
+            PaymentStatus: submission.Billing.PaymentStatus,
+            PaidAt:        submission.Billing.PaidAt,
+            IssuedAt:      submission.Billing.IssuedAt,
+            InvoiceDoc:    submission.Billing.InvoiceDoc,
+            ProofPayment:  submission.Billing.ProofPayment,
+        }
+    }
+
+    if submission.LHU != nil {
+        resp.LHUDocument = &dto.SubmissionCustomerLHUResponse{
+            ID:        submission.LHU.ID,
+            NoLhu:     submission.LHU.NoLhu,
+            FilePath:  submission.LHU.FilePath,
+            DateOfPub: submission.LHU.DateOfPub,
+        }
+    }
+
+    return resp
+}
+
+func buildCustomerSampleResponse(sample models.Sample) dto.SubmissionCustomerSampleResponse {
+    resp := dto.SubmissionCustomerSampleResponse{
+        ID:             sample.ID,
+        SampleModel:    sample.SampleModel,
+        SampleCodeCust: sample.SampleCodeCust,
+        SpecimenGroup:  sample.SpecimenGroup,
+        SpecimenType:   sample.SpecimenType,
+        Species:        sample.Species,
+        Preservative:   sample.Preservative,
+        Packaging:      sample.Packaging,
+        ProductionDate: sample.ProductionDate,
+        ExpiredDate:    sample.ExpiredDate,
+        Sex:            sample.Sex,
+        Age:            sample.Age,
+        UnitAge:        sample.UnitAge,
+        Owner:          sample.Owner,
+        TestType:       sample.TestType,
+        LocationType:   sample.LocationType,
+        LocationSmpl:   sample.LocationSmpl,
+        IsVaccinated:   sample.IsVaccinated,
+        Volume:         sample.Volume,
+        Condition:      sample.Condition,
+        TotalSample:    sample.TotalSample,
+    }
+
+    if len(sample.TestRequests) > 0 {
+        resp.TestRequests = make([]dto.SubmissionCustomerTestRequestResponse, 0, len(sample.TestRequests))
+        for _, testRequest := range sample.TestRequests {
+            resp.TestRequests = append(resp.TestRequests, buildCustomerTestRequestResponse(testRequest))
+        }
+    }
+
+    return resp
+}
+
+func buildCustomerTestRequestResponse(testRequest models.TestRequest) dto.SubmissionCustomerTestRequestResponse {
+    resp := dto.SubmissionCustomerTestRequestResponse{
+        ID:            testRequest.ID,
+        TestServiceID: testRequest.TestServiceID,
+        Discount:      testRequest.Discount,
+        PriceAtMoment: testRequest.PriceAtMoment,
+    }
+
+    resp.TestService = &dto.SubmissionCustomerTestServiceResponse{
+        ID:            testRequest.TestService.ID,
+        TestName:      testRequest.TestService.TestName,
+        UnitLab:       testRequest.TestService.UnitLab,
+        Target:        testRequest.TestService.Target,
+        Method:        testRequest.TestService.Method,
+        ResultType:    testRequest.TestService.ResultType,
+        TestReference: testRequest.TestService.TestReference,
+        Price:         testRequest.TestService.Price,
+        Duration:      testRequest.TestService.Duration,
+        Description:   testRequest.TestService.Description,
+    }
+
+    return resp
 }
 
 func (h *SubmissionHandler) RejectSubmission(c *gin.Context) {
@@ -577,3 +726,4 @@ func (h *SubmissionHandler) GetSubmissionByID(c *gin.Context) {
 
 	utils.DataResponse(c, http.StatusOK, "Submission retrieved successfully", submission)
 }
+

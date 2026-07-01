@@ -71,6 +71,12 @@ type MockSubmissionService struct {
 	getByIDErr    error
 
 	getSubmissionByUserErr error
+
+	getByIDForUserCalled bool
+    getByIDForUserID     uint
+    getByIDForUserUserID uint
+    getByIDForUserResult models.Submission
+    getByIDForUserErr    error
 }
 
 var _ services.SubmissionServiceInterface = (*MockSubmissionService)(nil)
@@ -134,6 +140,13 @@ func (m *MockSubmissionService) GetSubmissionByID(submissionID uint) (models.Sub
 	m.getByIDID = submissionID
 
 	return m.getByIDResult, m.getByIDErr
+}
+
+func (m *MockSubmissionService) GetSubmissionByIDForUser(submissionID uint, userID uint) (models.Submission, error) {
+    m.getByIDForUserCalled = true
+    m.getByIDForUserID = submissionID
+    m.getByIDForUserUserID = userID
+    return m.getByIDForUserResult, m.getByIDForUserErr
 }
 
 func (m *MockSubmissionService) GetAll() ([]models.Submission, error) {
@@ -420,6 +433,110 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(mockService.createReq.Samples[0].SampleCodeCust).To(gomega.Equal("SMPL-BULK-001"))
 		})
 	})
+
+	ginkgo.Describe("GetSubmissionByIDForCustomer", func() {
+        var (
+            router      *gin.Engine
+            mockService *MockSubmissionService
+            handler     *handlers.SubmissionHandler
+            w           *httptest.ResponseRecorder
+        )
+
+        ginkgo.BeforeEach(func() {
+            gin.SetMode(gin.TestMode)
+            router = gin.New()
+            mockService = &MockSubmissionService{}
+            handler = handlers.NewSubmissionHandler(mockService)
+        })
+
+        ginkgo.It("returns bad request for invalid submission id", func() {
+            router.GET("/submissions/:id", withUserID(42), handler.GetSubmissionByIDForCustomer)
+            req := httptest.NewRequest(http.MethodGet, "/submissions/abc", nil)
+            w = httptest.NewRecorder()
+
+            router.ServeHTTP(w, req)
+
+            gomega.Expect(w.Code).To(gomega.Equal(http.StatusBadRequest))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("invalid submission id"))
+            gomega.Expect(mockService.getByIDForUserCalled).To(gomega.BeFalse())
+        })
+
+        ginkgo.It("returns forbidden when submission does not belong to user", func() {
+            mockService.getByIDForUserErr = errors.New("unauthorized")
+            router.GET("/submissions/:id", withUserID(42), handler.GetSubmissionByIDForCustomer)
+            req := httptest.NewRequest(http.MethodGet, "/submissions/123", nil)
+            w = httptest.NewRecorder()
+
+            router.ServeHTTP(w, req)
+
+            gomega.Expect(w.Code).To(gomega.Equal(http.StatusForbidden))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("unauthorized"))
+            gomega.Expect(mockService.getByIDForUserCalled).To(gomega.BeTrue())
+            gomega.Expect(mockService.getByIDForUserID).To(gomega.Equal(uint(123)))
+            gomega.Expect(mockService.getByIDForUserUserID).To(gomega.Equal(uint(42)))
+        })
+
+        ginkgo.It("returns submission successfully with compact customer payload", func() {
+            mockService.getByIDForUserResult = models.Submission{
+                ID:             123,
+                UserID:         42,
+                NoTicket:       "TCK-2026-000123",
+                TypeService:    "Aktif",
+                PurposeOfTest:  "untuk kepentingan penelitian",
+                SampleTaker:    "Ivana",
+                ProcessStatus:  "pending_verification",
+                SamplesCount:   1,
+                DiagnosisRequired: false,
+                Samples: []models.Sample{
+                    {
+                        ID:             12,
+                        SubmissionID:   123,
+                        SampleModel:    "Mamalia",
+                        SampleCodeCust: "001",
+                        TotalSample:    2,
+                        TestRequests: []models.TestRequest{
+                            {
+                                ID:            2,
+                                SampleID:      12,
+                                TestServiceID: 416,
+                                Discount:      0,
+                                PriceAtMoment: 7500,
+                                TestService: models.TestService{
+                                    ID:            416,
+                                    TestName:      "AI H5 (2.3.2) HA-HI",
+                                    UnitLab:       "Virologi",
+                                    Target:        "AI subtipe H5 clade 2.3.2",
+                                    Method:        "Haemagglutination - Haemagglutination Inhibition (HA-HI) Test",
+                                    ResultType:    "single results",
+                                    TestReference: "MU.VIR.BVET-LPG No Bagian 03",
+                                    Price:         7500,
+                                    Duration:      "3",
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+
+            router.GET("/submissions/:id", withUserID(42), handler.GetSubmissionByIDForCustomer)
+            req := httptest.NewRequest(http.MethodGet, "/submissions/123", nil)
+            w = httptest.NewRecorder()
+
+            router.ServeHTTP(w, req)
+
+            gomega.Expect(w.Code).To(gomega.Equal(http.StatusOK))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Submission retrieved successfully"))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring(`"id":123`))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring(`"no_ticket":"TCK-2026-000123"`))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring(`"samples"`))
+            gomega.Expect(w.Body.String()).To(gomega.ContainSubstring(`"test_service"`))
+            gomega.Expect(w.Body.String()).ToNot(gomega.ContainSubstring("submission_info"))
+            gomega.Expect(w.Body.String()).ToNot(gomega.ContainSubstring(`"sample":{`))
+            gomega.Expect(mockService.getByIDForUserCalled).To(gomega.BeTrue())
+            gomega.Expect(mockService.getByIDForUserID).To(gomega.Equal(uint(123)))
+            gomega.Expect(mockService.getByIDForUserUserID).To(gomega.Equal(uint(42)))
+        })
+    })
 
 	ginkgo.Describe("UpdateSubmission", func() {
 		var (

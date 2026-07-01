@@ -23,6 +23,7 @@ type SubmissionServiceInterface interface {
 	Create(userID uint, req dto.SubmissionRequest) (models.Submission, error)
 	GetSubmissionsByUser(userID uint) ([]models.Submission, error)
 	GetSubmissionByID(submissionID uint) (models.Submission, error)
+	GetSubmissionByIDForUser(submissionID uint, userID uint) (models.Submission, error)
 	GetByUserPaginated(userID uint, page int, perPage int) ([]models.Submission, int64, error)
 	GetAll() ([]models.Submission, error)
 	GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error)
@@ -72,6 +73,19 @@ func (s *SubmissionService) GetAll() ([]models.Submission, error) {
 
 func (s *SubmissionService) GetSubmissionByID(submissionID uint) (models.Submission, error) {
 	return repositories.GetSubmissionByIDWithRelations(submissionID)
+}
+
+func (s *SubmissionService) GetSubmissionByIDForUser(submissionID uint, userID uint) (models.Submission, error) {
+    submission, err := repositories.GetSubmissionByIDWithRelations(submissionID)
+    if err != nil {
+        return models.Submission{}, err
+    }
+
+    if submission.UserID != userID {
+        return models.Submission{}, errors.New("unauthorized")
+    }
+
+    return submission, nil
 }
 
 func (s *SubmissionService) GetAllPaginated(page int, perPage int) ([]models.Submission, int64, error) {
