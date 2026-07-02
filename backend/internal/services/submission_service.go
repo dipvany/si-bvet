@@ -76,7 +76,7 @@ func (s *SubmissionService) GetSubmissionByID(submissionID uint) (models.Submiss
 }
 
 func (s *SubmissionService) GetSubmissionByIDForUser(submissionID uint, userID uint) (models.Submission, error) {
-    submission, err := repositories.GetSubmissionByIDWithRelations(submissionID)
+    submission, err := repositories.GetSubmissionByIDForUser(submissionID, userID)
     if err != nil {
         return models.Submission{}, err
     }
