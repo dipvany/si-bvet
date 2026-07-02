@@ -23,6 +23,10 @@ type MockUserRepository struct {
 	createUserError  error
 	createUserUser   *models.User
 
+	registerCustomerCalled bool
+	registerCustomerError   error
+	registerCustomerUser    *models.User
+
 	getUserByEmailCalled bool
 	getUserByEmailError  error
 	getUserByEmailUser   *models.User
@@ -60,6 +64,29 @@ func (m *MockUserRepository) SaveUser(user *models.User) error {
 	m.saveUserCalled = true
 	m.saveUserUser = user
 	return m.saveUserError
+}
+
+func (m *MockUserRepository) CreateUserTx(tx *gorm.DB, user *models.User) error {
+	m.createUserCalled = true
+	m.createUserUser = user
+	return m.createUserError
+}
+
+func (m *MockUserRepository) CreateCustomerTx(tx *gorm.DB, customer *models.Customer) error {
+	m.createUserCalled = true
+	return m.createUserError
+}
+
+func (m *MockUserRepository) RegisterCustomerAccount(user *models.User) error {
+	m.registerCustomerCalled = true
+	m.registerCustomerUser = user
+	return m.registerCustomerError
+}
+
+func (m *MockUserRepository) CreateCustomer(customer *models.Customer) error {
+	m.createUserCalled = true
+	m.createUserUser = &models.User{} // Set a default user for the customer
+	return m.createUserError
 }
 
 var _ = ginkgo.Describe("AuthService", func() {
@@ -111,7 +138,7 @@ var _ = ginkgo.Describe("AuthService", func() {
 
 				// Assert
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				gomega.Expect(mockRepo.createUserCalled).To(gomega.BeTrue())
+				gomega.Expect(mockRepo.registerCustomerCalled).To(gomega.BeTrue())
 				gomega.Expect(user.PasswordHash).NotTo(gomega.Equal(plainPassword))
 				gomega.Expect(user.PasswordHash).NotTo(gomega.BeEmpty())
 
@@ -131,7 +158,7 @@ var _ = ginkgo.Describe("AuthService", func() {
 
 				// Assert
 				gomega.Expect(err).To(gomega.HaveOccurred())
-				gomega.Expect(mockRepo.createUserCalled).To(gomega.BeFalse())
+				gomega.Expect(mockRepo.registerCustomerCalled).To(gomega.BeFalse())
 			})
 		})
 
@@ -146,7 +173,7 @@ var _ = ginkgo.Describe("AuthService", func() {
 				// Assert
 				gomega.Expect(err).To(gomega.HaveOccurred())
 				gomega.Expect(err.Error()).To(gomega.Equal("database error"))
-				gomega.Expect(mockRepo.createUserCalled).To(gomega.BeTrue())
+				gomega.Expect(mockRepo.registerCustomerCalled).To(gomega.BeTrue())
 			})
 		})
 
@@ -160,7 +187,7 @@ var _ = ginkgo.Describe("AuthService", func() {
 
 				// Assert
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				gomega.Expect(mockRepo.createUserCalled).To(gomega.BeTrue())
+				gomega.Expect(mockRepo.registerCustomerCalled).To(gomega.BeTrue())
 				gomega.Expect(user.PasswordHash).NotTo(gomega.BeEmpty())
 			})
 		})

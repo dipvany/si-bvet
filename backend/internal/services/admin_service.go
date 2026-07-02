@@ -223,7 +223,7 @@ func UpdateCustomerAccount(userID uint, req dto.CustomerUpdateRequest) error {
 		}
 
 		// Update customer profile fields
-		customer, err := repositories.GetCustomerProfileByUserIDTx(tx, user.ID)
+		customer, err := repositories.GetCustomerProfileTx(tx, user.ID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Jika profil tidak ada, buat baru (opsional, tergantung kebutuhan)

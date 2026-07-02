@@ -12,6 +12,7 @@ import (
 
 type UserServiceInterface interface {
 	GetUserProfile(userID uint) (models.User, error)
+	GetProfileByRole(userID uint, role string) (interface{}, error)
 	UpdateProfile(userID uint, role string, req dto.ProfileRequest) error
 }
 
@@ -19,6 +20,10 @@ type defaultUserService struct{}
 
 func (defaultUserService) GetUserProfile(userID uint) (models.User, error) {
 	return services.GetUserProfile(userID)
+}
+
+func (defaultUserService) GetProfileByRole(userID uint, role string) (interface{}, error) {
+	return services.GetProfileByRole(userID, role)
 }
 
 func (defaultUserService) UpdateProfile(userID uint, role string, req dto.ProfileRequest) error {
@@ -52,7 +57,7 @@ func (h *UserHandler) Profile(c *gin.Context) {
 		return
 	}
 
-	profile, err := h.Service.GetUserProfile(userID)
+	profile, err := h.Service.GetProfileByRole(userID, c.GetString("role"))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -95,21 +100,4 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	utils.MessageResponse(c, http.StatusOK, "Profile updated successfully")
-}
-
-// dashboard user berdasarkan role
-func UserDashboard(c *gin.Context) {
-	defaultUserHandler.UserDashboard(c)
-}
-
-func (h *UserHandler) UserDashboard(c *gin.Context) {
-
-	role, err := GetRole(c)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Welcome to the " + role + " dashboard",
-	})
 }

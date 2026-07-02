@@ -18,6 +18,7 @@ import (
 type MockUserService struct {
 	getCalled bool
 	getUserID uint
+	getRole    string
 	getResult models.User
 	getErr    error
 
@@ -33,6 +34,13 @@ var _ handlers.UserServiceInterface = (*MockUserService)(nil)
 func (m *MockUserService) GetUserProfile(userID uint) (models.User, error) {
 	m.getCalled = true
 	m.getUserID = userID
+	return m.getResult, m.getErr
+}
+
+func (m *MockUserService) GetProfileByRole(userID uint, role string) (interface{}, error) {
+	m.getCalled = true
+	m.getUserID = userID
+	m.getRole = role
 	return m.getResult, m.getErr
 }
 
@@ -101,7 +109,6 @@ func TestUserAndNotificationHandlers(t *testing.T) {
 		})
 		router.GET("/profile", handler.Profile)
 		router.PATCH("/profile", handler.UpdateProfile)
-		router.GET("/dashboard", handler.UserDashboard)
 
 		profileReq := httptest.NewRequest(http.MethodGet, "/profile", nil)
 		profileRes := httptest.NewRecorder()
@@ -141,17 +148,7 @@ func TestUserAndNotificationHandlers(t *testing.T) {
 		if mockService.updateReq.FullName == nil || *mockService.updateReq.FullName != "Jane Doe Updated" {
 			t.Fatalf("unexpected full name in update request: %+v", mockService.updateReq.FullName)
 		}
-
-		dashboardReq := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
-		dashboardRes := httptest.NewRecorder()
-		router.ServeHTTP(dashboardRes, dashboardReq)
-
-		if dashboardRes.Code != http.StatusOK {
-			t.Fatalf("expected dashboard status 200, got %d", dashboardRes.Code)
-		}
-		if !strings.Contains(dashboardRes.Body.String(), "customer dashboard") {
-			t.Fatalf("unexpected dashboard body: %s", dashboardRes.Body.String())
-		}
+	
 	})
 
 	t.Run("UserHandler error paths", func(t *testing.T) {
@@ -160,7 +157,6 @@ func TestUserAndNotificationHandlers(t *testing.T) {
 		router := gin.New()
 		router.GET("/profile", handler.Profile)
 		router.PATCH("/profile", handler.UpdateProfile)
-		router.GET("/dashboard", handler.UserDashboard)
 
 		profileReq := httptest.NewRequest(http.MethodGet, "/profile", nil)
 		profileRes := httptest.NewRecorder()
@@ -180,14 +176,6 @@ func TestUserAndNotificationHandlers(t *testing.T) {
 
 		if updateRes.Code != http.StatusUnauthorized {
 			t.Fatalf("expected update unauthorized status 401, got %d", updateRes.Code)
-		}
-
-		dashboardReq := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
-		dashboardRes := httptest.NewRecorder()
-		router.ServeHTTP(dashboardRes, dashboardReq)
-
-		if dashboardRes.Code != http.StatusInternalServerError {
-			t.Fatalf("expected dashboard error status 500, got %d", dashboardRes.Code)
 		}
 	})
 

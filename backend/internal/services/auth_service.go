@@ -17,9 +17,13 @@ import (
 // UserRepository interface untuk dependency injection
 type UserRepository interface {
 	CreateUser(user *models.User) error
+	CreateCustomer(customer *models.Customer) error
+	RegisterCustomerAccount(user *models.User) error
 	GetUserByEmail(email string) (*models.User, error)
 	GetUserByID(id uint) (*models.User, error)
 	SaveUser(user *models.User) error
+	CreateUserTx(tx *gorm.DB, user *models.User) error
+	CreateCustomerTx(tx *gorm.DB, customer *models.Customer) error
 }
 
 // AuthServiceInterface defines auth service contract untuk testing
@@ -51,6 +55,22 @@ func NewAuthService(userRepo UserRepository) *AuthService {
 	}
 }
 
+func (d *DefaultUserRepository) CreateCustomer(customer *models.Customer) error {
+    return repositories.CreateCustomer(customer)
+}
+
+func (d *DefaultUserRepository) CreateUserTx(tx *gorm.DB, user *models.User) error {
+    return repositories.CreateUserTx(tx, user)
+}
+
+func (d *DefaultUserRepository) CreateCustomerTx(tx *gorm.DB, customer *models.Customer) error {
+    return repositories.CreateCustomerTx(tx, customer)
+}
+
+func (d *DefaultUserRepository) RegisterCustomerAccount(user *models.User) error {
+	return repositories.RegisterCustomerAccount(user)
+}
+
 // RegisterUser melakukan hashing password dan menyimpan user ke database
 func (s *AuthService) RegisterUser(user *models.User) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.PasswordHash), bcrypt.DefaultCost)
@@ -58,11 +78,13 @@ func (s *AuthService) RegisterUser(user *models.User) error {
 		return err
 	}
 	user.PasswordHash = string(hash)
-	err = s.userRepo.CreateUser(user)
-	if err == nil {
-		LogSystemActivity(fmt.Sprintf("Registrasi akun baru diterima untuk %s (%s)", user.FullName, user.Email))
+
+	if err := s.userRepo.RegisterCustomerAccount(user); err != nil {
+		return err
 	}
-	return err
+
+	LogSystemActivity(fmt.Sprintf("Registrasi akun baru diterima untuk %s (%s)", user.FullName, user.Email))
+	return nil
 }
 
 // LoginUser memvalidasi email dan password, mengembalikan user jika valid

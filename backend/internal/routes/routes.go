@@ -66,7 +66,6 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 		{
 			protected.GET("/profile", userHandler.Profile)
 			protected.PATCH("/profile", userHandler.UpdateProfile)
-			protected.GET("/dashboard", userHandler.UserDashboard)
 
 			protectedAuth := protected.Group("/auth")
 			{
