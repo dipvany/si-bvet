@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
@@ -32,7 +33,10 @@ func CreateFeedback(req dto.FeedbackRequest) error {
 
 	err := repositories.CreateFeedback(&feedback)
 	if err == nil {
-		LogSystemActivity(fmt.Sprintf("Feedback created from: %s", feedback.Fullname))
+		if emailErr := SendFeedbackSubmittedEmail(req); emailErr != nil {
+			log.Printf("failed to send feedback confirmation email for %s: %v", feedback.Email, emailErr)
+		}
+    	LogSystemActivity(fmt.Sprintf("Feedback created from: %s", feedback.Fullname))
 	}
 	return err
 }

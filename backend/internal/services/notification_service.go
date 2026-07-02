@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
 	"si-bvet/internal/utils"
@@ -165,4 +166,31 @@ func mapSubmissionStatus(status string) string {
 	default:
 		return status
 	}
+}
+
+func SendFeedbackSubmittedEmail(feedback dto.FeedbackRequest) error {
+    body := fmt.Sprintf(
+        "Halo %s,\n\nTerima kasih telah mengirimkan feedback ke SI-BVET. Berikut ringkasan data yang kami terima:\n\n"+
+            "Nama: %s\nEmail: %s\nJenis Kelamin: %s\nPendidikan Terakhir: %s\nPekerjaan: %s\nJenis Layanan: %s\n"+
+            "Kesesuaian Persyaratan Pelayanan dengan Jenis Layanannya: %d\nKemudahan Prosedur Di sini: %d\nKecepatan Waktu Dalam Memberikan Layanan: %d\nKewajaran Biaya/Tarif Pelayanan: %d\nKesesuaian Produk Pelayanan Antara Yang Tercantum Dalam Standar Pelayanan Dengan Hasil Yang Diberikan: %d\nKompetensi/Kemampuan Petugas Dalam Pelayanan: %d\nPerilaku Petugas Dalam Pelayanan: %d\nKualitas Sarana dan Prasarana: %d\nPenanganan Pengaduan Pengguna Layanan: %d\n\n"+
+            "Feedback Anda akan kami tinjau untuk peningkatan layanan.\n\nTerima kasih.",
+        feedback.Fullname,
+        feedback.Fullname,
+        feedback.Email,
+        feedback.Gender,
+        feedback.LastEducation,
+        feedback.Occupation,
+        feedback.TypeService,
+        feedback.Rating1,
+        feedback.Rating2,
+        feedback.Rating3,
+        feedback.Rating4,
+        feedback.Rating5,
+        feedback.Rating6,
+        feedback.Rating7,
+        feedback.Rating8,
+        feedback.Rating9,
+    )
+
+    return utils.SendEmail(feedback.Email, "Feedback Berhasil Diterima - SI-BVET", body)
 }
