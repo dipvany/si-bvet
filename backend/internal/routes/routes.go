@@ -59,6 +59,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 		}
 
 		api.POST("/complaints", complaintHandler.CreateComplaint)
+		api.POST("/feedbacks", feedbackHandler.CreateFeedback)
 
 		// PROTECTED
 		protected := api.Group("/")
@@ -125,6 +126,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 				adminGroup.POST("/submissions/:id/lhu", lhuHandler.UploadLHU)
 
 				adminGroup.GET("/feedbacks", feedbackHandler.GetAllFeedbacks)
+				adminGroup.GET("/feedbacks/:id", feedbackHandler.GetFeedbackByID)
 
 				adminGroup.GET("/complaints", complaintHandler.GetAllComplaints)
 				adminGroup.PATCH("/complaints/:id/respond", complaintHandler.UpdateComplaintResponse)
@@ -154,10 +156,6 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 				customerGroup.GET("/submissions/:id/lhu", lhuHandler.GetLHU)
 				customerGroup.GET("/submissions/:id/lhu/download", lhuHandler.DownloadLHU)
-
-				customerGroup.POST("/feedbacks", feedbackHandler.CreateFeedback)
-				customerGroup.GET("/feedbacks", feedbackHandler.GetMyFeedbacks)
-
 			}
 
 		}

@@ -11,23 +11,23 @@ import (
 )
 
 type FeedbackServiceInterface interface {
-	CreateFeedback(userID uint, req dto.FeedbackRequest) error
+	CreateFeedback(req dto.FeedbackRequest) error
 	GetAllFeedbacks() ([]models.Feedback, error)
-	GetFeedbackByUserID(userID uint) ([]models.Feedback, error)
+	GetFeedbackByID(id uint) (*models.Feedback, error)
 }
 
 type defaultFeedbackService struct{}
 
-func (defaultFeedbackService) CreateFeedback(userID uint, req dto.FeedbackRequest) error {
-	return services.CreateFeedback(userID, req)
+func (defaultFeedbackService) CreateFeedback(req dto.FeedbackRequest) error {
+	return services.CreateFeedback(req)
 }
 
 func (defaultFeedbackService) GetAllFeedbacks() ([]models.Feedback, error) {
 	return services.GetAllFeedbacks()
 }
 
-func (defaultFeedbackService) GetFeedbackByUserID(userID uint) ([]models.Feedback, error) {
-	return services.GetFeedbackByUserID(userID)
+func (defaultFeedbackService) GetFeedbackByID(id uint) (*models.Feedback, error) {
+	return services.GetFeedbackByID(id)
 }
 
 type FeedbackHandler struct {
@@ -49,12 +49,6 @@ func CreateFeedback(c *gin.Context) {
 }
 
 func (h *FeedbackHandler) CreateFeedback(c *gin.Context) {
-	userID, err := GetUserID(c)
-	if err != nil {
-		RespondUserIDError(c, err)
-		return
-	}
-
 	var req dto.FeedbackRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,8 +56,7 @@ func (h *FeedbackHandler) CreateFeedback(c *gin.Context) {
 		return
 	}
 
-	err = h.Service.CreateFeedback(userID, req)
-	if err != nil {
+	if err := h.Service.CreateFeedback(req); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -86,24 +79,25 @@ func (h *FeedbackHandler) GetAllFeedbacks(c *gin.Context) {
 	})
 }
 
-func GetMyFeedbacks(c *gin.Context) {
-	defaultFeedbackHandler.GetMyFeedbacks(c)
+func GetFeedbackByID(c *gin.Context) {
+	defaultFeedbackHandler.GetFeedbackByID(c)
 }
 
-func (h *FeedbackHandler) GetMyFeedbacks(c *gin.Context) {
-	userID, err := GetUserID(c)
+func (h *FeedbackHandler) GetFeedbackByID(c *gin.Context) {
+	id, err := GetUintParam(c, "id")
+
 	if err != nil {
-		RespondUserIDError(c, err)
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid feedback ID")
 		return
 	}
 
-	feedbacks, err := h.Service.GetFeedbackByUserID(userID)
+	feedback, err := services.GetFeedbackByID(id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"feedbacks": feedbacks,
+		"feedback": feedback,
 	})
 }

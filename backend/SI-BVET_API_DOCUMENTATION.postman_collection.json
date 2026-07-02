@@ -78,6 +78,10 @@
       "value": "1"
     },
     {
+      "key": "feedback_id",
+      "value": "1"
+    },
+    {
       "key": "notification_id",
       "value": "1"
     }
@@ -202,6 +206,22 @@
             "url": "{{base_url}}/complaints",
             "description": "Buat complaint baru (publik, tidak perlu login). Field attachment opsional, field tanggal menerima format RFC3339 atau YYYY-MM-DD."
           }
+        },
+        {
+          "name": "Create Feedback (Public)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Nama Pengirim\",\n  \"email\": \"pengirim@example.com\",\n  \"rating\": 5,\n  \"comments\": \"Pelayanan sangat baik\"\n}",
+              "options": {
+                "raw": { "language": "json" }
+              }
+            },
+            "url": "{{base_url}}/feedbacks",
+            "description": "Buat feedback baru (publik, tidak perlu login)."
+          }
         }
       ]
     },
@@ -236,17 +256,6 @@
             },
             "url": "{{base_url}}/profile",
             "description": "Update profile sesuai role aktif. Field yang dikirim boleh parsial."
-          }
-        },
-        {
-          "name": "Dashboard",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
-            ],
-            "url": "{{base_url}}/dashboard",
-            "description": "Dashboard sederhana sesuai role login."
           }
         },
         {
@@ -771,6 +780,17 @@
           }
         },
         {
+          "name": "Get Feedback By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "url": "{{base_url}}/admin/feedbacks/{{feedback_id}}",
+            "description": "Ambil detail feedback berdasarkan ID."
+          }
+        },
+        {
           "name": "Get All Complaints",
           "request": {
             "method": "GET",
@@ -1014,36 +1034,6 @@
             ],
             "url": "{{base_url}}/customer/submissions/{{submission_id}}/lhu/download",
             "description": "Download file LHU."
-          }
-        },
-        {
-          "name": "Create Feedback",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token_customer}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"rating\": 5,\n  \"comments\": \"Pelayanan sangat baik\"\n}",
-              "options": {
-                "raw": { "language": "json" }
-              }
-            },
-            "url": "{{base_url}}/customer/feedbacks",
-            "description": "Buat feedback dari customer login."
-          }
-        },
-        {
-          "name": "Get My Feedbacks",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
-            ],
-            "url": "{{base_url}}/customer/feedbacks",
-            "description": "Daftar feedback milik customer login."
           }
         }
       ]
