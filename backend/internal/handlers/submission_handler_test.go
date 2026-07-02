@@ -499,7 +499,6 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
                                 ID:            2,
                                 SampleID:      12,
                                 TestServiceID: 416,
-                                Discount:      0,
                                 PriceAtMoment: 7500,
                                 TestService: models.TestService{
                                     ID:            416,

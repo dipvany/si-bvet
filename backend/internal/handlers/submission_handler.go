@@ -311,7 +311,6 @@ func buildCustomerTestRequestResponse(testRequest models.TestRequest) dto.Submis
     resp := dto.SubmissionCustomerTestRequestResponse{
         ID:            testRequest.ID,
         TestServiceID: testRequest.TestServiceID,
-        Discount:      testRequest.Discount,
         PriceAtMoment: testRequest.PriceAtMoment,
     }
 

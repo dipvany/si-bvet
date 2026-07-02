@@ -499,7 +499,6 @@ func createSamplesAndTestsTx(tx *gorm.DB, submissionID uint, samples []dto.Sampl
 				SampleID:      sample.ID,
 				TestServiceID: testReq.TestServiceID,
 				PriceAtMoment: service.Price,
-				Discount:      0,
 			}
 
 			if err := repositories.CreateTestRequestTx(tx, &createReq); err != nil {
