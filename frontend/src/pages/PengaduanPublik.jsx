@@ -49,7 +49,7 @@ function TextAreaSection({ label, value, onChange, placeholder }) {
 export default function PengaduanPublik() {
   const [form, setForm] = useState({
     fullname: "", email: "", id_number: "", phone: "",
-    date_of_complaint: "", subjects: "", description: "",
+    date_of_complaint: "", subjects: "", description: "", suggestion: "",
   });
   const [attachment, setAttachment] = useState(null);
   const [agreed, setAgreed]         = useState(false);
@@ -82,14 +82,14 @@ export default function PengaduanPublik() {
     setLoading(true);
     try {
       const fd = new FormData();
-      fd.append("fullname",           form.fullname);
-      fd.append("email",              form.email);
-      fd.append("id_number",          form.id_number);
-      fd.append("phone",              form.phone);
-      fd.append("suggestion",          form.subjects);       // backend pakai field "suggestion"
-      fd.append("description",        form.description);
-      fd.append("date_of_complaint",  form.date_of_complaint); // format YYYY-MM-DD
-      if (attachment) fd.append("attachment", attachment);     // opsional
+      fd.append("fullname",          form.fullname);
+      fd.append("email",             form.email);
+      fd.append("id_number",         form.id_number);
+      fd.append("phone",             form.phone);
+      fd.append("suggestion",        form.subjects);       // Sumbang Pikiran → endpoint "suggestion"
+      fd.append("description",       form.description);   // Uraian Pengaduan → endpoint "description"
+      fd.append("date_of_complaint", form.date_of_complaint);
+      if (attachment) fd.append("attachment", attachment);
 
       // Endpoint publik — TIDAK butuh header Authorization
       const res = await fetch(`${API_BASE}/complaints`, {
@@ -111,7 +111,7 @@ export default function PengaduanPublik() {
 
   const resetForm = () => {
     setSuccess(false);
-    setForm({ fullname:"", email:"", id_number:"", phone:"", date_of_complaint:"", subjects:"", description:"" });
+    setForm({ fullname:"", email:"", id_number:"", phone:"", date_of_complaint:"", subjects:"", description:"", suggestion:"" });
     setAttachment(null);
     setAgreed(false);
     setError("");
@@ -236,16 +236,16 @@ export default function PengaduanPublik() {
 
             <div className="border-t border-gray-100 pt-1" />
 
-            <Field label="Subjek Pengaduan">
+            <Field label="Sumbang Pikiran, Saran, Gagasan, Permintaan Penyelesaian Masalah yang Diajukan">
               <TextInput value={form.subjects} onChange={set("subjects")}
                 placeholder="Contoh: Keterlambatan hasil pengujian" />
             </Field>
 
             <TextAreaSection
-              label="Uraian Pengaduan"
+              label="Uraian Pelayanan yang Tidak Sesuai dengan Standar Pelayanan"
               value={form.description}
               onChange={set("description")}
-              placeholder="Jelaskan detail pengaduan, saran, atau gagasan Anda"
+              placeholder="Jelaskan detail pengaduan Anda secara lengkap"
             />
 
             {/* Lampiran — opsional sesuai dokumentasi API */}

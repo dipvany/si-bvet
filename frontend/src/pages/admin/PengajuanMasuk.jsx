@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAdminSubmissions } from "../../services/adminServices";
+import { getAdminSubmissions, exportSubmissions } from "../../services/adminServices";
 
 /**
  * PengajuanMasuk — daftar pengajuan uji sampel dari customer.
@@ -73,6 +73,12 @@ export default function PengajuanMasuk() {
   const [search,      setSearch]      = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
+  // ── State pilih & export ────────────────────────────────────────────
+  const [selectMode,  setSelectMode]  = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [exporting,   setExporting]   = useState(false);
+  const [exportError, setExportError] = useState("");
+
   useEffect(() => { fetchData(page); }, [page]);
 
   const fetchData = async (p = 1) => {
@@ -121,6 +127,76 @@ export default function PengajuanMasuk() {
     });
   };
 
+  // ── Pilih baris ──────────────────────────────────────────────────
+  const toggleSelectOne = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const allVisibleSelected = filtered.length > 0 && filtered.every(s => selectedIds.has(s.id));
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        filtered.forEach(s => next.delete(s.id));
+      } else {
+        filtered.forEach(s => next.add(s.id));
+      }
+      return next;
+    });
+  };
+
+  // ── Mode pilih (dibuka lewat tombol Export) ─────────────────────
+  const openSelectMode = () => { setSelectMode(true); setExportError(""); };
+  const closeSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+    setExportError("");
+  };
+
+  // ── Export ke Excel ─────────────────────────────────────────────
+  const handleExport = async (mode) => {
+    // mode: "all" | "selected"
+    const payload = mode === "all"
+      ? { export_all: true }
+      : { export_all: false, submission_ids: Array.from(selectedIds) };
+
+    if (mode === "selected" && payload.submission_ids.length === 0) {
+      setExportError("Pilih minimal 1 pengajuan untuk diekspor.");
+      return;
+    }
+
+    setExporting(true); setExportError("");
+    try {
+      const res = await exportSubmissions(payload);
+      if (!res.ok) {
+        let msg = "Gagal mengekspor data.";
+        try { const json = await res.json(); msg = json.error ?? json.message ?? msg; } catch { /* noop */ }
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : `pengajuan_export_${Date.now()}.xlsx`;
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+
+      closeSelectMode();
+    } catch (err) {
+      setExportError(err.message ?? "Gagal mengekspor data.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -131,17 +207,85 @@ export default function PengajuanMasuk() {
             Tinjauan dan verifikasi pengajuan uji sampel dari pelanggan
           </p>
         </div>
-        <button onClick={() => fetchData(page)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
-            bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-            strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Tombol Export (buka mode pilih) */}
+          {!selectMode && (
+            <button
+              onClick={openSelectMode}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
+                bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export
+            </button>
+          )}
+          {/* Tombol Refresh */}
+          <button onClick={() => fetchData(page)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
+              bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {/* Bar aksi mode pilih (muncul setelah klik Export) */}
+      {selectMode && (
+        <div className="bg-[#EEF0F8] border border-[#233B6E]/20 rounded-xl px-4 py-3
+          flex items-center justify-between flex-wrap gap-3">
+          <label className="flex items-center gap-2 text-xs font-semibold text-[#233B6E] cursor-pointer">
+            <input type="checkbox"
+              checked={allVisibleSelected}
+              onChange={toggleSelectAllVisible}
+              className="w-4 h-4 rounded border-gray-300 accent-[#233B6E] cursor-pointer" />
+            Pilih Semua di Halaman Ini
+            <span className="font-normal text-gray-500">
+              · {selectedIds.size} dipilih
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            <button onClick={() => handleExport("selected")}
+              disabled={exporting || selectedIds.size === 0}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white
+                bg-[#233B6E] hover:bg-[#1a2d56] px-3 py-2 rounded-lg transition-colors
+                disabled:opacity-40 disabled:cursor-not-allowed">
+              {exporting && <Spinner />}
+              Export yang Dipilih{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+            </button>
+            <button onClick={() => handleExport("all")}
+              disabled={exporting}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
+                bg-white border border-[#233B6E]/30 hover:bg-[#dde0f0] px-3 py-2 rounded-lg
+                transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              {exporting && <Spinner />}
+              Export Semua Data
+            </button>
+            <button onClick={closeSelectMode} disabled={exporting}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700
+                px-3 py-2 rounded-lg transition-colors disabled:opacity-40">
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error export */}
+      {exportError && (
+        <div className="bg-red-50 border border-red-200 text-red-600 text-sm
+          rounded-xl px-4 py-3 flex items-center justify-between">
+          {exportError}
+          <button onClick={() => setExportError("")}
+            className="text-xs font-semibold hover:underline ml-4">Tutup</button>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -218,6 +362,14 @@ export default function PengajuanMasuk() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
+                {selectMode && (
+                  <th className="px-4 py-3 text-left w-8">
+                    <input type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAllVisible}
+                      className="w-4 h-4 rounded border-gray-300 accent-[#233B6E] cursor-pointer" />
+                  </th>
+                )}
                 {["No.", "No. Tiket", "User ID", "Jenis Layanan", "Tujuan Pengujian",
                   "Jml Sampel", "Status", "Aksi"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold
@@ -229,14 +381,14 @@ export default function PengajuanMasuk() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={8} className="px-4 py-14 text-center">
+                <tr><td colSpan={selectMode ? 9 : 8} className="px-4 py-14 text-center">
                   <span className="flex items-center justify-center gap-2
                     text-gray-400 text-sm">
                     <Spinner />Memuat data...
                   </span>
                 </td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-14 text-center
+                <tr><td colSpan={selectMode ? 9 : 8} className="px-4 py-14 text-center
                   text-gray-400 text-sm">
                   {search || filterStatus !== "all"
                     ? "Tidak ada hasil yang cocok."
@@ -245,10 +397,18 @@ export default function PengajuanMasuk() {
               ) : filtered.map((s, i) => (
                 <tr key={s.id}
                   className="hover:bg-[#F6F7FB] transition-colors cursor-pointer"
-                  onClick={() => navigate(
-                    `detail/${s.id}`,
-                    { state: { submission: s } }
-                  )}>
+                  onClick={() => selectMode
+                    ? toggleSelectOne(s.id)
+                    : navigate(`detail/${s.id}`, { state: { submission: s } })
+                  }>
+                  {selectMode && (
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <input type="checkbox"
+                        checked={selectedIds.has(s.id)}
+                        onChange={() => toggleSelectOne(s.id)}
+                        className="w-4 h-4 rounded border-gray-300 accent-[#233B6E] cursor-pointer" />
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-gray-400 text-xs">
                     {(page - 1) * PER_PAGE + i + 1}.
                   </td>
