@@ -260,13 +260,13 @@ func GetUserProfile(userID uint) (models.User, error) {
 
 func GetAdminProfile(userID uint) (models.Admin, error) {
 	var admin models.Admin
-	err := db.DB.Where("user_id = ?", userID).First(&admin).Error
+	err := db.DB.Preload("User").Where("user_id = ?", userID).First(&admin).Error
 	return admin, err
 }
 
 func GetCustomerProfile(userID uint) (models.Customer, error) {
 	var customer models.Customer
-	err := db.DB.Where("user_id = ?", userID).First(&customer).Error
+	err := db.DB.Preload("User").Where("user_id = ?", userID).First(&customer).Error
 	return customer, err
 }
 
@@ -275,4 +275,3 @@ func GetCustomerProfileTx(tx *gorm.DB, userID uint) (models.Customer, error) {
 	err := tx.Where("user_id = ?", userID).First(&customer).Error
 	return customer, err
 }
-
