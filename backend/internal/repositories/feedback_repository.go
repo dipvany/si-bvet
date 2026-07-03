@@ -48,6 +48,10 @@ func CreateFeedbackQuestion(question *models.FeedbackQuestion) error {
 	return db.DB.Create(question).Error
 }
 
+func CreateFeedbackQuestionsTx(tx *gorm.DB, questions []*models.FeedbackQuestion) error {
+	return tx.Create(questions).Error
+}
+
 func GetFeedbackQuestionByID(id uint) (*models.FeedbackQuestion, error) {
 	var question models.FeedbackQuestion
 	err := db.DB.First(&question, id).Error

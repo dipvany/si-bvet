@@ -39,12 +39,15 @@ func CreateFeedback(req dto.FeedbackRequest) error {
 		return nil
 	})
 
-	if err == nil {
-		if emailErr := SendFeedbackSubmittedEmail(req); emailErr != nil {
-			log.Printf("failed to send feedback confirmation email for %s: %v", feedback.Email, emailErr)
-		}
-    	LogSystemActivity(fmt.Sprintf("Feedback created from: %s", feedback.Fullname))
-	}
+    if err == nil {
+        go func(email string, fullname string) {
+            if emailErr := SendFeedbackSubmittedEmail(req); emailErr != nil {
+                log.Printf("failed to send feedback confirmation email for %s: %v", feedback.Email, emailErr)
+            }
+            LogSystemActivity(fmt.Sprintf("Feedback created from: %s", feedback.Fullname))
+        }(feedback.Email, feedback.Fullname)
+    }
+
 	return err
 }
 
@@ -74,6 +77,33 @@ func CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQu
 
 	LogSystemActivity(fmt.Sprintf("Pertanyaan feedback baru dibuat: '%s'", question.QuestionText))
 	return question, nil
+}
+
+func CreateFeedbackQuestions(reqs []dto.FeedbackQuestionRequest) ([]*models.FeedbackQuestion, error) {
+	var questions []*models.FeedbackQuestion
+	for _, req := range reqs {
+		isActive := true
+		if req.IsActive != nil {
+			isActive = *req.IsActive
+		}
+		question := &models.FeedbackQuestion{
+			QuestionText: req.QuestionText,
+			IsActive:     isActive,
+		}
+		questions = append(questions, question)
+	}
+
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		return repositories.CreateFeedbackQuestionsTx(tx, questions)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	LogSystemActivity(fmt.Sprintf("%d pertanyaan feedback baru berhasil dibuat (bulk)", len(questions)))
+
+	return questions, nil
 }
 
 func UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {

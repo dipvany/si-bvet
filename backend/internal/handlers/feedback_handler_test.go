@@ -71,6 +71,10 @@ func (m *MockFeedbackService) CreateFeedbackQuestion(req dto.FeedbackQuestionReq
 	return m.createQuestionResult, m.createQuestionErr
 }
 
+func (m *MockFeedbackService) CreateFeedbackQuestions(reqs []dto.FeedbackQuestionRequest) ([]*models.FeedbackQuestion, error) {
+	return nil, nil
+}
+
 func (m *MockFeedbackService) UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
 	m.updateQuestionCalled = true
 	m.updateQuestionID = id
