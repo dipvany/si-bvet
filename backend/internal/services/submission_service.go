@@ -438,7 +438,15 @@ func buildSubmission(userID uint, req dto.SubmissionRequest) models.Submission {
 		UserID:        userID,
 		TypeService:   req.TypeService,
 		PurposeOfTest: req.PurposeOfTest,
+		DateOfSend: parseDateOrNil(req.DateOfSend),
+		DateOfReceive: parseDateOrNil(req.DateOfReceive),
 		SampleTaker:   req.SampleTaker,
+		IDIsikhnas:    req.IDIsikhnas,
+		DiagnosisRequired: req.DiagnosisRequired,
+		AgendaNo: req.AgendaNo,
+		CustLetterNo: req.CustLetterNo,
+		CourierName:   req.CourierName,
+		CourierContact: req.CourierContact,
 		SamplesCount:  len(req.Samples),
 		Notes:         req.Notes,
 		ProcessStatus: "pending_verification",
@@ -1287,4 +1295,9 @@ func parseDate(value string) (*time.Time, error) {
 	}
 
 	return nil, lastErr
+}
+
+func parseDateOrNil(value string) *time.Time {
+	t, _ := parseDate(value)
+	return t
 }
