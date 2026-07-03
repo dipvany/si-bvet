@@ -149,7 +149,10 @@ export default function RegisterPage() {
       <div className="w-full max-w-[680px] bg-[#EFF0F4] rounded-3xl px-8 sm:px-14 pb-10 shadow-2xl">
 
         <div className="flex flex-col items-center mb-6 pt-6">
-          <img src={logo} alt="SI-BVET Lampung" className="h-20 w-auto object-contain" />
+          <Link to="/" className="group">
+            <img src={logo} alt="SI-BVET Lampung"
+              className="h-20 w-auto object-contain group-hover:opacity-80 transition-opacity" />
+          </Link>
           <p className="text-[#233B6E] font-extrabold text-lg tracking-tight mt-2 leading-tight text-center">
             SI-BVET Lampung
           </p>
