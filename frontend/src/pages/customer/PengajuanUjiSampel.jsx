@@ -742,21 +742,35 @@ export default function PengajuanUjiSampel() {
     apiFetch("/profile")
       .then((r) => r.json())
       .then((data) => {
-        const p = data.profile ?? data;
-        const c = p.customer ?? {};
-        setProfile(p);
+        const prof = data.profile ?? data;
+
+        // Handle dua kemungkinan struktur response backend:
+        // Struktur A (API contract): { fullname, email, customer: { province, ... } }
+        // Struktur B (backend baru): { province, User: { fullname, email } }
+        let user, c;
+        if (prof.fullname || prof.email) {
+          // Struktur A
+          user = prof;
+          c    = prof.customer ?? {};
+        } else {
+          // Struktur B
+          user = prof.User ?? {};
+          c    = prof;
+        }
+
+        setProfile({ ...user });
         setStep3({
-          fullname: p.fullname ?? "",
-          phone: p.phone ?? "",
-          institution: p.institution ?? "",
-          address: c.address ?? "",
-          province: c.province ?? "",
-          city: c.city ?? "",
-          subdistrict: c.subdistrict ?? "",
-          village: c.village ?? "",
-          zip_code: c.zip_code ?? "",
-          pic_name: c.pic_name ?? "",
-          pic_contact: c.pic_contact ?? "",
+          fullname:     user.fullname     ?? "",
+          phone:        user.phone        ?? "",
+          institution:  user.institution  ?? "",
+          address:      c.address         ?? "",
+          province:     c.province        ?? "",
+          city:         c.city            ?? "",
+          subdistrict:  c.subdistrict     ?? "",
+          village:      c.village         ?? "",
+          zip_code:     c.zip_code        ?? "",
+          pic_name:     c.pic_name        ?? "",
+          pic_contact:  c.pic_contact     ?? "",
           lhu_receiver: c.lhu_receiver_name    ?? c.lhu_receiver ?? "",
           lhu_contact:  c.lhu_receiver_contact ?? c.lhu_contact  ?? "",
         });
