@@ -708,8 +708,12 @@ export default function PengajuanUjiSampel() {
     type_service: "",
     purpose_of_test: "",
     date_of_send: "",
+    date_of_receive: "",
     courier_name: "",
     courier_contact: "",
+    cust_letter_no: "",
+    id_isikhnas: "",
+    agenda_no: "",
     diagnosis_required: false,
     notes: "",
   });
@@ -883,9 +887,12 @@ export default function PengajuanUjiSampel() {
       fd.append("type_service", step1.type_service);
       fd.append("purpose_of_test", step1.purpose_of_test);
       fd.append("date_of_send", step1.date_of_send);
+      if (step1.date_of_receive) fd.append("date_of_receive", step1.date_of_receive);
       if (step1.courier_name) fd.append("courier_name", step1.courier_name);
-      if (step1.courier_contact)
-        fd.append("courier_contact", step1.courier_contact);
+      if (step1.courier_contact) fd.append("courier_contact", step1.courier_contact);
+      if (step1.cust_letter_no) fd.append("cust_letter_no", step1.cust_letter_no);
+      if (step1.id_isikhnas) fd.append("id_isikhnas", step1.id_isikhnas);
+      if (step1.agenda_no) fd.append("agenda_no", step1.agenda_no);
       fd.append("diagnosis_required", String(step1.diagnosis_required));
       if (step1.notes) fd.append("notes", step1.notes);
       fd.append(
@@ -1024,8 +1031,12 @@ export default function PengajuanUjiSampel() {
                   { label: "Jenis Layanan", val: step1.type_service },
                   { label: "Tujuan Pengujian", val: step1.purpose_of_test },
                   { label: "Tanggal Kirim", val: step1.date_of_send },
+                  { label: "Tanggal Terima", val: step1.date_of_receive || "-" },
                   { label: "Nama Kurir", val: step1.courier_name || "-" },
                   { label: "Kontak Kurir", val: step1.courier_contact || "-" },
+                  { label: "No. Surat Pelanggan", val: step1.cust_letter_no || "-" },
+                  { label: "ID iSIKHNAS", val: step1.id_isikhnas || "-" },
+                  { label: "No. Agenda", val: step1.agenda_no || "-" },
                   {
                     label: "Perlu Diagnosis",
                     val: step1.diagnosis_required ? "Ya" : "Tidak",
@@ -1250,6 +1261,34 @@ export default function PengajuanUjiSampel() {
                     type="date"
                     value={step1.date_of_send}
                     onChange={setS1("date_of_send")}
+                  />
+                </Field>
+                <Field label="Tanggal Terima">
+                  <Input
+                    type="date"
+                    value={step1.date_of_receive}
+                    onChange={setS1("date_of_receive")}
+                  />
+                </Field>
+                <Field label="No. Surat Pelanggan">
+                  <Input
+                    value={step1.cust_letter_no}
+                    onChange={setS1("cust_letter_no")}
+                    placeholder="cth: 001/SURAT/2026"
+                  />
+                </Field>
+                <Field label="ID iSIKHNAS">
+                  <Input
+                    value={step1.id_isikhnas}
+                    onChange={setS1("id_isikhnas")}
+                    placeholder="ID iSIKHNAS (jika ada)"
+                  />
+                </Field>
+                <Field label="No. Agenda">
+                  <Input
+                    value={step1.agenda_no}
+                    onChange={setS1("agenda_no")}
+                    placeholder="Nomor agenda"
                   />
                 </Field>
                 <Field label="Nama Kurir">

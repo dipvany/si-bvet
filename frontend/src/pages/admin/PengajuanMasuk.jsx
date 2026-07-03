@@ -208,21 +208,6 @@ export default function PengajuanMasuk() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Tombol Export (buka mode pilih) */}
-          {!selectMode && (
-            <button
-              onClick={openSelectMode}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
-                bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Export
-            </button>
-          )}
           {/* Tombol Refresh */}
           <button onClick={() => fetchData(page)}
             className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
@@ -337,24 +322,41 @@ export default function PengajuanMasuk() {
 
       {/* Tabel */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Search */}
+        {/* Search + Template + Export */}
         <div className="px-4 py-3 border-b border-gray-100 flex justify-between
           items-center gap-3 flex-wrap">
           <p className="text-xs text-gray-400">
             Total: <span className="font-bold text-[#233B6E]">{meta.total}</span> pengajuan
           </p>
-          <div className="relative">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-              strokeLinecap="round"
-              className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Cari no. tiket, layanan, tujuan..."
-              className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm
-                outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-64"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Search */}
+            <div className="relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                strokeLinecap="round"
+                className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Cari no. tiket, layanan, tujuan..."
+                className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm
+                  outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-56"
+              />
+            </div>
+            {/* Tombol Export */}
+            {!selectMode && (
+              <button onClick={openSelectMode}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
+                  bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export
+              </button>
+            )}
           </div>
         </div>
 
