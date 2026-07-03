@@ -16,16 +16,16 @@ type Feedback struct {
 }
 
 type FeedbackQuestion struct {
-    ID           uint   `gorm:"primaryKey"`
-    QuestionText string `gorm:"type:text;not null"`
-    IsActive     bool   `gorm:"default:true"`
+    ID           uint   `json:"id" gorm:"primaryKey"`
+    QuestionText string `json:"question_text" gorm:"type:text;not null"`
+    IsActive     bool   `json:"is_active" gorm:"default:true"`
 }
 
 type FeedbackAnswer struct {
-    ID         uint `gorm:"primaryKey"`
-    FeedbackID uint `gorm:"not null;index"` 
-    QuestionID uint `gorm:"not null;index"` 
-    Rating     int  `gorm:"not null"`       
+    ID         uint `json:"id" gorm:"primaryKey"`
+    FeedbackID uint `json:"feedback_id" gorm:"not null;index"` 
+    QuestionID uint `json:"question_id" gorm:"not null;index"` 
+    Rating     int  `json:"rating" gorm:"not null"`       
 }
 
 func (Feedback) TableName() string {
