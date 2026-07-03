@@ -121,7 +121,6 @@ export default function CustomerProfil() {
   const [village,      setVillage]      = useState("");
   const [address,      setAddress]      = useState("");
   const [zipCode,      setZipCode]      = useState("");
-  const [occupation,   setOccupation]   = useState("");
   const [lhuReceiver,  setLhuReceiver]  = useState("");
   const [lhuContact,   setLhuContact]   = useState("");
 
@@ -141,7 +140,7 @@ export default function CustomerProfil() {
     setFullname(p.fullname       ?? "");
     setEmail(p.email             ?? "");
     setPhone(p.phone             ?? "");
-    setInstitution(p.institution ?? "");
+    setInstitution(p.institution ?? c.institution ?? "");
     setIsVerified(p.is_verified  ?? false);
     if (p.registration_doc) setDocUrl(resolveFileUrl(p.registration_doc));
     setGroup(c.group             ?? "");
@@ -155,7 +154,6 @@ export default function CustomerProfil() {
     setVillage(c.village         ?? "");
     setAddress(c.address         ?? "");
     setZipCode(c.zip_code        ?? "");
-    setOccupation(c.occupation   ?? "");
     setLhuReceiver(c.lhu_receiver_name    ?? c.lhu_receiver ?? "");
     setLhuContact(c.lhu_receiver_contact ?? c.lhu_contact   ?? "");
   }, []);
@@ -165,20 +163,17 @@ export default function CustomerProfil() {
     const prof = data.profile ?? data;
 
     // Struktur A (API contract resmi):
-    // { profile: { fullname, email, phone, institution, is_verified, customer: { province, occupation, ... } } }
     if (prof.fullname || prof.email) {
       return {
         p: {
           ...prof,
           institution: prof.institution ?? prof.customer?.institution ?? "",
-          occupation:  prof.customer?.occupation ?? prof.occupation ?? "",
         },
         c: prof.customer ?? {},
       };
     }
 
     // Struktur B (backend baru — User nested, customer flat):
-    // { profile: { province, occupation, User: { fullname, email, institution, ... } } }
     const user = prof.User ?? {};
     return {
       p: {
@@ -188,7 +183,6 @@ export default function CustomerProfil() {
         institution:      user.institution     ?? prof.institution ?? "",
         is_verified:      user.is_verified     ?? false,
         registration_doc: prof.registration_doc,
-        occupation:       prof.occupation      ?? user.occupation ?? "",
       },
       c: prof,
     };
@@ -226,7 +220,6 @@ export default function CustomerProfil() {
         fullname,
         phone,
         institution,
-        occupation,
         group,
         is_membership:        isMembership,
         membership_no:        membershipNo,
@@ -370,10 +363,6 @@ export default function CustomerProfil() {
               <Field label="Jenis Kelompok">
                 <Select value={group} onChange={e => setGroup(e.target.value)}
                   options={GROUP_OPTIONS} placeholder="Pilih kelompok..." />
-              </Field>
-              <Field label="Bidang / Pekerjaan">
-                <TextInput value={occupation} onChange={e => setOccupation(e.target.value)}
-                  placeholder="Cth: Peternakan, Penelitian" />
               </Field>
             </div>
           </div>
