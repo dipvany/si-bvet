@@ -25,13 +25,13 @@ func CreateFeedbackAnswerTx(tx *gorm.DB, answer *models.FeedbackAnswer) error {
 
 func GetAllFeedbacks() ([]models.Feedback, error) {
 	var feedbacks []models.Feedback
-	err := db.DB.Order("id desc").Find(&feedbacks).Error
+	err := db.DB.Preload("Answers.Question").Order("id desc").Find(&feedbacks).Error
 	return feedbacks, err
 }
 
 func GetAllFeedbackQuestions() ([]models.FeedbackQuestion, error) {
 	var questions []models.FeedbackQuestion
-	err := db.DB.Order("id desc").Find(&questions).Error
+	err := db.DB.Order("id asc").Find(&questions).Error
 	return questions, err
 }
 
@@ -43,7 +43,7 @@ func GetActiveFeedbackQuestions() ([]models.FeedbackQuestion, error) {
 
 func GetFeedbackByID(id uint) (*models.Feedback, error) {
 	var feedback models.Feedback
-	err := db.DB.First(&feedback, id).Error
+	err := db.DB.Preload("Answers.Question").First(&feedback, id).Error
 	return &feedback, err
 }
 
