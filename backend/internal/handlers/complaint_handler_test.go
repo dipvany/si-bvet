@@ -8,14 +8,14 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
-	"testing"
 
 	"si-bvet/internal/dto"
 	"si-bvet/internal/handlers"
 	"si-bvet/internal/models"
 
 	"github.com/gin-gonic/gin"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 type MockComplaintService struct {
@@ -77,103 +77,80 @@ func complaintMultipartRequest(path string, fields map[string]string, fileField,
 	return req, nil
 }
 
-func TestComplaintHandler(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+var _ = Describe("ComplaintHandler", func() {
+	var mockService *MockComplaintService
+	var handler *handlers.ComplaintHandler
+	var router *gin.Engine
+	var w *httptest.ResponseRecorder
 
-	t.Run("CreateComplaint", func(t *testing.T) {
-		mockService := &MockComplaintService{}
-		handler := handlers.NewComplaintHandler(mockService)
-		router := gin.New()
-		router.POST("/complaints", handler.CreateComplaint)
-
-		uploadDir := filepath.Join("internal", "uploads", "complaints")
-		if err := os.MkdirAll(uploadDir, 0o755); err != nil {
-			t.Fatalf("create upload dir: %v", err)
-		}
-		// Defer removal if needed, but for test it might not be necessary
-		// as it runs in memory or temp directories.
-
-		req, err := complaintMultipartRequest("/complaints", map[string]string{
-			"fullname":    "John Doe",
-			"email":       "john.doe@example.com",
-			"description": "Service is slow",
-		}, "attachment", "proof.pdf")
-		if err != nil {
-			t.Fatalf("build request: %v", err)
-		}
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d", w.Code)
-		}
-		if !strings.Contains(w.Body.String(), "Complaint submitted successfully") {
-			t.Fatalf("unexpected body: %s, expected 'Complaint submitted successfully'", w.Body.String())
-		}
-		if !mockService.createCalled {
-			t.Fatal("expected service CreateComplaint to be called")
-		}
-		if mockService.createReq.Fullname != "John Doe" || mockService.createReq.Description != "Service is slow" {
-			t.Fatalf("unexpected complaint request: %+v", mockService.createReq)
-		}
-		if !strings.HasSuffix(mockService.createFilePath, "proof.pdf") {
-			t.Fatalf("unexpected file path: %s", mockService.createFilePath)
-		}
-		// Clean up the created file
-		if mockService.createFilePath != "" {
-			_ = os.Remove(mockService.createFilePath)
-		}
+	BeforeEach(func() {
+		gin.SetMode(gin.TestMode)
+		mockService = &MockComplaintService{}
+		handler = handlers.NewComplaintHandler(mockService)
+		router = gin.New()
+		w = httptest.NewRecorder()
 	})
 
-	t.Run("GetAllComplaints", func(t *testing.T) {
-		mockService := &MockComplaintService{
-			getAllResult: []models.Complaint{{ID: 1, Fullname: "Jane Doe", Email: "jane@example.com", Description: "Payment is delayed"}},
-		}
-		handler := handlers.NewComplaintHandler(mockService)
-		router := gin.New()
-		router.GET("/complaints", handler.GetAllComplaints)
+	Describe("CreateComplaint", func() {
+		It("should create a complaint with an attachment", func() {
+			router.POST("/complaints", handler.CreateComplaint)
+			uploadDir := filepath.Join("..", "uploads", "complaints")
+			Expect(os.MkdirAll(uploadDir, 0o755)).To(Succeed())
 
-		req := httptest.NewRequest(http.MethodGet, "/complaints", nil)
-		w := httptest.NewRecorder()
+			req, err := complaintMultipartRequest("/complaints", map[string]string{
+				"fullname":    "John Doe",
+				"id_number":   "1234567890123456",
+				"email":       "john.doe@example.com",
+				"description": "Service is slow",
+				"phone":       "081234567890",
+			}, "attachment", "proof.pdf")
+			Expect(err).NotTo(HaveOccurred())
 
-		router.ServeHTTP(w, req)
+			router.ServeHTTP(w, req)
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d", w.Code)
-		}
-		if !strings.Contains(w.Body.String(), "Jane Doe") {
-			t.Fatalf("unexpected body: %s", w.Body.String())
-		}
-		if !mockService.getAllCalled {
-			t.Fatal("expected GetAllComplaints to be called")
-		}
+			Expect(w.Code).To(Equal(http.StatusOK))
+			Expect(w.Body.String()).To(ContainSubstring("Complaint submitted successfully"))
+			Expect(mockService.createCalled).To(BeTrue())
+			Expect(mockService.createReq.Fullname).To(Equal("John Doe"))
+			Expect(mockService.createReq.Description).To(Equal("Service is slow"))
+			Expect(mockService.createFilePath).To(HaveSuffix("proof.pdf"))
+
+			if mockService.createFilePath != "" {
+				_ = os.Remove(mockService.createFilePath)
+			}
+		})
 	})
 
-	t.Run("UpdateComplaintResponse", func(t *testing.T) {
-		mockService := &MockComplaintService{}
-		handler := handlers.NewComplaintHandler(mockService)
-		router := gin.New()
-		router.PATCH("/complaints/:id/response", handler.UpdateComplaintResponse)
+	Describe("GetAllComplaints", func() {
+		It("should retrieve all complaints", func() {
+			mockService.getAllResult = []models.Complaint{{ID: 1, Fullname: "Jane Doe", Description: "Payment is delayed"}}
+			router.GET("/complaints", handler.GetAllComplaints)
 
-		body, err := json.Marshal(dto.ComplaintResponseRequest{AdminResponse: "We have reviewed it"})
-		if err != nil {
-			t.Fatalf("marshal request: %v", err)
-		}
-		req := httptest.NewRequest(http.MethodPatch, "/complaints/7/response", bytes.NewReader(body))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/complaints", nil)
+			router.ServeHTTP(w, req)
 
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected 200, got %d", w.Code)
-		}
-		if !strings.Contains(w.Body.String(), "Complaint response updated successfully") {
-			t.Fatalf("unexpected body: %s, expected 'Complaint response updated successfully'", w.Body.String())
-		}
-		if !mockService.updateCalled || mockService.updateID != 7 || mockService.updateMessage != "We have reviewed it" {
-			t.Fatalf("unexpected service call: %+v", mockService)
-		}
+			Expect(w.Code).To(Equal(http.StatusOK))
+			Expect(w.Body.String()).To(ContainSubstring("Jane Doe"))
+			Expect(mockService.getAllCalled).To(BeTrue())
+		})
 	})
-}
+
+	Describe("UpdateComplaintResponse", func() {
+		It("should update a complaint's response", func() {
+			router.PATCH("/complaints/:id/response", handler.UpdateComplaintResponse)
+
+			body, err := json.Marshal(dto.ComplaintResponseRequest{AdminResponse: "We have reviewed it"})
+			Expect(err).NotTo(HaveOccurred())
+			req := httptest.NewRequest(http.MethodPatch, "/complaints/7/response", bytes.NewReader(body))
+			req.Header.Set("Content-Type", "application/json")
+
+			router.ServeHTTP(w, req)
+
+			Expect(w.Code).To(Equal(http.StatusOK))
+			Expect(w.Body.String()).To(ContainSubstring("Complaint response updated successfully"))
+			Expect(mockService.updateCalled).To(BeTrue())
+			Expect(mockService.updateID).To(Equal(uint(7)))
+			Expect(mockService.updateMessage).To(Equal("We have reviewed it"))
+		})
+	})
+})

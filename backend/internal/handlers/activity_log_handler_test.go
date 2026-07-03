@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
-	"testing"
 
 	"si-bvet/internal/handlers"
 	"si-bvet/internal/repositories"
 
 	"github.com/gin-gonic/gin"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 type MockActivityLogService struct {
@@ -26,61 +26,59 @@ func (m *MockActivityLogService) GetActivityLogs(params repositories.GetActivity
 	return m.GetActivityLogsResult, m.GetActivityLogsError
 }
 
-func TestActivityLogHandler(t *testing.T) {
-	gin.SetMode(gin.TestMode)
+var _ = Describe("ActivityLogHandler", func() {
+	var router *gin.Engine
+	var w *httptest.ResponseRecorder
+	var handler *handlers.ActivityLogHandler
+	var mockService *MockActivityLogService
 
-	t.Run("GetActivityLogs success", func(t *testing.T) {
-		mockService := &MockActivityLogService{
-			GetActivityLogsResult: map[string]interface{}{
-				"data": "some_data",
-				"meta": "some_meta",
-			},
-		}
-		handler := handlers.NewActivityLogHandler(mockService)
-		router := gin.New()
+	BeforeEach(func() {
+		gin.SetMode(gin.TestMode)
+		mockService = &MockActivityLogService{}
+		handler = handlers.NewActivityLogHandler(mockService)
+		router = gin.New()
 		router.GET("/activity-logs", handler.GetActivityLogs)
-
-		req := httptest.NewRequest(http.MethodGet, "/activity-logs?page=2&actor=system", nil)
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-
-		if w.Code != http.StatusOK {
-			t.Fatalf("expected status 200, got %d", w.Code)
-		}
-
-		if !strings.Contains(w.Body.String(), "Activity logs retrieved successfully") {
-			t.Fatalf("unexpected body: %s", w.Body.String())
-		}
-
-		if !mockService.GetActivityLogsCalled {
-			t.Fatal("expected GetActivityLogs to be called")
-		}
-
-		if mockService.GetActivityLogsParams.Page != 2 {
-			t.Errorf("expected page 2, got %d", mockService.GetActivityLogsParams.Page)
-		}
-
-		if mockService.GetActivityLogsParams.Actor != "system" {
-			t.Errorf("expected actor 'system', got %s", mockService.GetActivityLogsParams.Actor)
-		}
+		w = httptest.NewRecorder()
 	})
 
-	t.Run("GetActivityLogs service error", func(t *testing.T) {
-		mockService := &MockActivityLogService{
-			GetActivityLogsError: errors.New("database error"),
-		}
-		handler := handlers.NewActivityLogHandler(mockService)
-		router := gin.New()
-		router.GET("/activity-logs", handler.GetActivityLogs)
+	Describe("GetActivityLogs", func() {
+		Context("when request is successful", func() {
+			It("should return activity logs with correct parameters", func() {
+				mockService.GetActivityLogsResult = map[string]interface{}{
+					"data": "some_data",
+					"meta": "some_meta",
+				}
 
-		req := httptest.NewRequest(http.MethodGet, "/activity-logs", nil)
-		w := httptest.NewRecorder()
+				req := httptest.NewRequest(http.MethodGet, "/activity-logs?page=2&actor=system", nil)
+				router.ServeHTTP(w, req)
 
-		router.ServeHTTP(w, req)
+				Expect(w.Code).To(Equal(http.StatusOK))
+				Expect(w.Body.String()).To(ContainSubstring("Activity logs retrieved successfully"))
+				Expect(mockService.GetActivityLogsCalled).To(BeTrue())
+				Expect(mockService.GetActivityLogsParams.Page).To(Equal(2))
+				Expect(mockService.GetActivityLogsParams.Actor).To(Equal("system"))
+			})
+		})
 
-		if w.Code != http.StatusInternalServerError {
-			t.Fatalf("expected status 500, got %d", w.Code)
-		}
+		Context("when the service returns an error", func() {
+			It("should return a 500 internal server error", func() {
+				mockService.GetActivityLogsError = errors.New("database error")
+
+				req := httptest.NewRequest(http.MethodGet, "/activity-logs", nil)
+				router.ServeHTTP(w, req)
+
+				Expect(w.Code).To(Equal(http.StatusInternalServerError))
+			})
+		})
+
+		Context("with default pagination", func() {
+			It("should use default page and per_page values", func() {
+				req := httptest.NewRequest(http.MethodGet, "/activity-logs", nil)
+				router.ServeHTTP(w, req)
+
+				Expect(mockService.GetActivityLogsParams.Page).To(Equal(1))
+				Expect(mockService.GetActivityLogsParams.PerPage).To(Equal(20))
+			})
+		})
 	})
-}
+})

@@ -47,6 +47,7 @@ type MockFeedbackService struct {
 }
 
 var _ handlers.FeedbackServiceInterface = (*MockFeedbackService)(nil)
+var _ handlers.FeedbackServiceInterface = (*MockFeedbackService)(nil)
 
 func (m *MockFeedbackService) CreateFeedback(req dto.FeedbackRequest) error {
     m.createCalled = true
@@ -72,7 +73,13 @@ func (m *MockFeedbackService) CreateFeedbackQuestion(req dto.FeedbackQuestionReq
 }
 
 func (m *MockFeedbackService) CreateFeedbackQuestions(reqs []dto.FeedbackQuestionRequest) ([]*models.FeedbackQuestion, error) {
-	return nil, nil
+	m.createQuestionCalled = true // Set the flag here
+	if len(reqs) > 0 {
+		m.createQuestionReq = reqs[0] // Store the first request for assertion
+		return []*models.FeedbackQuestion{m.createQuestionResult}, m.createQuestionErr
+	}
+
+	return []*models.FeedbackQuestion{}, m.createQuestionErr
 }
 
 func (m *MockFeedbackService) UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
@@ -245,7 +252,7 @@ var _ = ginkgo.Describe("FeedbackHandler", func() {
 			router.POST("/feedback-questions", handler.CreateFeedbackQuestion)
 
 			isActive := true
-			body, _ := json.Marshal(dto.FeedbackQuestionRequest{QuestionText: "Bagaimana pelayanannya?", IsActive: &isActive})
+			body, _ := json.Marshal([]dto.FeedbackQuestionRequest{{QuestionText: "Bagaimana pelayanannya?", IsActive: &isActive}})
 			req := httptest.NewRequest(http.MethodPost, "/feedback-questions", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
@@ -253,7 +260,7 @@ var _ = ginkgo.Describe("FeedbackHandler", func() {
 			router.ServeHTTP(w, req)
 
 			gomega.Expect(w.Code).To(gomega.Equal(http.StatusCreated))
-			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Feedback question created successfully"))
+			gomega.Expect(w.Body.String()).To(gomega.ContainSubstring("Feedback questions created successfully"))
 			gomega.Expect(mockService.createQuestionCalled).To(gomega.BeTrue())
 			gomega.Expect(mockService.createQuestionReq.QuestionText).To(gomega.Equal("Bagaimana pelayanannya?"))
 		})

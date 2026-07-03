@@ -111,7 +111,7 @@ func (h *FeedbackHandler) GetFeedbackByID(c *gin.Context) {
 		return
 	}
 
-	feedback, err := services.GetFeedbackByID(id)
+	feedback, err := h.Service.GetFeedbackByID(id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -139,12 +139,13 @@ func (h *FeedbackHandler) CreateFeedbackQuestion(c *gin.Context) {
 		dtos = append(dtos, *req)
 	}
 
-	if _, err := h.Service.CreateFeedbackQuestions(dtos); err != nil {
+	question, err := h.Service.CreateFeedbackQuestions(dtos);
+	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create feedback questions: "+err.Error())
 		return
 	}
 
-	utils.MessageResponse(c, http.StatusCreated, "Feedback questions created successfully")
+	utils.DataResponse(c, http.StatusCreated, "Feedback questions created successfully", question)
 }
 
 func UpdateFeedbackQuestion(c *gin.Context) {

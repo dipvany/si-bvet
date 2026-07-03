@@ -376,7 +376,7 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			gomega.Expect(writer.WriteField("purpose_of_test", "Surveilans")).To(gomega.Succeed())
 			gomega.Expect(writer.WriteField("sample_taker", "Petugas Lapangan")).To(gomega.Succeed())
 			gomega.Expect(writer.WriteField("notes", "Multipart samples json")).To(gomega.Succeed())
-			gomega.Expect(writer.WriteField("samples", `[[{"sample_code_cust":"SMPL-JSON-001","sample_model":"Serum","total_sample":3,"tests":[{"test_service_id":2}]}]]`)).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("samples", `[{"sample_code_cust":"SMPL-JSON-001","sample_model":"Serum","total_sample":3,"tests":[{"test_service_id":2}]}]`)).To(gomega.Succeed())
 			gomega.Expect(writer.Close()).To(gomega.Succeed())
 
 			router.POST("/submissions", withUserID(42), handler.CreateSubmission)
@@ -413,7 +413,7 @@ var _ = ginkgo.Describe("SubmissionHandler", func() {
 			writer := multipart.NewWriter(body)
 			gomega.Expect(writer.WriteField("type_service", "Reguler")).To(gomega.Succeed())
 			gomega.Expect(writer.WriteField("purpose_of_test", "Surveilans")).To(gomega.Succeed())
-			gomega.Expect(writer.WriteField("samples", `[[{"sample_code_cust":"SMPL-JSON-OVERRIDE","sample_model":"Serum","total_sample":9}]](http://_vscodecontentref_/6)`)).To(gomega.Succeed())
+			gomega.Expect(writer.WriteField("samples", `[{"sample_code_cust":"SMPL-JSON-OVERRIDE","sample_model":"Serum","total_sample":9,"tests":[{"test_service_id":99}]}]`)).To(gomega.Succeed())
 			part, err := writer.CreateFormFile("file", "bulk-template.xlsx")
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			_, err = part.Write(buf.Bytes())

@@ -165,7 +165,7 @@ var _ = ginkgo.Describe("AuthService", func() {
 		ginkgo.Context("when repository returns error", func() {
 			ginkgo.It("should return repository error", func() {
 				// Arrange
-				mockRepo.createUserError = errors.New("database error")
+				mockRepo.registerCustomerError = errors.New("database error")
 
 				// Act
 				err := service.RegisterUser(user)
@@ -203,9 +203,9 @@ var _ = ginkgo.Describe("AuthService", func() {
 				service.RegisterUser(user)
 
 				// Assert
-				gomega.Expect(mockRepo.createUserUser.FullName).To(gomega.Equal("Jane Smith"))
-				gomega.Expect(mockRepo.createUserUser.Email).To(gomega.Equal("jane@example.com"))
-				gomega.Expect(mockRepo.createUserUser.Role).To(gomega.Equal("admin"))
+				gomega.Expect(mockRepo.registerCustomerUser.FullName).To(gomega.Equal("Jane Smith"))
+				gomega.Expect(mockRepo.registerCustomerUser.Email).To(gomega.Equal("jane@example.com"))
+				gomega.Expect(mockRepo.registerCustomerUser.Role).To(gomega.Equal("admin"))
 			})
 		})
 	})
