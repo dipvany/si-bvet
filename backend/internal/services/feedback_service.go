@@ -39,7 +39,7 @@ func CreateFeedback(req dto.FeedbackRequest) error {
 		return nil
 	})
 
-    if err != nil {
+    if err == nil {
         go func(email string, fullname string) {
             if emailErr := SendFeedbackSubmittedEmail(req); emailErr != nil {
                 log.Printf("failed to send feedback confirmation email for %s: %v", feedback.Email, emailErr)
