@@ -160,6 +160,40 @@ export default function CustomerProfil() {
     setLhuContact(c.lhu_receiver_contact ?? c.lhu_contact   ?? "");
   }, []);
 
+  /* ── Normalise response — handle semua kemungkinan struktur backend ── */
+  const parseProfileResponse = useCallback((data) => {
+    const prof = data.profile ?? data;
+
+    // Struktur A (API contract resmi):
+    // { profile: { fullname, email, phone, institution, is_verified, customer: { province, occupation, ... } } }
+    if (prof.fullname || prof.email) {
+      return {
+        p: {
+          ...prof,
+          institution: prof.institution ?? prof.customer?.institution ?? "",
+          occupation:  prof.customer?.occupation ?? prof.occupation ?? "",
+        },
+        c: prof.customer ?? {},
+      };
+    }
+
+    // Struktur B (backend baru — User nested, customer flat):
+    // { profile: { province, occupation, User: { fullname, email, institution, ... } } }
+    const user = prof.User ?? {};
+    return {
+      p: {
+        fullname:         user.fullname        ?? "",
+        email:            user.email           ?? "",
+        phone:            user.phone           ?? "",
+        institution:      user.institution     ?? prof.institution ?? "",
+        is_verified:      user.is_verified     ?? false,
+        registration_doc: prof.registration_doc,
+        occupation:       prof.occupation      ?? user.occupation ?? "",
+      },
+      c: prof,
+    };
+  }, []);
+
   /* ── GET /profile — hanya saat pertama buka ── */
   useEffect(() => {
     (async () => {
@@ -168,8 +202,7 @@ export default function CustomerProfil() {
         const res = await getProfile();
         if (!res.ok) throw new Error();
         const data = await res.json();
-        const p = data.profile ?? data;
-        const c = p.customer   ?? {};
+        const { p, c } = parseProfileResponse(data);
         applyData(p, c);
       } catch {
         setError("Gagal memuat profil.");
@@ -177,7 +210,7 @@ export default function CustomerProfil() {
         setInitLoading(false);
       }
     })();
-  }, [applyData]);
+  }, [applyData, parseProfileResponse]);
 
   /* ── PATCH /profile ── */
   const handleSave = async (e) => {
@@ -192,6 +225,8 @@ export default function CustomerProfil() {
       const payload = {
         fullname,
         phone,
+        institution,
+        occupation,
         group,
         is_membership:        isMembership,
         membership_no:        membershipNo,
@@ -203,9 +238,8 @@ export default function CustomerProfil() {
         village,
         address,
         zip_code:             zipCode,
-        lhu_receiver_name:    lhuReceiver,    // bukan lhu_receiver
-        lhu_receiver_contact: lhuContact,     // bukan lhu_contact
-        // institution & occupation tidak ada di ProfileRequest backend — diabaikan
+        lhu_receiver_name:    lhuReceiver,
+        lhu_receiver_contact: lhuContact,
       };
 
       const res = await updateProfile(payload);
@@ -221,8 +255,7 @@ export default function CustomerProfil() {
       try {
         const checkRes  = await getProfile();
         const checkData = await checkRes.json();
-        const p = checkData.profile ?? checkData;
-        const c = p.customer ?? {};
+        const { p, c } = parseProfileResponse(checkData);
         applyData(p, c);
       } catch {}
 
