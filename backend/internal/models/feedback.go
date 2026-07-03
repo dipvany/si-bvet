@@ -25,7 +25,10 @@ type FeedbackAnswer struct {
     ID         uint `json:"id" gorm:"primaryKey"`
     FeedbackID uint `json:"feedback_id" gorm:"not null;index"` 
     QuestionID uint `json:"question_id" gorm:"not null;index"` 
-    Rating     int  `json:"rating" gorm:"not null"`       
+    Rating     int  `json:"rating" gorm:"not null"` 
+	
+	Feedback   Feedback `gorm:"foreignKey:FeedbackID"`
+	Question   FeedbackQuestion `gorm:"foreignKey:QuestionID"`
 }
 
 func (Feedback) TableName() string {

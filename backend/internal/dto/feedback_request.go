@@ -1,8 +1,10 @@
 package dto
 
 type FeedbackAnswerRequest struct {
-	QuestionID uint `json:"question_id" binding:"required"`
-	Rating     int  `json:"rating" binding:"required,min=1,max=5"`
+	FeedbackID uint `json:"feedback_id,omitempty"`
+	QuestionID uint `json:"question_id,omitempty"`
+
+	Rating int `json:"rating" binding:"required,min=1,max=5"`
 }
 
 type FeedbackRequest struct {
