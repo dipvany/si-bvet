@@ -127,6 +127,9 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 				adminGroup.GET("/feedbacks", feedbackHandler.GetAllFeedbacks)
 				adminGroup.GET("/feedbacks/:id", feedbackHandler.GetFeedbackByID)
+				adminGroup.POST("/feedbacks/questions", feedbackHandler.CreateFeedbackQuestion)
+				adminGroup.PATCH("/feedbacks/questions/:id", handlers.UpdateFeedbackQuestion)
+				adminGroup.DELETE("/feedbacks/questions/:id", handlers.DeleteFeedbackQuestion)
 
 				adminGroup.GET("/complaints", complaintHandler.GetAllComplaints)
 				adminGroup.PATCH("/complaints/:id/respond", complaintHandler.UpdateComplaintResponse)

@@ -3,35 +3,42 @@ package services
 import (
 	"fmt"
 	"log"
+	"si-bvet/internal/db"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
 	"si-bvet/internal/repositories"
-	"time"
+
+	"gorm.io/gorm"
 )
 
 func CreateFeedback(req dto.FeedbackRequest) error {
-    now := time.Now()
+	feedback := models.Feedback{
+		Fullname:      req.Fullname,
+		Email:         req.Email,
+		Gender:        req.Gender,
+		LastEducation: req.LastEducation,
+		Occupation:    req.Occupation,
+		TypeService:   req.TypeService,
+	}
 
-    feedback := models.Feedback{
-        Fullname:      req.Fullname,
-        Email:         req.Email,
-        Gender:        req.Gender,
-        LastEducation: req.LastEducation,
-        Occupation:    req.Occupation,
-        TypeService:   req.TypeService,
-        Rating1:       req.Rating1,
-        Rating2:       req.Rating2,
-        Rating3:       req.Rating3,
-        Rating4:       req.Rating4,
-        Rating5:       req.Rating5,
-        Rating6:       req.Rating6,
-        Rating7:       req.Rating7,
-        Rating8:       req.Rating8,
-        Rating9:       req.Rating9,
-        CreatedAt:     now,
-    }
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		if err := repositories.CreateFeedbackTx(tx, &feedback); err != nil {
+			return err
+		}
 
-	err := repositories.CreateFeedback(&feedback)
+		for _, ans := range req.Answers {
+			answer := models.FeedbackAnswer{
+				FeedbackID: feedback.ID,
+				QuestionID: ans.QuestionID,
+				Rating:     ans.Rating,
+			}
+			if err := repositories.CreateFeedbackAnswerTx(tx, &answer); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	if err == nil {
 		if emailErr := SendFeedbackSubmittedEmail(req); emailErr != nil {
 			log.Printf("failed to send feedback confirmation email for %s: %v", feedback.Email, emailErr)
@@ -47,4 +54,54 @@ func GetAllFeedbacks() ([]models.Feedback, error) {
 
 func GetFeedbackByID(id uint) (*models.Feedback, error) {
 	return repositories.GetFeedbackByID(id)
+}
+
+func CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	question := &models.FeedbackQuestion{
+		QuestionText: req.QuestionText,
+		IsActive:     isActive,
+	}
+
+	err := repositories.CreateFeedbackQuestion(question)
+	if err != nil {
+		return nil, err
+	}
+
+	LogSystemActivity(fmt.Sprintf("Pertanyaan feedback baru dibuat: '%s'", question.QuestionText))
+	return question, nil
+}
+
+func UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
+	question, err := repositories.GetFeedbackQuestionByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.QuestionText != "" {
+		question.QuestionText = req.QuestionText
+	}
+
+	if req.IsActive != nil {
+		question.IsActive = *req.IsActive
+	}
+
+	if err := repositories.UpdateFeedbackQuestion(question); err != nil {
+		return nil, err
+	}
+
+	LogSystemActivity(fmt.Sprintf("Pertanyaan feedback ID %d diperbarui: '%s'", id, question.QuestionText))
+	return question, nil
+}
+
+func DeleteFeedbackQuestion(id uint) error {
+	err := repositories.DeleteFeedbackQuestion(id)
+	if err == nil {
+		LogSystemActivity(fmt.Sprintf("Pertanyaan feedback ID %d dihapus", id))
+	}
+	return err
 }

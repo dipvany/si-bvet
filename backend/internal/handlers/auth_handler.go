@@ -73,7 +73,7 @@ func (h *AuthHandler) RegisterCustomer(c *gin.Context) {
 		return
 	}
 
-	services.SendRegistrationPendingEmail(user.FullName, user.Email)
+	go services.SendRegistrationPendingEmail(user.FullName, user.Email)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Registration successful, waiting for admin verification",

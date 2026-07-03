@@ -14,6 +14,9 @@ type FeedbackServiceInterface interface {
 	CreateFeedback(req dto.FeedbackRequest) error
 	GetAllFeedbacks() ([]models.Feedback, error)
 	GetFeedbackByID(id uint) (*models.Feedback, error)
+	CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error)
+	UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error)
+	DeleteFeedbackQuestion(id uint) error
 }
 
 type defaultFeedbackService struct{}
@@ -28,6 +31,18 @@ func (defaultFeedbackService) GetAllFeedbacks() ([]models.Feedback, error) {
 
 func (defaultFeedbackService) GetFeedbackByID(id uint) (*models.Feedback, error) {
 	return services.GetFeedbackByID(id)
+}
+
+func (s defaultFeedbackService) CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
+	return services.CreateFeedbackQuestion(req)
+}
+
+func (s defaultFeedbackService) UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
+	return services.UpdateFeedbackQuestion(id, req)
+}
+
+func (s defaultFeedbackService) DeleteFeedbackQuestion(id uint) error {
+	return services.DeleteFeedbackQuestion(id)
 }
 
 type FeedbackHandler struct {
@@ -100,4 +115,69 @@ func (h *FeedbackHandler) GetFeedbackByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"feedback": feedback,
 	})
+}
+
+func CreateFeedbackQuestion(c *gin.Context) {
+	defaultFeedbackHandler.CreateFeedbackQuestion(c)
+}
+
+func (h *FeedbackHandler) CreateFeedbackQuestion(c *gin.Context) {
+	var req dto.FeedbackQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	question, err := h.Service.CreateFeedbackQuestion(req)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.DataResponse(c, http.StatusCreated, "Feedback question created successfully", question)
+}
+
+func UpdateFeedbackQuestion(c *gin.Context) {
+	defaultFeedbackHandler.UpdateFeedbackQuestion(c)
+}
+
+func (h *FeedbackHandler) UpdateFeedbackQuestion(c *gin.Context) {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid question ID")
+		return
+	}
+
+	var req dto.FeedbackQuestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	question, err := h.Service.UpdateFeedbackQuestion(id, req)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.DataResponse(c, http.StatusOK, "Feedback question updated successfully", question)
+}
+
+func DeleteFeedbackQuestion(c *gin.Context) {
+	defaultFeedbackHandler.DeleteFeedbackQuestion(c)
+}
+
+func (h *FeedbackHandler) DeleteFeedbackQuestion(c *gin.Context) {
+	id, err := GetUintParam(c, "id")
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid question ID")
+		return
+	}
+
+	if err := h.Service.DeleteFeedbackQuestion(id); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.MessageResponse(c, http.StatusOK, "Feedback question deleted successfully")
 }

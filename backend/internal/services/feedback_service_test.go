@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -22,15 +23,11 @@ func validFeedbackRequest() dto.FeedbackRequest {
         LastEducation: "S1",
         Occupation:    "ASN",
         TypeService:   "Konsultasi",
-        Rating1:       5,
-        Rating2:       4,
-        Rating3:       5,
-        Rating4:       4,
-        Rating5:       5,
-        Rating6:       4,
-        Rating7:       5,
-        Rating8:       4,
-        Rating9:       5,
+        Answers: []dto.FeedbackAnswerRequest{
+            {QuestionID: 1, Rating: 5},
+            {QuestionID: 2, Rating: 4},
+            {QuestionID: 3, Rating: 5},
+        },
     }
 }
 
@@ -45,27 +42,20 @@ var _ = ginkgo.Describe("Feedback Service", func() {
 
         db.DB = gdb
 
-        err = db.DB.Exec(`
-            CREATE TABLE Feedback (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fullname TEXT NOT NULL,
-                email TEXT NOT NULL,
-                gender TEXT NOT NULL,
-                last_education TEXT NOT NULL,
-                occupation TEXT NOT NULL,
-                type_service TEXT NOT NULL,
-                score1 INTEGER NOT NULL,
-                score2 INTEGER NOT NULL,
-                score3 INTEGER NOT NULL,
-                score4 INTEGER NOT NULL,
-                score5 INTEGER NOT NULL,
-                score6 INTEGER NOT NULL,
-                score7 INTEGER NOT NULL,
-                score8 INTEGER NOT NULL,
-                score9 INTEGER NOT NULL,
-                created_at DATETIME NOT NULL
-            );
-        `).Error
+        err = db.DB.AutoMigrate(
+            &models.Feedback{},
+            &models.FeedbackAnswer{},
+            &models.FeedbackQuestion{},
+        )
+        gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+        // Seed questions
+        questions := []models.FeedbackQuestion{
+            {ID: 1, QuestionText: "Q1"},
+            {ID: 2, QuestionText: "Q2"},
+            {ID: 3, QuestionText: "Q3"},
+        }
+        err = db.DB.Create(&questions).Error
         gomega.Expect(err).NotTo(gomega.HaveOccurred())
     })
 
@@ -77,47 +67,37 @@ var _ = ginkgo.Describe("Feedback Service", func() {
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
             var feedback models.Feedback
-            err = db.DB.First(&feedback, "email = ?", req.Email).Error
+            err = db.DB.Preload("Answers").First(&feedback, "email = ?", req.Email).Error
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
             gomega.Expect(feedback.Fullname).To(gomega.Equal(req.Fullname))
             gomega.Expect(feedback.Email).To(gomega.Equal(req.Email))
-            gomega.Expect(feedback.Gender).To(gomega.Equal(req.Gender))
-            gomega.Expect(feedback.LastEducation).To(gomega.Equal(req.LastEducation))
-            gomega.Expect(feedback.Occupation).To(gomega.Equal(req.Occupation))
-            gomega.Expect(feedback.TypeService).To(gomega.Equal(req.TypeService))
-            gomega.Expect(feedback.Rating1).To(gomega.Equal(req.Rating1))
-            gomega.Expect(feedback.Rating2).To(gomega.Equal(req.Rating2))
-            gomega.Expect(feedback.Rating3).To(gomega.Equal(req.Rating3))
-            gomega.Expect(feedback.Rating4).To(gomega.Equal(req.Rating4))
-            gomega.Expect(feedback.Rating5).To(gomega.Equal(req.Rating5))
-            gomega.Expect(feedback.Rating6).To(gomega.Equal(req.Rating6))
-            gomega.Expect(feedback.Rating7).To(gomega.Equal(req.Rating7))
-            gomega.Expect(feedback.Rating8).To(gomega.Equal(req.Rating8))
-            gomega.Expect(feedback.Rating9).To(gomega.Equal(req.Rating9))
+            gomega.Expect(feedback.Answers).To(gomega.HaveLen(3))
+            gomega.Expect(feedback.Answers[0].QuestionID).To(gomega.Equal(uint(1)))
+            gomega.Expect(feedback.Answers[0].Rating).To(gomega.Equal(5))
+            gomega.Expect(feedback.Answers[1].QuestionID).To(gomega.Equal(uint(2)))
+            gomega.Expect(feedback.Answers[1].Rating).To(gomega.Equal(4))
             gomega.Expect(feedback.CreatedAt.IsZero()).To(gomega.BeFalse())
         })
 
         ginkgo.It("should create feedback with minimum rating values", func() {
             req := validFeedbackRequest()
-            req.Rating1 = 1
-            req.Rating2 = 1
-            req.Rating3 = 1
-            req.Rating4 = 1
-            req.Rating5 = 1
-            req.Rating6 = 1
-            req.Rating7 = 1
-            req.Rating8 = 1
-            req.Rating9 = 1
+            req.Answers = []dto.FeedbackAnswerRequest{
+                {QuestionID: 1, Rating: 1},
+                {QuestionID: 2, Rating: 1},
+                {QuestionID: 3, Rating: 1},
+            }
 
             err := CreateFeedback(req)
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
             var feedback models.Feedback
-            err = db.DB.First(&feedback, "email = ?", req.Email).Error
+            err = db.DB.Preload("Answers").First(&feedback, "email = ?", req.Email).Error
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
-            gomega.Expect(feedback.Rating1).To(gomega.Equal(1))
-            gomega.Expect(feedback.Rating9).To(gomega.Equal(1))
+            gomega.Expect(feedback.Answers).To(gomega.HaveLen(3))
+            gomega.Expect(feedback.Answers[0].Rating).To(gomega.Equal(1))
+            gomega.Expect(feedback.Answers[1].Rating).To(gomega.Equal(1))
+            gomega.Expect(feedback.Answers[2].Rating).To(gomega.Equal(1))
         })
     })
 
@@ -140,20 +120,14 @@ var _ = ginkgo.Describe("Feedback Service", func() {
                     LastEducation: "S1",
                     Occupation:    "ASN",
                     TypeService:   "Konsultasi",
-                    Rating1:       i,
-                    Rating2:       i,
-                    Rating3:       i,
-                    Rating4:       i,
-                    Rating5:       i,
-                    Rating6:       i,
-                    Rating7:       i,
-                    Rating8:       i,
-                    Rating9:       i,
                     CreatedAt:     now,
                 }
                 err := db.DB.Create(feedback).Error
                 gomega.Expect(err).NotTo(gomega.HaveOccurred())
-                time.Sleep(1 * time.Millisecond)
+
+                answer := &models.FeedbackAnswer{FeedbackID: feedback.ID, QuestionID: 1, Rating: i}
+                err = db.DB.Create(answer).Error
+                gomega.Expect(err).NotTo(gomega.HaveOccurred())
             }
 
             feedbacks, err := GetAllFeedbacks()
@@ -175,36 +149,19 @@ var _ = ginkgo.Describe("Feedback Service", func() {
                 LastEducation: "S1",
                 Occupation:    "ASN",
                 TypeService:   "Konsultasi",
-                Rating1:       5,
-                Rating2:       5,
-                Rating3:       5,
-                Rating4:       5,
-                Rating5:       5,
-                Rating6:       5,
-                Rating7:       5,
-                Rating8:       5,
-                Rating9:       5,
                 CreatedAt:     now,
             }
             err := db.DB.Create(feedback1).Error
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
+            db.DB.Create(&models.FeedbackAnswer{FeedbackID: feedback1.ID, QuestionID: 1, Rating: 5})
 
             feedback2 := &models.Feedback{
                 Fullname:      "User 2",
                 Email:         "user2@example.com",
                 Gender:        "Perempuan",
                 LastEducation: "S2",
-                Occupation:    "Pegawai Swasta",
+                Occupation:    "Swasta",
                 TypeService:   "Administrasi",
-                Rating1:       3,
-                Rating2:       3,
-                Rating3:       3,
-                Rating4:       3,
-                Rating5:       3,
-                Rating6:       3,
-                Rating7:       3,
-                Rating8:       3,
-                Rating9:       3,
                 CreatedAt:     now,
             }
             err = db.DB.Create(feedback2).Error
@@ -228,21 +185,16 @@ var _ = ginkgo.Describe("Feedback Service", func() {
                 LastEducation: "S1",
                 Occupation:    "ASN",
                 TypeService:   "Konsultasi",
-                Rating1:       5,
-                Rating2:       4,
-                Rating3:       5,
-                Rating4:       4,
-                Rating5:       5,
-                Rating6:       4,
-                Rating7:       5,
-                Rating8:       4,
-                Rating9:       5,
                 CreatedAt:     now,
             }
             err := db.DB.Create(feedback).Error
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-            feedbackResult, err := GetFeedbackByID(1)
+            answer := &models.FeedbackAnswer{FeedbackID: feedback.ID, QuestionID: 1, Rating: 5}
+            err = db.DB.Create(answer).Error
+            gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+            feedbackResult, err := GetFeedbackByID(feedback.ID)
 
             gomega.Expect(err).NotTo(gomega.HaveOccurred())
             gomega.Expect(feedbackResult).NotTo(gomega.BeNil())
@@ -250,4 +202,97 @@ var _ = ginkgo.Describe("Feedback Service", func() {
             gomega.Expect(feedbackResult.Fullname).To(gomega.Equal("Budi Santoso"))
         })
     })
+
+	ginkgo.Describe("FeedbackQuestion Management", func() {
+		ginkgo.It("should create a feedback question", func() {
+			isActive := true
+			req := dto.FeedbackQuestionRequest{
+				QuestionText: "Seberapa puaskah Anda?",
+				IsActive:     &isActive,
+			}
+
+			question, err := CreateFeedbackQuestion(req)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(question).NotTo(gomega.BeNil())
+			gomega.Expect(question.ID).To(gomega.BeNumerically(">", 0))
+			gomega.Expect(question.QuestionText).To(gomega.Equal("Seberapa puaskah Anda?"))
+			gomega.Expect(question.IsActive).To(gomega.BeTrue())
+
+			var savedQuestion models.FeedbackQuestion
+			err = db.DB.First(&savedQuestion, question.ID).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(savedQuestion.QuestionText).To(gomega.Equal(req.QuestionText))
+		})
+
+		ginkgo.It("should update a feedback question", func() {
+			initialQuestion := models.FeedbackQuestion{
+				QuestionText: "Old Question",
+				IsActive:     true,
+			}
+			err := db.DB.Create(&initialQuestion).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			isInactive := false
+			updateReq := dto.FeedbackQuestionRequest{
+				QuestionText: "New Updated Question",
+				IsActive:     &isInactive,
+			}
+
+			updatedQuestion, err := UpdateFeedbackQuestion(initialQuestion.ID, updateReq)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(updatedQuestion).NotTo(gomega.BeNil())
+			gomega.Expect(updatedQuestion.QuestionText).To(gomega.Equal("New Updated Question"))
+			gomega.Expect(updatedQuestion.IsActive).To(gomega.BeFalse())
+
+			var savedQuestion models.FeedbackQuestion
+			err = db.DB.First(&savedQuestion, initialQuestion.ID).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(savedQuestion.IsActive).To(gomega.BeFalse())
+		})
+
+		ginkgo.It("should only update text when IsActive is nil", func() {
+			initialQuestion := models.FeedbackQuestion{
+				QuestionText: "Only Text",
+				IsActive:     true,
+			}
+			err := db.DB.Create(&initialQuestion).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			updateReq := dto.FeedbackQuestionRequest{
+				QuestionText: "Only Text Updated",
+			}
+
+			_, err = UpdateFeedbackQuestion(initialQuestion.ID, updateReq)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			var savedQuestion models.FeedbackQuestion
+			err = db.DB.First(&savedQuestion, initialQuestion.ID).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(savedQuestion.QuestionText).To(gomega.Equal("Only Text Updated"))
+			gomega.Expect(savedQuestion.IsActive).To(gomega.BeTrue())
+		})
+
+		ginkgo.It("should delete a feedback question", func() {
+			question := models.FeedbackQuestion{
+				QuestionText: "To be deleted",
+				IsActive:     true,
+			}
+			err := db.DB.Create(&question).Error
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			err = DeleteFeedbackQuestion(question.ID)
+			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+
+			var deletedQuestion models.FeedbackQuestion
+			err = db.DB.First(&deletedQuestion, question.ID).Error
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(gomega.BeTrue())
+		})
+
+		ginkgo.It("should return error when deleting non-existent question", func() {
+			err := DeleteFeedbackQuestion(9999)
+			gomega.Expect(err).To(gomega.HaveOccurred())
+			gomega.Expect(errors.Is(err, gorm.ErrRecordNotFound)).To(gomega.BeTrue())
+		})
+	})
 })

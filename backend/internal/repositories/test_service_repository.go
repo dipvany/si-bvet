@@ -11,8 +11,11 @@ func CreateTestService(service *models.TestService) error {
 	return db.DB.Create(service).Error
 }
 
+func CreateTestServiceTx(tx *gorm.DB, service *models.TestService) error {
+	return tx.Create(service).Error
+}
+
 func GetAllTestServices() ([]models.TestService, error) {
-	
 	var services []models.TestService
 
 	err := db.DB.
@@ -37,7 +40,6 @@ func GetTestServicesByIDs(ids []uint) ([]models.TestService, error) {
 }
 
 func GetTestServiceByID(id uint) (models.TestService, error) {
-	
 	var service models.TestService
 
 	err := db.DB.First(&service, id).Error

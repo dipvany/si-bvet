@@ -5,8 +5,8 @@ import (
 	"si-bvet/internal/models"
 	"si-bvet/internal/services"
 	"si-bvet/internal/storage"
+	"si-bvet/internal/utils"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -158,23 +158,16 @@ func (h *LHUHandler) DownloadLHU(c *gin.Context) {
 	}
 
 	resolvedLocation, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, lhu.FilePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "failed to resolve file location",
-		})
-		return
-	}
+    if err != nil {
+        utils.ErrorResponse(c, http.StatusInternalServerError, "failed to resolve document location")
+        return
+    }
 
-	if strings.HasPrefix(strings.ToLower(resolvedLocation), "http") {
-		c.Redirect(http.StatusFound, resolvedLocation)
-		return
-	}
-
-	if strings.HasPrefix(resolvedLocation, "/uploads/") {
-		c.Redirect(http.StatusFound, resolvedLocation)
-		return
-	}
-
-	c.FileAttachment(resolvedLocation, "LHU_"+strconv.FormatUint(idUint, 10)+".pdf")
-	return
+	c.JSON(http.StatusOK, gin.H{
+        "message": "LHU URL resolved successfully",
+        "data": gin.H{
+            "lhu_id":       lhu.ID,
+            "download_url": resolvedLocation,
+        },
+	})
 }

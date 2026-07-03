@@ -42,6 +42,8 @@ var _ = ginkgo.Describe("Repository Complex Queries", func() {
 			&models.LhuDocument{},
 			&models.Notification{},
 			&models.Feedback{},
+			&models.FeedbackAnswer{},
+			&models.FeedbackQuestion{},
 			&models.Complaint{},
 		)
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())

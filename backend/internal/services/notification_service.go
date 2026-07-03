@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"si-bvet/internal/dto"
@@ -169,28 +170,41 @@ func mapSubmissionStatus(status string) string {
 }
 
 func SendFeedbackSubmittedEmail(feedback dto.FeedbackRequest) error {
-    body := fmt.Sprintf(
-        "Halo %s,\n\nTerima kasih telah mengirimkan feedback ke SI-BVET. Berikut ringkasan data yang kami terima:\n\n"+
-            "Nama: %s\nEmail: %s\nJenis Kelamin: %s\nPendidikan Terakhir: %s\nPekerjaan: %s\nJenis Layanan: %s\n"+
-            "Kesesuaian Persyaratan Pelayanan dengan Jenis Layanannya: %d\nKemudahan Prosedur Di sini: %d\nKecepatan Waktu Dalam Memberikan Layanan: %d\nKewajaran Biaya/Tarif Pelayanan: %d\nKesesuaian Produk Pelayanan Antara Yang Tercantum Dalam Standar Pelayanan Dengan Hasil Yang Diberikan: %d\nKompetensi/Kemampuan Petugas Dalam Pelayanan: %d\nPerilaku Petugas Dalam Pelayanan: %d\nKualitas Sarana dan Prasarana: %d\nPenanganan Pengaduan Pengguna Layanan: %d\n\n"+
-            "Feedback Anda akan kami tinjau untuk peningkatan layanan.\n\nTerima kasih.",
-        feedback.Fullname,
-        feedback.Fullname,
-        feedback.Email,
-        feedback.Gender,
-        feedback.LastEducation,
-        feedback.Occupation,
-        feedback.TypeService,
-        feedback.Rating1,
-        feedback.Rating2,
-        feedback.Rating3,
-        feedback.Rating4,
-        feedback.Rating5,
-        feedback.Rating6,
-        feedback.Rating7,
-        feedback.Rating8,
-        feedback.Rating9,
-    )
+	questionIDs := make([]uint, len(feedback.Answers))
+	for i, ans := range feedback.Answers {
+		questionIDs[i] = ans.QuestionID
+	}
 
-    return utils.SendEmail(feedback.Email, "Feedback Berhasil Diterima - SI-BVET", body)
+	questions, err := repositories.GetFeedbackQuestionsByIDs(questionIDs)
+	if err != nil {
+		log.Printf("failed to get feedback questions for email: %v", err)
+		// Fallback to sending email without answer details
+		questions = []models.FeedbackQuestion{}
+	}
+
+	questionMap := make(map[uint]string)
+	for _, q := range questions {
+		questionMap[q.ID] = q.QuestionText
+	}
+
+	var answersSummary strings.Builder
+	for _, ans := range feedback.Answers {
+		questionText := questionMap[ans.QuestionID]
+		if questionText == "" {
+			questionText = fmt.Sprintf("Pertanyaan ID %d", ans.QuestionID)
+		}
+		answersSummary.WriteString(fmt.Sprintf("%s: %d\n", questionText, ans.Rating))
+	}
+
+	body := fmt.Sprintf(
+		"Halo %s,\n\nTerima kasih telah mengirimkan feedback ke SI-BVET. Berikut ringkasan data yang kami terima:\n\n"+
+			"Nama: %s\nEmail: %s\nJenis Kelamin: %s\nPendidikan Terakhir: %s\nPekerjaan: %s\nJenis Layanan: %s\n\n"+
+			"Jawaban Anda:\n%s\n"+
+			"Feedback Anda akan kami tinjau untuk peningkatan layanan.\n\nTerima kasih.",
+		feedback.Fullname, feedback.Fullname, feedback.Email, feedback.Gender,
+		feedback.LastEducation, feedback.Occupation, feedback.TypeService,
+		answersSummary.String(),
+	)
+
+	return utils.SendEmail(feedback.Email, "Feedback Berhasil Diterima - SI-BVET", body)
 }
