@@ -55,6 +55,14 @@ func GetAllFeedbacks() ([]models.Feedback, error) {
 	return repositories.GetAllFeedbacks()
 }
 
+func GetAllFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	return repositories.GetAllFeedbackQuestions()
+}
+
+func GetActiveFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	return repositories.GetActiveFeedbackQuestions()
+}
+
 func GetFeedbackByID(id uint) (*models.Feedback, error) {
 	return repositories.GetFeedbackByID(id)
 }

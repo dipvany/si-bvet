@@ -60,6 +60,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 		api.POST("/complaints", complaintHandler.CreateComplaint)
 		api.POST("/feedbacks", feedbackHandler.CreateFeedback)
+		api.GET("/feedbacks/questions/active", handlers.GetActiveFeedbackQuestions)
 
 		// PROTECTED
 		protected := api.Group("/")
@@ -127,6 +128,7 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 				adminGroup.GET("/feedbacks", feedbackHandler.GetAllFeedbacks)
 				adminGroup.GET("/feedbacks/:id", feedbackHandler.GetFeedbackByID)
+				adminGroup.GET("/feedbacks/questions", handlers.GetAllFeedbackQuestions)
 				adminGroup.POST("/feedbacks/questions", feedbackHandler.CreateFeedbackQuestion)
 				adminGroup.PATCH("/feedbacks/questions/:id", handlers.UpdateFeedbackQuestion)
 				adminGroup.DELETE("/feedbacks/questions/:id", handlers.DeleteFeedbackQuestion)

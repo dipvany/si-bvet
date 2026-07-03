@@ -29,6 +29,18 @@ func GetAllFeedbacks() ([]models.Feedback, error) {
 	return feedbacks, err
 }
 
+func GetAllFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	var questions []models.FeedbackQuestion
+	err := db.DB.Order("id desc").Find(&questions).Error
+	return questions, err
+}
+
+func GetActiveFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	var questions []models.FeedbackQuestion
+	err := db.DB.Where("is_active = ?", true).Order("id asc").Find(&questions).Error
+	return questions, err
+}
+
 func GetFeedbackByID(id uint) (*models.Feedback, error) {
 	var feedback models.Feedback
 	err := db.DB.First(&feedback, id).Error

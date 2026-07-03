@@ -187,28 +187,42 @@
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "fullname", "value": "Nama Pelapor", "type": "text" },
+                {
+                  "key": "fullname",
+                  "value": "Nama Pelapor Publik",
+                  "type": "text"
+                },
                 {
                   "key": "email",
-                  "value": "pelapor@example.com",
+                  "value": "pelapor.publik@example.com",
                   "type": "text"
                 },
-                { "key": "subjects", "value": "Billing issue", "type": "text" },
                 {
-                  "key": "description",
-                  "value": "Tagihan belum masuk ke sistem",
+                  "key": "id_number",
+                  "value": "1871010101010001",
                   "type": "text"
                 },
+                { "key": "phone", "value": "089988776655", "type": "text" },
                 {
                   "key": "date_of_complaint",
-                  "value": "2026-06-06",
+                  "value": "2026-07-01",
                   "type": "text"
                 },
-                { "key": "attachment", "type": "file", "src": "" }
+                {
+                  "key": "suggestion",
+                  "value": "Keterlambatan hasil pengujian",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Uraian lengkap mengenai keterlambatan hasil pengujian sampel XYZ.",
+                  "type": "text"
+                },
+                { "key": "attachment", "type": "file", "src": [] }
               ]
             },
             "url": "{{base_url}}/complaints",
-            "description": "Buat complaint baru (publik, tidak perlu login). Field attachment opsional, field tanggal menerima format RFC3339 atau YYYY-MM-DD."
+            "description": "Buat complaint baru (publik, tidak perlu login). Field `attachment` opsional. Field `suggestion` berisi subjek/saran, `description` berisi uraian."
           }
         },
         {
@@ -218,14 +232,42 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullname\": \"Nama Pengirim\",\n  \"email\": \"pengirim@example.com\",\n  \"rating\": 5,\n  \"comments\": \"Pelayanan sangat baik\"\n}",
+              "raw": "{\n  \"fullname\": \"Nama Pengisi Survei\",\n  \"email\": \"pengisi.survei@example.com\",\n  \"gender\": \"Laki-laki\",\n  \"last_education\": \"S1\",\n  \"occupation\": \"Swasta\",\n  \"type_service\": \"PCR\",\n  \"answers\": [\n    { \"question_id\": 1, \"rating\": 4 },\n    { \"question_id\": 2, \"rating\": 3 },\n    { \"question_id\": 3, \"rating\": 4 }\n  ]\n}",
               "options": {
                 "raw": { "language": "json" }
               }
             },
             "url": "{{base_url}}/feedbacks",
-            "description": "Buat feedback baru (publik, tidak perlu login)."
+            "description": "Buat feedback/survei kepuasan baru (publik, tidak perlu login). Mengirimkan data responden dan jawaban per pertanyaan."
           }
+        },
+        {
+          "name": "Get Active Feedback Questions (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/feedbacks/questions/active",
+            "description": "Mengambil daftar pertanyaan feedback yang aktif untuk ditampilkan di form survei publik."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/feedbacks/questions/active"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"questions\": [\n        {\n            \"id\": 1,\n            \"question_text\": \"Bagaimana kualitas pelayanan kami?\",\n            \"is_active\": true\n        },\n        {\n            \"id\": 3,\n            \"question_text\": \"Seberapa cepat Anda mendapatkan hasil?\",\n            \"is_active\": true\n        }\n    ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -795,6 +837,41 @@
           }
         },
         {
+          "name": "Get All Feedback Questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": "{{base_url}}/admin/feedbacks/questions",
+            "description": "Mengambil semua pertanyaan feedback yang ada di sistem (aktif dan non-aktif). Diurutkan dari yang terbaru."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token_admin}}"
+                  }
+                ],
+                "url": "{{base_url}}/admin/feedbacks/questions"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"questions\": [\n        {\n            \"id\": 3,\n            \"question_text\": \"Seberapa cepat Anda mendapatkan hasil?\",\n            \"is_active\": true\n        },\n        {\n            \"id\": 2,\n            \"question_text\": \"Bagaimana kualitas sarana dan prasarana di laboratorium?\",\n            \"is_active\": false\n        },\n        {\n            \"id\": 1,\n            \"question_text\": \"Bagaimana kualitas pelayanan kami?\",\n            \"is_active\": true\n        }\n    ]\n}"
+            }
+          ]
+        },
+        {
           "name": "Create Feedback Question",
           "request": {
             "method": "POST",
@@ -937,18 +1014,45 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{token_customer}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Authorization", "value": "Bearer {{token_customer}}" }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"no_registration\": \"REG-2026-001\",\n  \"no_epi\": \"EPI-2026-001\",\n  \"no_ticket\": \"TCK-0001\",\n  \"type_service\": \"PCR\",\n  \"purpose_of_test\": \"Screening\",\n  \"date_of_send\": \"2026-06-01\",\n  \"date_of_receive\": \"2026-06-02\",\n  \"sample_taker\": \"Dr. A\",\n  \"id_isikhnas\": \"123456\",\n  \"diagnosis_required\": true,\n  \"agenda_no\": \"AG-001\",\n  \"cust_letter_no\": \"CL-001\",\n  \"courier_name\": \"JNE\",\n  \"courier_contact\": \"08123456789\",\n  \"notes\": \"Dokumen contoh\",\n  \"samples_count\": 1,\n  \"process_status\": \"draft\",\n  \"samples\": [\n    {\n      \"sample_code_cust\": \"CUST-001\",\n      \"sample_model\": \"Serum\",\n      \"total_sample\": 1,\n      \"tests\": [\n        { \"test_service_id\": 1 }\n      ]\n    }\n  ]\n}",
-              "options": {
-                "raw": { "language": "json" }
-              }
+              "mode": "formdata",
+              "formdata": [
+                { "key": "type_service", "value": "PCR", "type": "text" },
+                {
+                  "key": "purpose_of_test",
+                  "value": "Screening",
+                  "type": "text"
+                },
+                {
+                  "key": "date_of_send",
+                  "value": "2026-07-01",
+                  "type": "text"
+                },
+                { "key": "courier_name", "value": "JNE", "type": "text" },
+                {
+                  "key": "courier_contact",
+                  "value": "08123456789",
+                  "type": "text"
+                },
+                {
+                  "key": "diagnosis_required",
+                  "value": "true",
+                  "type": "text"
+                },
+                { "key": "notes", "value": "Catatan tambahan", "type": "text" },
+                { "key": "samples_count", "value": "1", "type": "text" },
+                {
+                  "key": "samples",
+                  "value": "[{\"sample_code_cust\":\"CUST-001\",\"sample_model\":\"Serum\",\"total_sample\":1,\"tests\":[{\"test_service_id\":1}]}]",
+                  "type": "text"
+                },
+                { "key": "attachment_doc", "type": "file", "src": [] }
+              ]
             },
             "url": "{{base_url}}/customer/submissions",
-            "description": "Buat submission baru. Endpoint ini juga menerima multipart/form-data dengan field file untuk bulk import template."
+            "description": "Buat submission baru. Endpoint ini menerima `multipart/form-data`. Field `samples` adalah string JSON dari array data sampel. Field `attachment_doc` bisa dikirim berkali-kali untuk multiple files."
           }
         },
         {

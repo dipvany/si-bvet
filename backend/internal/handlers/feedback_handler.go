@@ -13,6 +13,8 @@ import (
 type FeedbackServiceInterface interface {
 	CreateFeedback(req dto.FeedbackRequest) error
 	GetAllFeedbacks() ([]models.Feedback, error)
+	GetAllFeedbackQuestions() ([]models.FeedbackQuestion, error)
+	GetActiveFeedbackQuestions() ([]models.FeedbackQuestion, error)
 	GetFeedbackByID(id uint) (*models.Feedback, error)
 	CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error)
 	CreateFeedbackQuestions(reqs []dto.FeedbackQuestionRequest) ([]*models.FeedbackQuestion, error)
@@ -28,6 +30,14 @@ func (defaultFeedbackService) CreateFeedback(req dto.FeedbackRequest) error {
 
 func (defaultFeedbackService) GetAllFeedbacks() ([]models.Feedback, error) {
 	return services.GetAllFeedbacks()
+}
+
+func (defaultFeedbackService) GetAllFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	return services.GetAllFeedbackQuestions()
+}
+
+func (defaultFeedbackService) GetActiveFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	return services.GetActiveFeedbackQuestions()
 }
 
 func (defaultFeedbackService) GetFeedbackByID(id uint) (*models.Feedback, error) {
@@ -96,6 +106,38 @@ func (h *FeedbackHandler) GetAllFeedbacks(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"feedbacks": feedbacks,
+	})
+}
+
+func GetAllFeedbackQuestions(c *gin.Context) {
+	defaultFeedbackHandler.GetAllFeedbackQuestions(c)
+}
+
+func (h *FeedbackHandler) GetAllFeedbackQuestions(c *gin.Context) {
+	questions, err := h.Service.GetAllFeedbackQuestions()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"questions": questions,
+	})
+}
+
+func GetActiveFeedbackQuestions(c *gin.Context) {
+	defaultFeedbackHandler.GetActiveFeedbackQuestions(c)
+}
+
+func (h *FeedbackHandler) GetActiveFeedbackQuestions(c *gin.Context) {
+	questions, err := h.Service.GetActiveFeedbackQuestions()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"questions": questions,
 	})
 }
 

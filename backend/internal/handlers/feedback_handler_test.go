@@ -47,7 +47,6 @@ type MockFeedbackService struct {
 }
 
 var _ handlers.FeedbackServiceInterface = (*MockFeedbackService)(nil)
-var _ handlers.FeedbackServiceInterface = (*MockFeedbackService)(nil)
 
 func (m *MockFeedbackService) CreateFeedback(req dto.FeedbackRequest) error {
     m.createCalled = true
@@ -80,6 +79,18 @@ func (m *MockFeedbackService) CreateFeedbackQuestions(reqs []dto.FeedbackQuestio
 	}
 
 	return []*models.FeedbackQuestion{}, m.createQuestionErr
+}
+
+func (m *MockFeedbackService) GetAllFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	m.getAllCalled = true
+	return []models.FeedbackQuestion{
+	}, nil
+}
+
+func (m *MockFeedbackService) GetActiveFeedbackQuestions() ([]models.FeedbackQuestion, error) {
+	m.getAllCalled = true
+	return []models.FeedbackQuestion{
+	}, nil
 }
 
 func (m *MockFeedbackService) UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
