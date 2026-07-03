@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getProfile, updateProfile, changePassword } from "../../services/CustomerServices";
 import { resolveFileUrl } from "../../utils/fileUrl";
+import WilayahSelect from "../../components/WilayahSelect";
 
 function EyeIcon({ open }) {
   return (
@@ -106,6 +107,7 @@ export default function CustomerProfil() {
   const [fullname,     setFullname]     = useState("");
   const [email,        setEmail]        = useState("");
   const [phone,        setPhone]        = useState("");
+  const [institution,  setInstitution]  = useState("");
   const [isVerified,   setIsVerified]   = useState(false);
   const [docUrl,       setDocUrl]       = useState("");
   const [group,        setGroup]        = useState("");
@@ -120,6 +122,8 @@ export default function CustomerProfil() {
   const [address,      setAddress]      = useState("");
   const [zipCode,      setZipCode]      = useState("");
   const [occupation,   setOccupation]   = useState("");
+  const [lhuReceiver,  setLhuReceiver]  = useState("");
+  const [lhuContact,   setLhuContact]   = useState("");
 
   /* ── password ── */
   const [currentPass, setCurrentPass] = useState("");
@@ -137,6 +141,7 @@ export default function CustomerProfil() {
     setFullname(p.fullname       ?? "");
     setEmail(p.email             ?? "");
     setPhone(p.phone             ?? "");
+    setInstitution(p.institution ?? "");
     setIsVerified(p.is_verified  ?? false);
     if (p.registration_doc) setDocUrl(resolveFileUrl(p.registration_doc));
     setGroup(c.group             ?? "");
@@ -151,6 +156,8 @@ export default function CustomerProfil() {
     setAddress(c.address         ?? "");
     setZipCode(c.zip_code        ?? "");
     setOccupation(c.occupation   ?? "");
+    setLhuReceiver(c.lhu_receiver_name    ?? c.lhu_receiver ?? "");
+    setLhuContact(c.lhu_receiver_contact ?? c.lhu_contact   ?? "");
   }, []);
 
   /* ── GET /profile — hanya saat pertama buka ── */
@@ -180,26 +187,29 @@ export default function CustomerProfil() {
 
     setSaving(true);
     try {
+      // Sesuaikan dengan kontrak API PATCH /profile
+      // Field names harus PERSIS sama dengan ProfileRequest di backend DTO
       const payload = {
         fullname,
         phone,
         group,
-        is_membership: isMembership,
-        membership_no: membershipNo,
-        pic_name:      picName,
-        pic_contact:   picContact,
+        is_membership:        isMembership,
+        membership_no:        membershipNo,
+        pic_name:             picName,
+        pic_contact:          picContact,
         province,
         city,
         subdistrict,
         village,
         address,
-        zip_code:      zipCode,
-        occupation,
+        zip_code:             zipCode,
+        lhu_receiver_name:    lhuReceiver,    // bukan lhu_receiver
+        lhu_receiver_contact: lhuContact,     // bukan lhu_contact
+        // institution & occupation tidak ada di ProfileRequest backend — diabaikan
       };
 
       const res = await updateProfile(payload);
 
-      // Cek respons — bisa ok atau error dari server
       let body = {};
       try { body = await res.json(); } catch {}
 
@@ -207,11 +217,15 @@ export default function CustomerProfil() {
         throw new Error(body.error ?? body.message ?? "Gagal menyimpan profil.");
       }
 
-      // ✅ SOLUSI UTAMA:
-      // Server mengembalikan 200 tapi GET /profile mungkin belum reflect perubahan
-      // (kemungkinan bug backend — customer fields tersimpan di tabel terpisah).
-      // Kita TIDAK re-fetch — state sudah berisi nilai yang benar dari input user.
-      // Nilai di form = nilai yang dikirim ke server = nilai yang seharusnya tersimpan.
+      // Re-fetch setelah save supaya form langsung reflect data terbaru dari backend
+      try {
+        const checkRes  = await getProfile();
+        const checkData = await checkRes.json();
+        const p = checkData.profile ?? checkData;
+        const c = p.customer ?? {};
+        applyData(p, c);
+      } catch {}
+
       setSuccess("Profil berhasil disimpan!");
 
     } catch (err) {
@@ -316,6 +330,10 @@ export default function CustomerProfil() {
                 <TextInput value={phone} onChange={e => setPhone(e.target.value)}
                   placeholder="08XXXXXXXXXX" />
               </Field>
+              <Field label="Institusi / Perusahaan">
+                <TextInput value={institution} onChange={e => setInstitution(e.target.value)}
+                  placeholder="Nama institusi atau perusahaan" />
+              </Field>
               <Field label="Jenis Kelompok">
                 <Select value={group} onChange={e => setGroup(e.target.value)}
                   options={GROUP_OPTIONS} placeholder="Pilih kelompok..." />
@@ -361,24 +379,32 @@ export default function CustomerProfil() {
           </div>
 
           <div className="space-y-4">
+            <SectionTitle>Penerima LHU</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Nama Penerima LHU">
+                <TextInput value={lhuReceiver} onChange={e => setLhuReceiver(e.target.value)}
+                  placeholder="Nama penerima Laporan Hasil Uji" />
+              </Field>
+              <Field label="Kontak Penerima LHU">
+                <TextInput value={lhuContact} onChange={e => setLhuContact(e.target.value)}
+                  placeholder="08XXXXXXXXXX" />
+              </Field>
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <SectionTitle>Alamat</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Provinsi">
-                <TextInput value={province} onChange={e => setProvince(e.target.value)}
-                  placeholder="Cth: Lampung" />
-              </Field>
-              <Field label="Kota / Kabupaten">
-                <TextInput value={city} onChange={e => setCity(e.target.value)}
-                  placeholder="Cth: Bandar Lampung" />
-              </Field>
-              <Field label="Kecamatan">
-                <TextInput value={subdistrict} onChange={e => setSubdistrict(e.target.value)}
-                  placeholder="Cth: Rajabasa" />
-              </Field>
-              <Field label="Kelurahan / Desa">
-                <TextInput value={village} onChange={e => setVillage(e.target.value)}
-                  placeholder="Cth: Gedong Meneng" />
-              </Field>
+              <WilayahSelect
+                value={{ province, city, subdistrict, village }}
+                onChange={(f) => {
+                  if ("province"    in f) setProvince(f.province);
+                  if ("city"        in f) setCity(f.city);
+                  if ("subdistrict" in f) setSubdistrict(f.subdistrict);
+                  if ("village"     in f) setVillage(f.village);
+                }}
+                required
+              />
               <Field label="Kode Pos">
                 <TextInput value={zipCode} onChange={e => setZipCode(e.target.value)}
                   placeholder="Cth: 35141" />

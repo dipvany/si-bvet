@@ -28,6 +28,19 @@ export const approveSubmission = (id) =>
 export const rejectSubmission = (id) =>
   apiFetch(`/admin/submissions/${id}/reject`, { method: "PATCH" });
 
+export const getSubmissionByID = (id) =>
+  apiFetch(`/admin/submissions/${id}`);
+
+// Export pengajuan ke Excel.
+// payload: { export_all: true } untuk semua data,
+// atau { export_all: false, submission_ids: [1, 2, 3] } untuk pilih beberapa/1 data.
+export const exportSubmissions = (payload) =>
+  apiFetch("/admin/submissions/export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
 // ── Billing ───────────────────────────────────────────────────────
 export const createBilling = (submissionId, data) =>
   apiFetch(`/admin/billings/${submissionId}`, {

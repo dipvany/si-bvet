@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { apiFetch } from "../../services/api";
+import { updateProfile } from "../../services/CustomerServices";
 import { getCart, removeFromCart, addToCart } from "../../utils/cart";
 import { parseSubmissionList } from "../../utils/parseList";
+import WilayahSelect from "../../components/WilayahSelect";
 import {
   TYPE_SERVICE,
   PURPOSE,
@@ -636,264 +638,6 @@ async function fetchWilayah(path, altPath) {
   return [];
 }
 
-function WilayahSelect({ step3, setStep3 }) {
-  const [regencies, setRegencies] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [villages, setVillages] = useState([]);
-  const [loadingReg, setLoadingReg] = useState(false);
-  const [loadingDist, setLoadingDist] = useState(false);
-  const [loadingVil, setLoadingVil] = useState(false);
-  const [errReg, setErrReg] = useState("");
-  const [errDist, setErrDist] = useState("");
-  const [errVil, setErrVil] = useState("");
-  const [provId, setProvId] = useState("");
-  const [regId, setRegId] = useState("");
-  const [distId, setDistId] = useState("");
-
-  useEffect(() => {
-    if (!provId) {
-      setRegencies([]);
-      setDistricts([]);
-      setVillages([]);
-      return;
-    }
-    setLoadingReg(true);
-    setErrReg("");
-    setRegencies([]);
-    setDistricts([]);
-    setVillages([]);
-    fetchWilayah(`regencies/${provId}.json`, `kabupaten/${provId}.json`)
-      .then((d) => {
-        setRegencies(d);
-        if (!d.length) setErrReg("Gagal memuat data kabupaten.");
-      })
-      .finally(() => setLoadingReg(false));
-  }, [provId]);
-
-  useEffect(() => {
-    if (!regId) {
-      setDistricts([]);
-      setVillages([]);
-      return;
-    }
-    setLoadingDist(true);
-    setErrDist("");
-    setDistricts([]);
-    setVillages([]);
-    fetchWilayah(`districts/${regId}.json`, `kecamatan/${regId}.json`)
-      .then((d) => {
-        setDistricts(d);
-        if (!d.length) setErrDist("Gagal memuat data kecamatan.");
-      })
-      .finally(() => setLoadingDist(false));
-  }, [regId]);
-
-  useEffect(() => {
-    if (!distId) {
-      setVillages([]);
-      return;
-    }
-    setLoadingVil(true);
-    setErrVil("");
-    setVillages([]);
-    fetchWilayah(`villages/${distId}.json`, `kelurahan/${distId}.json`)
-      .then((d) => {
-        setVillages(d);
-        if (!d.length) setErrVil("Gagal memuat data kelurahan.");
-      })
-      .finally(() => setLoadingVil(false));
-  }, [distId]);
-
-  const getId = (o) => o.code ?? o.id ?? "";
-
-  const handleProv = (e) => {
-    const id = e.target.value;
-    const name = PROVINCES.find((p) => p.id === id)?.name ?? "";
-    setProvId(id);
-    setRegId("");
-    setDistId("");
-    setStep3((p) => ({
-      ...p,
-      province: name,
-      city: "",
-      subdistrict: "",
-      village: "",
-    }));
-  };
-  const handleReg = (e) => {
-    const id = e.target.value;
-    const name = regencies.find((r) => getId(r) === id)?.name ?? "";
-    setRegId(id);
-    setDistId("");
-    setStep3((p) => ({ ...p, city: name, subdistrict: "", village: "" }));
-  };
-  const handleDist = (e) => {
-    const id = e.target.value;
-    const name = districts.find((d) => getId(d) === id)?.name ?? "";
-    setDistId(id);
-    setStep3((p) => ({ ...p, subdistrict: name, village: "" }));
-  };
-  const handleVil = (e) => {
-    const name = villages.find((v) => getId(v) === e.target.value)?.name ?? "";
-    setStep3((p) => ({ ...p, village: name }));
-  };
-
-  const WDD = ({
-    label,
-    required,
-    value,
-    onChange,
-    opts,
-    loading,
-    disabled,
-    placeholder,
-  }) => (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-[#233B6E]">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      <div className="relative">
-        <select
-          value={(() => {
-            const f = opts.find((o) => o.name === value);
-            return f ? getId(f) : "";
-          })()}
-          onChange={onChange}
-          disabled={disabled || loading}
-          className="w-full appearance-none border border-gray-300 rounded-xl px-3 py-2.5
-            text-sm outline-none bg-white pr-9 text-gray-800
-            focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]
-            disabled:bg-gray-50 disabled:text-gray-400 transition"
-        >
-          <option value="">
-            {loading
-              ? "Memuat..."
-              : disabled
-                ? "Pilih sebelumnya dulu"
-                : placeholder}
-          </option>
-          {opts.map((o) => (
-            <option key={getId(o)} value={getId(o)}>
-              {o.name}
-            </option>
-          ))}
-        </select>
-        {loading ? (
-          <svg
-            className="animate-spin w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2
-              text-[#233B6E] pointer-events-none"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            />
-          </svg>
-        ) : (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        )}
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* Provinsi — hardcode, tidak perlu fetch */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-[#233B6E]">
-          Provinsi<span className="text-red-500 ml-0.5">*</span>
-        </label>
-        <div className="relative">
-          <select
-            value={provId}
-            onChange={handleProv}
-            className="w-full appearance-none border border-gray-300 rounded-xl px-3 py-2.5
-              text-sm outline-none bg-white pr-9 text-gray-800
-              focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E] transition"
-          >
-            <option value="">Pilih provinsi</option>
-            {PROVINCES.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-      </div>
-
-      <div>
-        <WDD
-          label="Kabupaten/Kota"
-          required
-          value={step3.city}
-          onChange={handleReg}
-          opts={regencies}
-          loading={loadingReg}
-          disabled={!provId}
-          placeholder="Pilih kabupaten/kota"
-        />
-        {errReg && <p className="text-xs text-red-500 mt-1">{errReg}</p>}
-      </div>
-      <div>
-        <WDD
-          label="Kecamatan"
-          required
-          value={step3.subdistrict}
-          onChange={handleDist}
-          opts={districts}
-          loading={loadingDist}
-          disabled={!regId}
-          placeholder="Pilih kecamatan"
-        />
-        {errDist && <p className="text-xs text-red-500 mt-1">{errDist}</p>}
-      </div>
-      <div>
-        <WDD
-          label="Kelurahan/Desa"
-          required
-          value={step3.village}
-          onChange={handleVil}
-          opts={villages}
-          loading={loadingVil}
-          disabled={!distId}
-          placeholder="Pilih kelurahan/desa"
-        />
-        {errVil && <p className="text-xs text-red-500 mt-1">{errVil}</p>}
-      </div>
-    </>
-  );
-}
-
 /* ─── NavButtons ─── */
 function NavButtons({ step, onBack, onNext }) {
   return (
@@ -990,6 +734,8 @@ export default function PengajuanUjiSampel() {
     zip_code: "",
     pic_name: "",
     pic_contact: "",
+    lhu_receiver: "",
+    lhu_contact: "",
   });
 
   useEffect(() => {
@@ -1011,6 +757,8 @@ export default function PengajuanUjiSampel() {
           zip_code: c.zip_code ?? "",
           pic_name: c.pic_name ?? "",
           pic_contact: c.pic_contact ?? "",
+          lhu_receiver: c.lhu_receiver_name    ?? c.lhu_receiver ?? "",
+          lhu_contact:  c.lhu_receiver_contact ?? c.lhu_contact  ?? "",
         });
       })
       .catch(() => {});
@@ -1170,11 +918,42 @@ export default function PengajuanUjiSampel() {
           const newest = mine.reduce((a, b) => (b.id > a.id ? b : a));
           localStorage.setItem(
             `tinjauan_sampel_${newest.id}`,
-            JSON.stringify({ step1, samples, savedAt: Date.now() }),
+            JSON.stringify({
+              step1,
+              samples,
+              step3,
+              // File object tidak bisa di-serialize, simpan nama saja sebagai info
+              docFileNames: docFiles.map(f => f.name),
+              savedAt: Date.now(),
+            }),
           );
         }
       } catch {
         // Cache gagal disimpan, tidak fatal — lanjut saja.
+      }
+
+      // ✅ Simpan data step3 ke profil secara otomatis setelah submit berhasil.
+      // Kalau user mengubah/mengisi data di step3, data terbaru tersimpan ke profil
+      // supaya pengajuan berikutnya sudah ter-isi otomatis.
+      try {
+        // updateProfile sudah di-import di atas (static import)
+        await updateProfile({
+          fullname:             step3.fullname    || undefined,
+          phone:                step3.phone       || undefined,
+          pic_name:             step3.pic_name    || undefined,
+          pic_contact:          step3.pic_contact || undefined,
+          province:             step3.province    || undefined,
+          city:                 step3.city        || undefined,
+          subdistrict:          step3.subdistrict || undefined,
+          village:              step3.village     || undefined,
+          address:              step3.address     || undefined,
+          zip_code:             step3.zip_code    || undefined,
+          lhu_receiver_name:    step3.lhu_receiver    || undefined,
+          lhu_receiver_contact: step3.lhu_contact     || undefined,
+          // institution tidak ada di ProfileRequest backend
+        });
+      } catch {
+        // Gagal update profil tidak fatal — pengajuan tetap berhasil
       }
 
       navigate("/customer/pengajuan-saya");
@@ -1271,38 +1050,48 @@ export default function PengajuanUjiSampel() {
                 Data Sampel ({samples.length} sampel)
               </p>
               {samples.map((s, i) => (
-                <div
-                  key={i}
-                  className="bg-[#F6F7FB] rounded-xl p-3 mb-2 text-sm"
-                >
-                  <p className="font-bold text-[#233B6E] mb-2">
+                <div key={i} className="bg-[#F6F7FB] rounded-xl p-4 mb-3 text-sm">
+                  <p className="font-bold text-[#233B6E] mb-3">
                     Sampel {i + 1}: {s.sample_code_cust}
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                     {[
-                      { label: "Model Sampel", val: s.sample_model },
-                      { label: "Species/Hewan", val: s.species },
-                      { label: "Jenis Spesimen", val: s.specimen_type },
-                      { label: "Pengawet", val: s.preservative },
+                      { label: "Model Sampel",       val: s.sample_model },
+                      { label: "Total Sampel",        val: s.total_sample || "1" },
+                      { label: "Kelompok Spesimen",   val: s.specimen_group },
+                      { label: "Jenis Spesimen",      val: s.specimen_type },
+                      { label: "Hewan / Species",     val: s.species },
+                      { label: "Pengawet",            val: s.preservative },
+                      { label: "Kemasan",             val: s.packaging },
+                      { label: "Tanggal Produksi",    val: s.production_date },
+                      { label: "Tanggal Kadaluarsa",  val: s.expired_date },
+                      { label: "Jenis Kelamin",       val: s.sex },
+                      { label: "Umur",                val: s.age ? `${s.age} ${s.unit_age ?? ""}`.trim() : "-" },
+                      { label: "Pemilik Hewan",       val: s.owner },
+                      { label: "Telah Divaksin",      val: s.is_vaccinated },
+                      { label: "Jenis Lokasi",        val: s.location_type },
+                      { label: "Lokasi Pengambilan",  val: s.location_smpl },
                     ].map((r) => (
                       <div key={r.label}>
                         <p className="text-[11px] text-gray-400">{r.label}</p>
-                        <p className="font-medium text-[#233B6E]">
-                          {r.val || "-"}
-                        </p>
+                        <p className="font-medium text-[#233B6E]">{r.val || "-"}</p>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {s.test_services?.map((t) => (
-                      <span
-                        key={t.id}
-                        className="bg-[#233B6E]/10 text-[#233B6E] text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      >
-                        {t.test_name}
-                      </span>
-                    ))}
-                  </div>
+                  {/* Jenis Pengujian */}
+                  {s.test_services?.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-gray-200">
+                      <p className="text-[11px] text-gray-400 mb-1.5">Jenis Pengujian</p>
+                      <div className="flex flex-wrap gap-1">
+                        {s.test_services.map((t) => (
+                          <span key={t.id}
+                            className="bg-[#233B6E]/10 text-[#233B6E] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {t.test_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </section>
@@ -1321,6 +1110,10 @@ export default function PengajuanUjiSampel() {
                   { label: "Kota", val: step3.city },
                   { label: "Kecamatan", val: step3.subdistrict },
                   { label: "Kelurahan", val: step3.village },
+                  { label: "Nama PIC", val: step3.pic_name },
+                  { label: "Kontak PIC", val: step3.pic_contact },
+                  { label: "Nama Penerima LHU", val: step3.lhu_receiver },
+                  { label: "Kontak Penerima LHU", val: step3.lhu_contact },
                 ].map((r) => (
                   <div key={r.label}>
                     <p className="text-xs text-gray-400">{r.label}</p>
@@ -2096,7 +1889,11 @@ export default function PengajuanUjiSampel() {
                     placeholder="cth: 35141"
                   />
                 </Field>
-                <WilayahSelect step3={step3} setStep3={setStep3} />
+                <WilayahSelect
+                  value={step3}
+                  onChange={(f) => setStep3((p) => ({ ...p, ...f }))}
+                  required
+                />
                 <Field label="Nama PIC">
                   <Input
                     value={step3.pic_name}
@@ -2109,6 +1906,20 @@ export default function PengajuanUjiSampel() {
                     value={step3.pic_contact}
                     onChange={setS3("pic_contact")}
                     placeholder="No. HP narahubung"
+                  />
+                </Field>
+                <Field label="Nama Penerima LHU">
+                  <Input
+                    value={step3.lhu_receiver}
+                    onChange={setS3("lhu_receiver")}
+                    placeholder="Nama penerima Laporan Hasil Uji"
+                  />
+                </Field>
+                <Field label="Kontak Penerima LHU">
+                  <Input
+                    value={step3.lhu_contact}
+                    onChange={setS3("lhu_contact")}
+                    placeholder="No. HP penerima LHU"
                   />
                 </Field>
               </div>

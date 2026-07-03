@@ -1,36 +1,32 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  getAdminSubmissions,
-  createBilling,
-  updateBilling,
-  getBilling,
-  verifyPayment,
-  rejectPayment,
+  getAdminSubmissions, createBilling, updateBilling,
+  getBilling, verifyPayment, rejectPayment,
 } from "../../services/adminServices";
 import { apiFetch } from "../../services/api";
 import { resolveFileUrl } from "../../utils/fileUrl";
 
-/**
- * ProsesPengujian — kelola alur proses pengujian setelah pengajuan disetujui.
- *
- * Alur status:
- *   reviewing         → (Mulai Proses Pembayaran) → awaiting_payment  + input billing
- *   awaiting_payment  → (Verifikasi Pembayaran)   → in_process
- *   in_process        → (Selesaikan Pengujian)    → done
- *   done              → tampil di Laporan Hasil Uji
- */
-
-/* ── Shared helpers ─────────────────────────────────────────────── */
 const STATUS_CONFIG = {
-  approved:         { label: "Disetujui",        bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500",  order: 0 },
+  approved:         { label: "Disetujui",          bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500",  order: 0 },
   awaiting_payment: { label: "Menunggu Pembayaran", bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   order: 1 },
   in_process:       { label: "Proses Pengujian",    bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", order: 2 },
-  processed:        { label: "Selesai Diproses",    bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500",  order: 3 },
+  processed:        { label: "Selesai Diproses",    bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500", order: 3 },
   done:             { label: "Pengujian Selesai",   bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500",  order: 4 },
 };
 
-// Endpoint update status submission (misal: PATCH /admin/submissions/:id/status)
+const ACTIVE_STATUSES = ["approved", "awaiting_payment", "in_process", "processed", "done"];
+const PER_PAGE = 20;
+
+// Safe JSON parse — hindari crash kalau backend return HTML/empty
+const safeJson = async (res) => {
+  try {
+    const text = await res.text();
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
+};
+
 const updateSubmissionStatus = (id, status) =>
   apiFetch(`/admin/submissions/${id}/status`, {
     method:  "PATCH",
@@ -41,8 +37,7 @@ const updateSubmissionStatus = (id, status) =>
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n ?? 0);
 
-const PER_PAGE = 20;
-
+/* ── Komponen kecil ── */
 function StatusPill({ status }) {
   const c = STATUS_CONFIG[status] ?? { label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
   return (
@@ -64,17 +59,28 @@ function Spinner({ sm }) {
 
 function Alert({ type, msg, onClose }) {
   if (!msg) return null;
-  const cls = type === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700";
+  const cls = type === "error"
+    ? "bg-red-50 border-red-200 text-red-700"
+    : "bg-green-50 border-green-200 text-green-700";
   return (
     <div className={`border rounded-xl px-4 py-3 text-sm flex items-start justify-between gap-3 ${cls}`}>
       <span>{msg}</span>
       {onClose && (
-        <button onClick={onClose} className="opacity-60 hover:opacity-100 flex-shrink-0">
+        <button onClick={onClose} className="opacity-60 hover:opacity-100 flex-shrink-0 mt-0.5">
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
             <path d="M1 1l12 12M13 1L1 13"/>
           </svg>
         </button>
       )}
+    </div>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div className="flex gap-3 py-2.5 border-b border-gray-50 last:border-0">
+      <span className="text-xs text-gray-400 w-40 flex-shrink-0">{label}</span>
+      <span className="text-sm font-medium text-gray-800 flex-1">{value ?? "-"}</span>
     </div>
   );
 }
@@ -90,58 +96,58 @@ function PBtn({ children, active, disabled, onClick }) {
   );
 }
 
-function InfoRow({ label, value }) {
-  return (
-    <div className="flex gap-3 py-2 border-b border-gray-50 last:border-0">
-      <span className="text-xs text-gray-400 w-36 flex-shrink-0">{label}</span>
-      <span className="text-sm font-medium text-gray-800 flex-1">{value ?? "-"}</span>
-    </div>
-  );
-}
-
 /* ══════════════════════════════════════════════════════════════════
-   MODAL DETAIL + AKSI PER SUBMISSION
+   HALAMAN DETAIL — tampil di area konten, bukan popup
 ══════════════════════════════════════════════════════════════════ */
-function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
-  const [sub,         setSub]         = useState(initialSub);
-  const [billing,     setBilling]     = useState(null);
-  const [loadBill,    setLoadBill]    = useState(true);
-  const [actionLoad,  setActionLoad]  = useState(false);
-  const [savingBill,  setSavingBill]  = useState(false);
-  const [err,         setErr]         = useState("");
-  const [ok,          setOk]          = useState("");
+function DetailProses({ submission: initialSub, onBack, onUpdated }) {
+  const [sub,          setSub]          = useState(initialSub);
+  const [billing,      setBilling]      = useState(null);
+  const [loadBill,     setLoadBill]     = useState(true);
+  const [actionLoad,   setActionLoad]   = useState(false);
+  const [savingBill,   setSavingBill]   = useState(false);
+  const [err,          setErr]          = useState("");
+  const [ok,           setOk]           = useState("");
   const [showBillForm, setShowBillForm] = useState(false);
-  const [billForm, setBillForm] = useState({ ebilling_code: "", total_amount: "", no_registration: "", no_epi: "" });
+  const [billForm,     setBillForm]     = useState({
+    ebilling_code: "", total_amount: "", no_registration: "", no_epi: "",
+  });
 
-  const status           = sub.process_status;
-  const isReviewing      = status === "approved";
-  const isAwaitingPay    = status === "awaiting_payment";
-  const isInProcess      = status === "in_process";
-  const isDone           = status === "done";
+  const status                = sub.process_status;
+  const isReviewing           = status === "approved";
+  const isAwaitingPay         = status === "awaiting_payment";
+  const isAwaitingVerification = status === "awaiting_verification";
+  const isInProcess           = status === "in_process";
+  const isDone                = status === "done";
 
   useEffect(() => {
     (async () => {
       setLoadBill(true);
       try {
         const res = await getBilling(sub.id);
+        const j   = await safeJson(res);
         if (res.ok) {
-          const j = await res.json();
           const b = j.billing ?? j.data ?? j;
-          setBilling(b);
-          if (b) setBillForm({ ebilling_code: b.ebilling_code ?? "", total_amount: String(b.total_amount ?? ""), no_registration: b.no_registration ?? "", no_epi: b.no_epi ?? "" });
+          if (b && b.ebilling_code) {
+            setBilling(b);
+            setBillForm({
+              ebilling_code:   b.ebilling_code   ?? "",
+              total_amount:    String(b.total_amount ?? ""),
+              no_registration: b.no_registration ?? "",
+              no_epi:          b.no_epi          ?? "",
+            });
+          }
         }
       } catch {}
       finally { setLoadBill(false); }
     })();
   }, [sub.id]);
 
-  // Ubah status submission
   const changeStatus = async (newStatus, confirmMsg) => {
     if (!window.confirm(confirmMsg)) return;
     setActionLoad(true); setErr(""); setOk("");
     try {
       const res  = await updateSubmissionStatus(sub.id, newStatus);
-      const json = await res.json();
+      const json = await safeJson(res);
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal mengubah status.");
       setSub(p => ({ ...p, process_status: newStatus }));
       setOk("Status berhasil diperbarui.");
@@ -150,23 +156,28 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
     finally { setActionLoad(false); }
   };
 
-  // Simpan billing lalu ubah status ke awaiting_payment
   const handleSaveBillingAndNext = async (e) => {
     e.preventDefault();
     if (!billForm.ebilling_code) { setErr("Kode e-billing wajib diisi."); return; }
     if (!billForm.total_amount)  { setErr("Total tagihan wajib diisi."); return; }
     setSavingBill(true); setErr(""); setOk("");
     try {
-      const body = { ebilling_code: billForm.ebilling_code, total_amount: Number(billForm.total_amount), no_registration: billForm.no_registration, no_epi: billForm.no_epi };
-      const billRes = billing ? await updateBilling(sub.id, body) : await createBilling(sub.id, body);
-      const billJson = await billRes.json();
-      if (!billRes.ok) throw new Error(billJson.error ?? "Gagal menyimpan tagihan.");
-      setBilling(billJson.billing ?? body);
+      const body = {
+        ebilling_code:   billForm.ebilling_code,
+        total_amount:    Number(billForm.total_amount),
+        no_registration: billForm.no_registration,
+        no_epi:          billForm.no_epi,
+      };
+      const billRes  = billing
+        ? await updateBilling(sub.id, body)
+        : await createBilling(sub.id, body);
+      const billJson = await safeJson(billRes);
+      if (!billRes.ok) throw new Error(billJson.error ?? billJson.message ?? "Gagal menyimpan tagihan.");
+      setBilling(billJson.billing ?? billJson.data ?? body);
 
-      // Ubah status ke awaiting_payment
       const statusRes  = await updateSubmissionStatus(sub.id, "awaiting_payment");
-      const statusJson = await statusRes.json();
-      if (!statusRes.ok) throw new Error(statusJson.error ?? "Gagal mengubah status.");
+      const statusJson = await safeJson(statusRes);
+      if (!statusRes.ok) throw new Error(statusJson.error ?? statusJson.message ?? "Gagal mengubah status.");
       setSub(p => ({ ...p, process_status: "awaiting_payment" }));
       onUpdated(sub.id, "awaiting_payment");
       setOk("Tagihan disimpan. Status diubah ke Menunggu Pembayaran.");
@@ -175,14 +186,13 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
     finally { setSavingBill(false); }
   };
 
-  // Verifikasi pembayaran customer → in_process
   const handleVerifyPayment = async () => {
     if (!window.confirm("Verifikasi pembayaran ini? Status akan berubah ke Proses Pengujian.")) return;
     setActionLoad(true); setErr(""); setOk("");
     try {
       const res  = await verifyPayment(sub.id);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Gagal verifikasi pembayaran.");
+      const json = await safeJson(res);
+      if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal verifikasi pembayaran.");
       setSub(p => ({ ...p, process_status: "in_process" }));
       onUpdated(sub.id, "in_process");
       setOk("Pembayaran terverifikasi. Status: Proses Pengujian.");
@@ -195,243 +205,342 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
     setActionLoad(true); setErr(""); setOk("");
     try {
       const res  = await rejectPayment(sub.id);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Gagal menolak pembayaran.");
-      setOk("Pembayaran ditolak.");
+      const json = await safeJson(res);
+      if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal menolak pembayaran.");
+      setOk("Pembayaran ditolak. Pelanggan perlu unggah ulang.");
     } catch (e) { setErr(e.message); }
     finally { setActionLoad(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl
-        max-h-[90vh] overflow-y-auto">
-        <div className="h-1 bg-[#233B6E] rounded-t-2xl" />
-        <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-3">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack}
+            className="p-2 rounded-lg hover:bg-white text-gray-500 hover:text-[#233B6E] transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-bold text-[#233B6E] text-base">Detail Proses Pengujian</h2>
+              <h1 className="text-xl font-bold text-[#233B6E]">Detail Proses Pengujian</h1>
               <StatusPill status={status} />
             </div>
             <p className="text-xs text-gray-400 mt-0.5 font-mono">{sub.no_ticket ?? `#${sub.id}`}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-5 h-5">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </button>
+        </div>
+      </div>
+
+      {/* Alur status */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Alur Proses</p>
+        <div className="flex items-center gap-1 flex-wrap">
+          {[
+            { key: "approved",              label: "Disetujui"   },
+            { key: "awaiting_payment",      label: "Pembayaran"  },
+            { key: "awaiting_verification", label: "Verifikasi"  },
+            { key: "in_process",            label: "Pengujian"   },
+            { key: "done",                  label: "Selesai"     },
+          ].map((step, i, arr) => {
+            const order        = STATUS_CONFIG[step.key]?.order ?? 0;
+            const currentOrder = STATUS_CONFIG[status]?.order  ?? 0;
+            const isCurrent    = step.key === status;
+            const isPast       = order < currentOrder;
+            return (
+              <div key={step.key} className="flex items-center gap-1">
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold
+                  ${isCurrent ? "bg-[#233B6E] text-white" : isPast ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                  {isPast && "✓ "}{step.label}
+                </div>
+                {i < arr.length - 1 && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" className={`w-3 h-3 flex-shrink-0 ${isPast ? "text-green-400" : "text-gray-300"}`}>
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Kolom kiri — info submission */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="h-1 bg-[#233B6E]" />
+            <div className="p-5">
+              <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
+                Informasi Pengajuan
+              </p>
+              <InfoRow label="No. Tiket"        value={sub.no_ticket} />
+              <InfoRow label="No. Registrasi"   value={sub.no_registration} />
+              <InfoRow label="No. EPI"          value={sub.no_epi} />
+              <InfoRow label="Jenis Layanan"    value={sub.type_service} />
+              <InfoRow label="Tujuan Pengujian" value={sub.purpose_of_test} />
+              <InfoRow label="Jumlah Sampel"    value={sub.samples_count} />
+            </div>
+          </div>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        {/* Kolom kanan — aksi */}
+        <div className="lg:col-span-2 space-y-4">
           <Alert type="error"   msg={err} onClose={() => setErr("")} />
-          <Alert type="success" msg={ok}  onClose={() => setOk("") } />
+          <Alert type="success" msg={ok}  onClose={() => setOk("")} />
 
-          {/* ── Info submission ── */}
-          <div className="space-y-0">
-            <InfoRow label="Jenis Layanan"    value={sub.type_service} />
-            <InfoRow label="Tujuan Pengujian" value={sub.purpose_of_test} />
-            <InfoRow label="Jumlah Sampel"    value={sub.samples_count} />
-            <InfoRow label="No. Registrasi"   value={sub.no_registration} />
-            <InfoRow label="No. EPI"          value={sub.no_epi} />
-          </div>
-
-          {/* ── Tombol aksi per status ── */}
-
-          {/* 1. KAJI ULANG → Proses Pembayaran (input billing) */}
+          {/* 1. KAJI ULANG */}
           {isReviewing && (
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
-              <div>
-                <p className="text-sm font-bold text-orange-800">Tahap: Kaji Ulang</p>
-                <p className="text-xs text-orange-600 mt-0.5">
-                  Tinjau pengajuan. Jika sudah benar, masuk ke tahap pembayaran dengan mengisi data tagihan.
-                </p>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="h-1 bg-orange-400" />
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-orange-800">Tahap: Kaji Ulang</p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    Tinjau pengajuan. Jika sudah benar, masuk ke tahap pembayaran dengan mengisi data tagihan.
+                  </p>
+                </div>
+                <button onClick={() => setShowBillForm(p => !p)}
+                  className="flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
+                    text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-all shadow-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                  </svg>
+                  Lanjut ke Proses Pembayaran
+                </button>
+
+                {showBillForm && (
+                  <form onSubmit={handleSaveBillingAndNext}
+                    className="pt-4 border-t border-gray-100 space-y-4">
+                    <p className="text-xs font-bold text-[#233B6E] uppercase tracking-wider">
+                      Input Data Tagihan
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[
+                        { key: "ebilling_code",   label: "Kode e-Billing",     req: true, ph: "EB-001" },
+                        { key: "total_amount",    label: "Total Tagihan (Rp)", req: true, ph: "250000", type: "number" },
+                        { key: "no_registration", label: "No. Registrasi",     ph: "REG-001" },
+                        { key: "no_epi",          label: "No. EPI",            ph: "EPI-001" },
+                      ].map(f => (
+                        <div key={f.key}>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                            {f.label}{f.req && <span className="text-red-400 ml-0.5">*</span>}
+                          </label>
+                          <input type={f.type ?? "text"} value={billForm[f.key]}
+                            onChange={e => setBillForm(p => ({ ...p, [f.key]: e.target.value }))}
+                            placeholder={f.ph}
+                            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm
+                              outline-none focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button type="button" onClick={() => setShowBillForm(false)}
+                        className="px-4 py-2 text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl">
+                        Batal
+                      </button>
+                      <button type="submit" disabled={savingBill}
+                        className="flex items-center gap-2 bg-[#233B6E] text-white font-bold text-sm
+                          px-5 py-2 rounded-xl disabled:opacity-60">
+                        {savingBill ? <><Spinner sm />Menyimpan...</> : "Simpan & Lanjutkan"}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
-              <button onClick={() => setShowBillForm(p => !p)}
-                className="flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
-                  text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-all shadow-sm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                  <line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-                Lanjut ke Proses Pembayaran
-              </button>
-              {showBillForm && (
-                <form onSubmit={handleSaveBillingAndNext} className="pt-3 border-t border-orange-200 space-y-3">
-                  <p className="text-xs font-bold text-[#233B6E] uppercase tracking-wider">Input Data Tagihan</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      { key: "ebilling_code",   label: "Kode e-Billing",  req: true, ph: "EB-001" },
-                      { key: "total_amount",    label: "Total Tagihan (Rp)", req: true, ph: "250000", type: "number" },
-                      { key: "no_registration", label: "No. Registrasi",  ph: "REG-001" },
-                      { key: "no_epi",          label: "No. EPI",         ph: "EPI-001" },
-                    ].map(f => (
-                      <div key={f.key}>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                          {f.label}{f.req && <span className="text-red-400 ml-0.5">*</span>}
-                        </label>
-                        <input type={f.type ?? "text"} value={billForm[f.key]}
-                          onChange={e => setBillForm(p => ({ ...p, [f.key]: e.target.value }))}
-                          placeholder={f.ph}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm
-                            outline-none focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button type="button" onClick={() => setShowBillForm(false)}
-                      className="px-3 py-2 text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                      Batal
-                    </button>
-                    <button type="submit" disabled={savingBill}
-                      className="flex items-center gap-2 bg-[#233B6E] text-white font-bold text-sm
-                        px-4 py-2 rounded-xl disabled:opacity-60">
-                      {savingBill ? <><Spinner sm />Menyimpan...</> : "Simpan & Lanjutkan"}
-                    </button>
-                  </div>
-                </form>
-              )}
             </div>
           )}
 
-          {/* 2. MENUNGGU PEMBAYARAN — tampilkan tagihan + verifikasi/tolak */}
+          {/* 2. MENUNGGU PEMBAYARAN */}
           {isAwaitingPay && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-              <div>
-                <p className="text-sm font-bold text-blue-800">Tahap: Menunggu Pembayaran</p>
-                <p className="text-xs text-blue-600 mt-0.5">
-                  Pelanggan perlu membayar tagihan di bawah. Setelah bukti pembayaran diunggah pelanggan, verifikasi di sini.
-                </p>
-              </div>
-              {/* Tagihan */}
-              {loadBill ? (
-                <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat tagihan...</div>
-              ) : billing ? (
-                <div className="bg-white rounded-xl border border-blue-100 p-3 space-y-0 text-sm">
-                  <InfoRow label="Kode e-Billing"  value={billing.ebilling_code} />
-                  <InfoRow label="Total Tagihan"   value={rupiah(billing.total_amount)} />
-                  <InfoRow label="No. Registrasi"  value={billing.no_registration} />
-                  <InfoRow label="No. EPI"         value={billing.no_epi} />
-                  {/* FIX: bukti pembayaran yang diunggah customer (field proof_payment)
-                      sebelumnya tidak pernah ditampilkan, jadi admin/superadmin
-                      tidak punya cara melihat bukti sebelum verifikasi. */}
-                  <div className="flex gap-3 py-2.5">
-                    <span className="text-xs text-gray-400 w-36 flex-shrink-0">Bukti Pembayaran</span>
-                    <span className="text-sm font-medium flex-1">
-                      {billing.proof_payment ? (
-                        <a href={resolveFileUrl(billing.proof_payment)} target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-[#233B6E] font-semibold hover:underline">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                            strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                          </svg>
-                          Lihat Bukti Pembayaran
-                        </a>
-                      ) : (
-                        <span className="text-orange-500">Belum diunggah pelanggan</span>
-                      )}
-                    </span>
-                  </div>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="h-1 bg-blue-400" />
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-blue-800">Tahap: Menunggu Pembayaran</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Pelanggan perlu membayar tagihan. Setelah bukti diunggah, verifikasi di sini.
+                  </p>
                 </div>
-              ) : (
-                <p className="text-xs text-blue-600">Belum ada data tagihan.</p>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <button onClick={handleVerifyPayment} disabled={actionLoad || !billing?.proof_payment}
-                  title={!billing?.proof_payment ? "Pelanggan belum mengunggah bukti pembayaran" : undefined}
+
+                {loadBill ? (
+                  <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat tagihan...</div>
+                ) : billing ? (
+                  <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 space-y-0">
+                    <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-2">Data Tagihan</p>
+                    <InfoRow label="Kode e-Billing"  value={billing.ebilling_code} />
+                    <InfoRow label="Total Tagihan"   value={rupiah(billing.total_amount)} />
+                    <InfoRow label="No. Registrasi"  value={billing.no_registration} />
+                    <InfoRow label="No. EPI"         value={billing.no_epi} />
+                    <div className="flex gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                      <span className="text-xs text-gray-400 w-40 flex-shrink-0">Bukti Pembayaran</span>
+                      <span className="text-sm font-medium flex-1">
+                        {billing.proof_payment ? (
+                          <a href={resolveFileUrl(billing.proof_payment)} target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-[#233B6E] font-semibold hover:underline">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                              strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            Lihat Bukti Pembayaran
+                          </a>
+                        ) : (
+                          <span className="text-orange-500 text-xs">Belum diunggah pelanggan</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-blue-600">Belum ada data tagihan.</p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={handleVerifyPayment}
+                    disabled={actionLoad || !billing?.proof_payment}
+                    title={!billing?.proof_payment ? "Pelanggan belum mengunggah bukti pembayaran" : undefined}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700
+                      text-white font-bold text-sm px-4 py-2.5 rounded-xl
+                      disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
+                    {actionLoad ? <Spinner sm /> : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                        strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                    Verifikasi Pembayaran
+                  </button>
+                  <button onClick={handleRejectPayment} disabled={actionLoad}
+                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100
+                      text-red-600 font-bold text-sm px-4 py-2.5 rounded-xl
+                      border border-red-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                    Tolak Pembayaran
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. MENUNGGU VERIFIKASI PEMBAYARAN */}
+          {isAwaitingVerification && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="h-1 bg-cyan-400" />
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-cyan-800">Tahap: Verifikasi Pembayaran</p>
+                  <p className="text-xs text-cyan-600 mt-1">
+                    Customer sudah mengunggah bukti pembayaran. Periksa dokumen lalu verifikasi atau tolak.
+                  </p>
+                </div>
+
+                {loadBill ? (
+                  <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat data tagihan...</div>
+                ) : billing ? (
+                  <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 space-y-0">
+                    <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-2">Data Tagihan</p>
+                    <InfoRow label="Kode e-Billing"  value={billing.ebilling_code} />
+                    <InfoRow label="Total Tagihan"   value={rupiah(billing.total_amount)} />
+                    <InfoRow label="No. Registrasi"  value={billing.no_registration} />
+                    <InfoRow label="No. EPI"         value={billing.no_epi} />
+                    <div className="flex gap-3 py-2.5 border-b border-gray-50 last:border-0">
+                      <span className="text-xs text-gray-400 w-40 flex-shrink-0">Bukti Pembayaran</span>
+                      <span className="text-sm font-medium flex-1">
+                        {billing.proof_payment ? (
+                          <a href={resolveFileUrl(billing.proof_payment)} target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-[#233B6E] font-semibold hover:underline">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                              strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            Lihat Bukti Pembayaran
+                          </a>
+                        ) : (
+                          <span className="text-orange-500 text-xs">Belum diunggah pelanggan</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-cyan-600">Belum ada data tagihan.</p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={handleVerifyPayment}
+                    disabled={actionLoad || !billing?.proof_payment}
+                    title={!billing?.proof_payment ? "Pelanggan belum mengunggah bukti pembayaran" : undefined}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700
+                      text-white font-bold text-sm px-4 py-2.5 rounded-xl
+                      disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
+                    {actionLoad ? <Spinner sm /> : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                        strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                    Verifikasi Pembayaran
+                  </button>
+                  <button onClick={handleRejectPayment} disabled={actionLoad}
+                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100
+                      text-red-600 font-bold text-sm px-4 py-2.5 rounded-xl
+                      border border-red-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                    Tolak Pembayaran
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. PROSES PENGUJIAN */}
+          {isInProcess && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="h-1 bg-purple-400" />
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-bold text-purple-800">Tahap: Proses Pengujian</p>
+                  <p className="text-xs text-purple-600 mt-1">
+                    Pengujian sedang berjalan. Setelah selesai, ubah status ke Pengujian Selesai.
+                  </p>
+                </div>
+                <button
+                  onClick={() => changeStatus("done", "Tandai pengujian ini sebagai selesai?")}
+                  disabled={actionLoad}
                   className="flex items-center gap-2 bg-green-600 hover:bg-green-700
                     text-white font-bold text-sm px-4 py-2.5 rounded-xl
                     disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
                   {actionLoad ? <Spinner sm /> : (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
                       strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                      <polyline points="20 6 9 17 4 12"/>
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
                     </svg>
                   )}
-                  Verifikasi Pembayaran
-                </button>
-                <button onClick={handleRejectPayment} disabled={actionLoad}
-                  className="flex items-center gap-2 bg-red-50 hover:bg-red-100
-                    text-red-600 font-bold text-sm px-4 py-2.5 rounded-xl
-                    border border-red-200 disabled:opacity-60 disabled:cursor-not-allowed">
-                  Tolak Pembayaran
+                  Selesaikan Pengujian
                 </button>
               </div>
             </div>
           )}
 
-          {/* 3. PROSES PENGUJIAN → Selesai */}
-          {isInProcess && (
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
-              <div>
-                <p className="text-sm font-bold text-purple-800">Tahap: Proses Pengujian</p>
-                <p className="text-xs text-purple-600 mt-0.5">
-                  Pengujian sedang berjalan. Setelah selesai, ubah status ke Pengujian Selesai.
-                </p>
-              </div>
-              <button
-                onClick={() => changeStatus("done", "Tandai pengujian ini sebagai selesai?")}
-                disabled={actionLoad}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700
-                  text-white font-bold text-sm px-4 py-2.5 rounded-xl
-                  disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
-                {actionLoad ? <Spinner sm /> : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-                    strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
-                )}
-                Selesaikan Pengujian
-              </button>
-            </div>
-          )}
-
-          {/* 4. SELESAI */}
+          {/* 5. SELESAI */}
           {isDone && (
-            <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
-              text-sm text-green-700 flex items-center gap-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              Pengujian selesai. Data sudah masuk ke menu <strong className="mx-1">Laporan Hasil Uji</strong> untuk upload LHU.
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="h-1 bg-green-400" />
+              <div className="p-5 flex items-center gap-3 text-sm text-green-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Pengujian selesai. Data sudah masuk ke menu <strong className="mx-1">Laporan Hasil Uji</strong> untuk upload LHU.
+              </div>
             </div>
           )}
-
-          {/* Timeline mini */}
-          <div className="pt-2 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Alur Proses</p>
-            <div className="flex items-center gap-1 flex-wrap">
-              {[
-                { key: "approved",         label: "Disetujui"     },
-                { key: "awaiting_payment", label: "Pembayaran"    },
-                { key: "in_process",       label: "Pengujian"     },
-                { key: "done",             label: "Selesai"       },
-              ].map((step, i, arr) => {
-                const order        = STATUS_CONFIG[step.key]?.order ?? 0;
-                const currentOrder = STATUS_CONFIG[status]?.order ?? 0;
-                const isCurrent    = step.key === status;
-                const isPast       = order < currentOrder;
-                return (
-                  <div key={step.key} className="flex items-center gap-1">
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold
-                      ${isCurrent ? "bg-[#233B6E] text-white" : isPast ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                      {isPast && "✓ "}{step.label}
-                    </div>
-                    {i < arr.length - 1 && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" className={`w-3 h-3 flex-shrink-0 ${isPast ? "text-green-400" : "text-gray-300"}`}>
-                        <path d="M9 18l6-6-6-6"/>
-                      </svg>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -442,17 +551,14 @@ function ModalDetailAksi({ submission: initialSub, onClose, onUpdated }) {
    HALAMAN UTAMA
 ══════════════════════════════════════════════════════════════════ */
 export default function ProsesPengujian() {
-  const [submissions, setSubmissions] = useState([]);
-  const [meta,        setMeta]        = useState({ page: 1, total: 0, total_pages: 1 });
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState("");
-  const [page,        setPage]        = useState(1);
-  const [search,      setSearch]      = useState("");
+  const [submissions,  setSubmissions]  = useState([]);
+  const [meta,         setMeta]         = useState({ page: 1, total: 0, total_pages: 1 });
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState("");
+  const [page,         setPage]         = useState(1);
+  const [search,       setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [selected,    setSelected]    = useState(null);
-
-  // Status yang masuk ke Proses Pengujian (sudah diverifikasi dari Pengajuan Masuk)
-  const ACTIVE_STATUSES = ["approved", "awaiting_payment", "in_process", "processed", "done"];
+  const [selected,     setSelected]     = useState(null); // null = list, object = detail
 
   useEffect(() => { fetchData(page); }, [page]);
 
@@ -460,10 +566,9 @@ export default function ProsesPengujian() {
     setLoading(true); setError("");
     try {
       const res  = await getAdminSubmissions(`?page=${p}&per_page=${PER_PAGE}`);
-      const json = await res.json();
+      const json = await safeJson(res);
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal memuat data.");
-      const inner = json.data ?? {};
-      // Hanya tampilkan yang sudah melewati tahap verifikasi
+      const inner    = json.data ?? {};
       const filtered = (inner.data ?? []).filter(s => ACTIVE_STATUSES.includes(s.process_status));
       setSubmissions(filtered);
       setMeta(inner.meta ?? { page: p, total: filtered.length, total_pages: 1 });
@@ -476,6 +581,8 @@ export default function ProsesPengujian() {
 
   const handleUpdated = (id, newStatus) => {
     setSubmissions(prev => prev.map(s => s.id === id ? { ...s, process_status: newStatus } : s));
+    // Update selected juga biar pill status di detail langsung berubah
+    setSelected(prev => prev?.id === id ? { ...prev, process_status: newStatus } : prev);
   };
 
   const filtered = useMemo(() => {
@@ -496,9 +603,20 @@ export default function ProsesPengujian() {
     return map;
   }, [submissions]);
 
+  /* ── Tampilkan halaman detail kalau ada yang dipilih ── */
+  if (selected) {
+    return (
+      <DetailProses
+        submission={selected}
+        onBack={() => setSelected(null)}
+        onUpdated={handleUpdated}
+      />
+    );
+  }
+
+  /* ── Halaman list ── */
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#233B6E]">Proses Pengujian</h1>
@@ -527,8 +645,7 @@ export default function ProsesPengujian() {
       {/* Filter status */}
       <div className="flex flex-wrap gap-2">
         {[{ value: "all", label: "Semua" }, ...ACTIVE_STATUSES.map(s => ({ value: s, label: STATUS_CONFIG[s]?.label ?? s }))].map(opt => (
-          <button key={opt.value}
-            onClick={() => setFilterStatus(opt.value)}
+          <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
               ${filterStatus === opt.value
                 ? "bg-[#233B6E] text-white border-[#233B6E]"
@@ -629,15 +746,6 @@ export default function ProsesPengujian() {
           </div>
         </div>
       </div>
-
-      {/* Modal detail + aksi */}
-      {selected && (
-        <ModalDetailAksi
-          submission={selected}
-          onClose={() => setSelected(null)}
-          onUpdated={handleUpdated}
-        />
-      )}
     </div>
   );
 }
