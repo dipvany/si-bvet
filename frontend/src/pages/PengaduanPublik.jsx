@@ -236,16 +236,18 @@ export default function PengaduanPublik() {
 
             <div className="border-t border-gray-100 pt-1" />
 
-            <Field label="Sumbang Pikiran, Saran, Gagasan, Permintaan Penyelesaian Masalah yang Diajukan">
-              <TextInput value={form.subjects} onChange={set("subjects")}
-                placeholder="Contoh: Keterlambatan hasil pengujian" />
-            </Field>
-
             <TextAreaSection
               label="Uraian Pelayanan yang Tidak Sesuai dengan Standar Pelayanan"
               value={form.description}
               onChange={set("description")}
               placeholder="Jelaskan detail pengaduan Anda secara lengkap"
+            />
+
+            <TextAreaSection
+              label="Sumbang Pikiran, Saran, Gagasan, Permintaan Penyelesaian Masalah yang Diajukan"
+              value={form.subjects}
+              onChange={set("subjects")}
+              placeholder="Contoh: Keterlambatan hasil pengujian"
             />
 
             {/* Lampiran — opsional sesuai dokumentasi API */}

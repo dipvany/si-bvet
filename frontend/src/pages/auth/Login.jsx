@@ -72,10 +72,14 @@ export default function LoginPage() {
       <div className="w-full max-w-[680px] bg-[#EFF0F4] rounded-3xl px-8 sm:px-14 pt-0 pb-10 shadow-2xl">
 
         <div className="flex flex-col items-center mb-8 pt-6">
-          <img src={logo} alt="SI-BVET Lampung" className="h-20 w-auto object-contain" />
-          <p className="text-[#233B6E] font-extrabold text-lg tracking-tight mt-2 leading-tight text-center">
-            SI-BVET Lampung
-          </p>
+          <Link to="/" className="flex flex-col items-center group">
+            <img src={logo} alt="SI-BVET Lampung"
+              className="h-20 w-auto object-contain group-hover:opacity-80 transition-opacity" />
+            <p className="text-[#233B6E] font-extrabold text-lg tracking-tight mt-2 leading-tight text-center
+              group-hover:text-[#415F9D] transition-colors">
+              SI-BVET Lampung
+            </p>
+          </Link>
           <p className="text-[#415F9D] text-m font-medium mt-0.5 text-center">
             Sistem Informasi Balai Veteriner Lampung
           </p>
