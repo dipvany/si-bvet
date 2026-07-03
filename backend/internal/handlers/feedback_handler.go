@@ -15,6 +15,7 @@ type FeedbackServiceInterface interface {
 	GetAllFeedbacks() ([]models.Feedback, error)
 	GetFeedbackByID(id uint) (*models.Feedback, error)
 	CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error)
+	CreateFeedbackQuestions(reqs []dto.FeedbackQuestionRequest) ([]*models.FeedbackQuestion, error)
 	UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error)
 	DeleteFeedbackQuestion(id uint) error
 }
@@ -35,6 +36,10 @@ func (defaultFeedbackService) GetFeedbackByID(id uint) (*models.Feedback, error)
 
 func (s defaultFeedbackService) CreateFeedbackQuestion(req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
 	return services.CreateFeedbackQuestion(req)
+}
+
+func (s defaultFeedbackService) CreateFeedbackQuestions(reqs []dto.FeedbackQuestionRequest) ([]*models.FeedbackQuestion, error) {
+	return services.CreateFeedbackQuestions(reqs)
 }
 
 func (s defaultFeedbackService) UpdateFeedbackQuestion(id uint, req dto.FeedbackQuestionRequest) (*models.FeedbackQuestion, error) {
@@ -122,19 +127,24 @@ func CreateFeedbackQuestion(c *gin.Context) {
 }
 
 func (h *FeedbackHandler) CreateFeedbackQuestion(c *gin.Context) {
-	var req dto.FeedbackQuestionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var reqs []*dto.FeedbackQuestionRequest
+	if err := c.ShouldBindJSON(&reqs); err != nil { // Menerima array dari JSON
 		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	question, err := h.Service.CreateFeedbackQuestion(req)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+	// Konversi []*dto.FeedbackQuestionRequest menjadi []dto.FeedbackQuestionRequest
+	var dtos []dto.FeedbackQuestionRequest
+	for _, req := range reqs {
+		dtos = append(dtos, *req)
+	}
+
+	if _, err := h.Service.CreateFeedbackQuestions(dtos); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create feedback questions: "+err.Error())
 		return
 	}
 
-	utils.DataResponse(c, http.StatusCreated, "Feedback question created successfully", question)
+	utils.MessageResponse(c, http.StatusCreated, "Feedback questions created successfully")
 }
 
 func UpdateFeedbackQuestion(c *gin.Context) {
