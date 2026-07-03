@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"si-bvet/internal/dto"
 	"si-bvet/internal/models"
@@ -79,13 +78,18 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 		return
 	}
 
-	if file != nil && file.Size > 0 {
-		filePath, err = h.fileStorage.SaveComplaintAttachment(context.Background(), file)
-		if err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "failed to save attachment")
-			return
-		}
-	}
+	if file != nil {
+        if file.Size > 10*1024*1024 {
+            utils.ErrorResponse(c, http.StatusBadRequest, "attachment exceeds the maximum allowed size of 10MB")
+            return
+        }
+
+        filePath, err = h.fileStorage.SaveComplaintAttachment(c.Request.Context(), file)
+        if err != nil {
+            utils.ErrorResponse(c, http.StatusInternalServerError, "failed to securely save the attachment")
+            return
+        }
+    }
 
 	// validate date_of_complaint when provided (accept RFC3339 or YYYY-MM-DD)
 	if req.DateOfComplaint != "" {
@@ -99,7 +103,7 @@ func (h *ComplaintHandler) CreateComplaint(c *gin.Context) {
 
 	err = h.Service.CreateComplaint(req, filePath)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, "an error occurred while submitting your complaint")
 		return
 	}
 
