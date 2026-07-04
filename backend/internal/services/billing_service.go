@@ -114,12 +114,19 @@ func VerifyPayment(submissionID uint) error {
 
 // function untuk menolak pembayaran
 func RejectPayment(submissionID uint) error {
-	err := repositories.UpdateBilling(submissionID, "", 0)
-	if err != nil {
-		return err
-	}
+	err := db.DB.Transaction(func(tx *gorm.DB) error {
+		// Kosongkan bukti pembayaran dan set status kembali ke unpaid
+		if err := tx.Model(&models.Billing{}).
+			Where("submission_id = ?", submissionID).
+			Updates(map[string]interface{}{
+				"proof_payment":  nil,
+				"payment_status": "unpaid",
+			}).Error; err != nil {
+			return err
+		}
 
-	err = UpdateSubmissionStatusWithNotification(submissionID, "payment_rejected")
+		return UpdateSubmissionStatusWithNotification(submissionID, "payment_rejected")
+	})
 	if err == nil {
 		LogSystemActivity(fmt.Sprintf("Pembayaran untuk submission ID %d ditolak", submissionID))
 	}

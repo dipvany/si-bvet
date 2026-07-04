@@ -619,6 +619,21 @@ func ExportSubmissionsExcel(
 
 	f := excelize.NewFile()
 
+	// Style untuk header tabel
+	headerStyle, err := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"#4F81BD"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Vertical: "center", Horizontal: "center"},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 	// =========================
 	// SHEET 1: METADATA
 	// =========================
@@ -658,12 +673,14 @@ func ExportSubmissionsExcel(
 	// SHEET 2: SUMMARY
 	// =========================
 	f.NewSheet("Summary")
-	f.SetCellValue("Summary", "A1", "Submission ID")
-	f.SetCellValue("Summary", "B1", "Customer")
-	f.SetCellValue("Summary", "C1", "Email")
-	f.SetCellValue("Summary", "D1", "Status")
-	f.SetCellValue("Summary", "E1", "Samples Count")
-
+	summaryHeaders := []string{"Submission ID", "Customer", "Email", "Status", "Samples Count"}
+	for i, h := range summaryHeaders {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue("Summary", cell, h)
+	}
+	f.SetCellStyle("Summary", "A1", "E1", headerStyle)
+	f.SetColWidth("Summary", "B", "C", 30)
+	f.SetColWidth("Summary", "D", "D", 20)
 	row := 2
 	for _, s := range submissions {
 		f.SetCellValue("Summary", fmt.Sprintf("A%d", row), s.ID)
@@ -677,30 +694,30 @@ func ExportSubmissionsExcel(
 	// =========================
 	// SHEET 3: SAMPLES
 	// =========================
-	f.NewSheet("Samples")
-	f.SetCellValue("Samples", "A1", "Submission ID")
-	f.SetCellValue("Samples", "B1", "Sample Code")
-	f.SetCellValue("Samples", "C1", "Sample Model")
-	f.SetCellValue("Samples", "D1", "Specimen Group")
-	f.SetCellValue("Samples", "E1", "Specimen Type")
-	f.SetCellValue("Samples", "F1", "Species")
-	f.SetCellValue("Samples", "G1", "Batch")
-	f.SetCellValue("Samples", "H1", "Preservative")
-	f.SetCellValue("Samples", "I1", "Packaging")
-	f.SetCellValue("Samples", "J1", "Production Date")
-	f.SetCellValue("Samples", "K1", "Expired Date")
-	f.SetCellValue("Samples", "L1", "Sex")
-	f.SetCellValue("Samples", "M1", "Age")
-	f.SetCellValue("Samples", "N1", "Unit Age")
-	f.SetCellValue("Samples", "O1", "Owner")
-	f.SetCellValue("Samples", "P1", "Test Type")
-	f.SetCellValue("Samples", "Q1", "Location Type")
-	f.SetCellValue("Samples", "R1", "Location Sample")
-	f.SetCellValue("Samples", "S1", "Vaccinated")
-	f.SetCellValue("Samples", "T1", "Volume")
-	f.SetCellValue("Samples", "U1", "Condition")
-	f.SetCellValue("Samples", "V1", "Total Sample")
+	
 
+	f.NewSheet("Samples")
+	sampleHeaders := []string{
+		"ID Pengajuan", "Kode Sampel", "Model Sampel", "Specimen Group", "Specimen Type",
+		"Species", "Pengawet", "Kemasan", "Tanggal Produksi", "Tanggal Kadaluarsa",
+		"Jenis Kelamin", "Umur", "Unit Umur", "Pemilik Hewan", "Jenis Pengujian",
+		"Jenis Lokasi", "Lokasi Sampel", "Telah Divaksin", "Volume", "Kondisi Sampel",
+		"Jumlah Sampel",
+	}
+	for i, h := range sampleHeaders {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue("Samples", cell, h)
+	}
+	f.SetCellStyle("Samples", "A1", "U1", headerStyle)
+	f.SetColWidth("Samples", "A", "U", 20)
+	f.SetPanes("Samples", &excelize.Panes{
+		Freeze:      true,
+		Split:       false,
+		XSplit:      0,
+		YSplit:      1,
+		TopLeftCell: "A2",
+		ActivePane:  "bottomLeft",
+	})
 	row = 2
 	for _, s := range submissions {
 		for _, sample := range s.Samples {
@@ -723,10 +740,12 @@ func ExportSubmissionsExcel(
 			f.SetCellValue("Samples", fmt.Sprintf("M%d", row), sample.UnitAge)
 			f.SetCellValue("Samples", fmt.Sprintf("N%d", row), sample.Owner)
 			f.SetCellValue("Samples", fmt.Sprintf("O%d", row), sample.TestType)
+			f.SetCellValue("Samples", fmt.Sprintf("P%d", row), sample.LocationType)
+			f.SetCellValue("Samples", fmt.Sprintf("Q%d", row), sample.LocationSmpl)
 			f.SetCellValue("Samples", fmt.Sprintf("R%d", row), sample.IsVaccinated)
-			f.SetCellValue("Samples", fmt.Sprintf("T%d", row), sample.Volume)
-			f.SetCellValue("Samples", fmt.Sprintf("U%d", row), sample.Condition)
-			f.SetCellValue("Samples", fmt.Sprintf("V%d", row), sample.TotalSample)
+			f.SetCellValue("Samples", fmt.Sprintf("S%d", row), sample.Volume)
+			f.SetCellValue("Samples", fmt.Sprintf("T%d", row), sample.Condition)
+			f.SetCellValue("Samples", fmt.Sprintf("U%d", row), sample.TotalSample)
 			row++
 		}
 	}
@@ -735,11 +754,13 @@ func ExportSubmissionsExcel(
 	// SHEET 4: TESTS
 	// =========================
 	f.NewSheet("Tests")
-	f.SetCellValue("Tests", "A1", "Submission ID")
-	f.SetCellValue("Tests", "B1", "Sample Code")
-	f.SetCellValue("Tests", "C1", "Test Name")
-	f.SetCellValue("Tests", "D1", "Price")
-
+	testHeaders := []string{"Submission ID", "Sample Code", "Test Name", "Price"}
+	for i, h := range testHeaders {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue("Tests", cell, h)
+	}
+	f.SetCellStyle("Tests", "A1", "D1", headerStyle)
+	f.SetColWidth("Tests", "B", "C", 30)
 	row = 2
 	for _, s := range submissions {
 		for _, sample := range s.Samples {
@@ -757,11 +778,13 @@ func ExportSubmissionsExcel(
 	// SHEET 5: BILLING
 	// =========================
 	f.NewSheet("Billing")
-	f.SetCellValue("Billing", "A1", "Submission ID")
-	f.SetCellValue("Billing", "B1", "Billing Code")
-	f.SetCellValue("Billing", "C1", "Amount")
-	f.SetCellValue("Billing", "D1", "Payment Status")
-
+	billingHeaders := []string{"Submission ID", "Kode Billing", "Total Harga", "Status Pembayaran", "Tanggal Dibuat", "Tanggal Dibayar"}
+	for i, h := range billingHeaders {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue("Billing", cell, h)
+	}
+	f.SetCellStyle("Billing", "A1", "F1", headerStyle)
+	f.SetColWidth("Billing", "B", "F", 25)
 	row = 2
 	for _, s := range submissions {
 		if s.Billing != nil {
@@ -769,6 +792,12 @@ func ExportSubmissionsExcel(
 			f.SetCellValue("Billing", fmt.Sprintf("B%d", row), s.Billing.EBillingCode)
 			f.SetCellValue("Billing", fmt.Sprintf("C%d", row), s.Billing.TotalAmount)
 			f.SetCellValue("Billing", fmt.Sprintf("D%d", row), s.Billing.PaymentStatus)
+			if s.Billing.IssuedAt != nil {
+				f.SetCellValue("Billing", fmt.Sprintf("E%d", row), s.Billing.IssuedAt.Format("2006-01-02 15:04:05"))
+			}
+			if s.Billing.PaidAt != nil {
+				f.SetCellValue("Billing", fmt.Sprintf("F%d", row), s.Billing.PaidAt.Format("2006-01-02 15:04:05"))
+			}
 			row++
 		}
 	}
