@@ -2,22 +2,29 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import { parseSubmissionList } from "../../utils/parseList";
-
+​
 const PER_PAGE = 10;
-
+​
 // FIX: key di bawah disamakan dengan enum process_status yang sebenarnya
 // dipakai backend (lihat admin/ProsesPengujian.jsx & dokumentasi API).
 // Sebelumnya pakai "waiting_payment"/"completed"/"revision" yang tidak
 // pernah cocok dengan data asli, jadi badge selalu fallback ke label abu-abu.
 const STATUS_CONFIG = {
-  pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
-  reviewing:            { label: "Kaji Ulang",          bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
-  awaiting_payment:     { label: "Menunggu Pembayaran", bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500"   },
-  in_process:           { label: "Sedang Diproses",     bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
-  done:                 { label: "Selesai",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
-  rejected:             { label: "Ditolak",             bg: "bg-red-100",    text: "text-red-600",    dot: "bg-red-500"    },
+  pending:               { label: "Menunggu",                       bg: "bg-gray-100",    text: "text-gray-600",    dot: "bg-gray-400"    },
+  pending_verification:  { label: "Menunggu Verifikasi",            bg: "bg-yellow-100",  text: "text-yellow-700",  dot: "bg-yellow-500"  },
+  reviewing:             { label: "Kaji Ulang",                     bg: "bg-orange-100",  text: "text-orange-700",  dot: "bg-orange-500"  },
+  approved:              { label: "Disetujui",                      bg: "bg-orange-100",  text: "text-orange-700",  dot: "bg-orange-500"  },
+  awaiting_payment:      { label: "Menunggu Pembayaran",            bg: "bg-blue-100",    text: "text-blue-700",    dot: "bg-blue-500"    },
+  awaiting_verification: { label: "Menunggu Verifikasi Pembayaran", bg: "bg-cyan-100",    text: "text-cyan-700",    dot: "bg-cyan-500"    },
+  payment_rejected:      { label: "Pembayaran Ditolak",             bg: "bg-red-100",     text: "text-red-600",     dot: "bg-red-500"     },
+  paid:                  { label: "Lunas",                          bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500" },
+  in_process:            { label: "Sedang Diproses",                bg: "bg-purple-100",  text: "text-purple-700",  dot: "bg-purple-500"  },
+  processed:             { label: "Sedang Proses Pengujian",        bg: "bg-indigo-100",  text: "text-indigo-700",  dot: "bg-indigo-500"  },
+  done:                  { label: "Selesai",                        bg: "bg-green-100",   text: "text-green-700",   dot: "bg-green-500"   },
+  completed:             { label: "Selesai",                        bg: "bg-green-100",   text: "text-green-700",   dot: "bg-green-500"   },
+  rejected:              { label: "Ditolak",                        bg: "bg-red-100",     text: "text-red-600",     dot: "bg-red-500"     },
 };
-
+​
 function StatusBadge({ status }) {
   const c = STATUS_CONFIG[status] ?? { label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
   return (
@@ -28,7 +35,7 @@ function StatusBadge({ status }) {
     </span>
   );
 }
-
+​
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -40,13 +47,13 @@ function PBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-
+​
 const formatDate = (iso) => {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID",
     { day: "2-digit", month: "2-digit", year: "numeric" });
 };
-
+​
 export default function PengajuanSaya() {
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState([]);
@@ -54,9 +61,9 @@ export default function PengajuanSaya() {
   const [error, setError]             = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
-
+​
   useEffect(() => { fetchData(); }, []);
-
+​
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
@@ -72,24 +79,25 @@ export default function PengajuanSaya() {
       setLoading(false);
     }
   };
-
+​
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return submissions.filter(s =>
       !q ||
+      s.no_ticket?.toLowerCase().includes(q) ||
       s.no_epi?.toLowerCase().includes(q) ||
       s.no_registration?.toLowerCase().includes(q) ||
       s.type_service?.toLowerCase().includes(q)
     );
   }, [submissions, search]);
-
+​
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
+​
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Riwayat Pengajuan Saya</h1>
-
+​
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm
           rounded-xl px-4 py-3 flex justify-between items-center">
@@ -100,7 +108,7 @@ export default function PengajuanSaya() {
           </button>
         </div>
       )}
-
+​
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="px-4 py-3 border-b border-gray-100 flex items-center
@@ -129,13 +137,13 @@ export default function PengajuanSaya() {
             Ajukan Baru
           </button>
         </div>
-
+​
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {["No.", "Tanggal Pengajuan", "Nomor EPI", "Status", "Detail"].map(h => (
+                {["No.", "No. Tiket", "Tanggal Pengajuan", "Nomor EPI", "Status", "Detail"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold
                     text-gray-500 uppercase tracking-wide whitespace-nowrap">
                     {h}
@@ -145,7 +153,7 @@ export default function PengajuanSaya() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {loading ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center">
+                <tr><td colSpan={6} className="px-4 py-12 text-center">
                   <span className="flex items-center justify-center gap-2
                     text-gray-400 text-sm">
                     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -158,8 +166,7 @@ export default function PengajuanSaya() {
                   </span>
                 </td></tr>
               ) : paginated.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center
-                  text-gray-400 text-sm">
+                <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-400 text-sm">
                   {search ? "Tidak ada hasil pencarian."
                           : "Belum ada pengajuan. Klik 'Ajukan Baru' untuk memulai."}
                 </td></tr>
@@ -167,6 +174,11 @@ export default function PengajuanSaya() {
                 <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-gray-400 text-xs">
                     {(page - 1) * PER_PAGE + i + 1}.
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="font-mono font-bold text-[#233B6E] text-xs">
+                      {s.no_ticket ?? "-"}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                     {formatDate(s.created_at)}
@@ -200,7 +212,7 @@ export default function PengajuanSaya() {
             </tbody>
           </table>
         </div>
-
+​
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-gray-100 flex items-center
           justify-between flex-wrap gap-2">

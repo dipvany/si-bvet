@@ -222,45 +222,6 @@ export default function PengajuanMasuk() {
         </div>
       </div>
 
-      {/* Bar aksi mode pilih (muncul setelah klik Export) */}
-      {selectMode && (
-        <div className="bg-[#EEF0F8] border border-[#233B6E]/20 rounded-xl px-4 py-3
-          flex items-center justify-between flex-wrap gap-3">
-          <label className="flex items-center gap-2 text-xs font-semibold text-[#233B6E] cursor-pointer">
-            <input type="checkbox"
-              checked={allVisibleSelected}
-              onChange={toggleSelectAllVisible}
-              className="w-4 h-4 rounded border-gray-300 accent-[#233B6E] cursor-pointer" />
-            Pilih Semua di Halaman Ini
-            <span className="font-normal text-gray-500">
-              · {selectedIds.size} dipilih
-            </span>
-          </label>
-          <div className="flex items-center gap-2">
-            <button onClick={() => handleExport("selected")}
-              disabled={exporting || selectedIds.size === 0}
-              className="flex items-center gap-1.5 text-xs font-semibold text-white
-                bg-[#233B6E] hover:bg-[#1a2d56] px-3 py-2 rounded-lg transition-colors
-                disabled:opacity-40 disabled:cursor-not-allowed">
-              {exporting && <Spinner />}
-              Export yang Dipilih{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
-            </button>
-            <button onClick={() => handleExport("all")}
-              disabled={exporting}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
-                bg-white border border-[#233B6E]/30 hover:bg-[#dde0f0] px-3 py-2 rounded-lg
-                transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-              {exporting && <Spinner />}
-              Export Semua Data
-            </button>
-            <button onClick={closeSelectMode} disabled={exporting}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-700
-                px-3 py-2 rounded-lg transition-colors disabled:opacity-40">
-              Batal
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Error export */}
       {exportError && (
@@ -322,14 +283,13 @@ export default function PengajuanMasuk() {
 
       {/* Tabel */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Search + Template + Export */}
+        {/* Search + Export */}
         <div className="px-4 py-3 border-b border-gray-100 flex justify-between
           items-center gap-3 flex-wrap">
           <p className="text-xs text-gray-400">
             Total: <span className="font-bold text-[#233B6E]">{meta.total}</span> pengajuan
           </p>
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Search */}
             <div className="relative">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
                 strokeLinecap="round"
@@ -343,7 +303,6 @@ export default function PengajuanMasuk() {
                   outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-56"
               />
             </div>
-            {/* Tombol Export */}
             {!selectMode && (
               <button onClick={openSelectMode}
                 className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
@@ -359,6 +318,45 @@ export default function PengajuanMasuk() {
             )}
           </div>
         </div>
+
+        {/* Bar aksi pilih — muncul di dalam card saat mode export aktif */}
+        {selectMode && (
+          <div className="px-4 py-3 border-b border-gray-100 bg-[#EEF0F8]
+            flex items-center justify-between flex-wrap gap-3">
+            <label className="flex items-center gap-2 text-xs font-semibold
+              text-[#233B6E] cursor-pointer">
+              <input type="checkbox"
+                checked={allVisibleSelected}
+                onChange={toggleSelectAllVisible}
+                className="w-4 h-4 rounded border-gray-300 accent-[#233B6E] cursor-pointer" />
+              Pilih Semua di Halaman Ini
+              <span className="font-normal text-gray-500">· {selectedIds.size} dipilih</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <button onClick={() => handleExport("selected")}
+                disabled={exporting || selectedIds.size === 0}
+                className="flex items-center gap-1.5 text-xs font-semibold text-white
+                  bg-[#233B6E] hover:bg-[#1a2d56] px-3 py-2 rounded-lg transition-colors
+                  disabled:opacity-40 disabled:cursor-not-allowed">
+                {exporting && <Spinner />}
+                Export yang Dipilih{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+              </button>
+              <button onClick={() => handleExport("all")}
+                disabled={exporting}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
+                  bg-white border border-[#233B6E]/30 hover:bg-[#dde0f0] px-3 py-2 rounded-lg
+                  transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                {exporting && <Spinner />}
+                Export Semua Data
+              </button>
+              <button onClick={closeSelectMode} disabled={exporting}
+                className="text-xs font-semibold text-gray-500 hover:text-gray-700
+                  px-3 py-2 rounded-lg transition-colors disabled:opacity-40">
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
