@@ -10,6 +10,11 @@ const fmt = (iso) => {
     { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 ​
+const rupiah = (n) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency", currency: "IDR", maximumFractionDigits: 0,
+  }).format(n ?? 0);
+​
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -157,6 +162,24 @@ export default function DetailPengajuanMasuk() {
   const userInfo = submission.user_info ?? {};
   const customer = userInfo.customer   ?? {};
   const samples  = Array.isArray(submission.samples) ? submission.samples : [];
+​
+  // Estimasi harga: sampel x layanan pengujian (harga x jumlah sampel) - sama seperti preview customer
+  const estLines = (() => {
+    const map = new Map();
+    samples.forEach((s) => {
+      const qty = Number(s.total_sample) || 0;
+      (s.test_requests ?? s.test_services ?? []).forEach((tr) => {
+        const svc = tr.test_service ?? tr;
+        const key = svc.id ?? svc.test_name ?? svc.name;
+        if (key == null) return;
+        const prev = map.get(key) ?? { name: svc.test_name ?? svc.name ?? "-", price: Number(svc.price) || 0, qty: 0 };
+        prev.qty += qty;
+        map.set(key, prev);
+      });
+    });
+    return Array.from(map.values());
+  })();
+  const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
 ​
   // Dokumen lampiran — bisa string atau array
   const attRaw  = submission.attachment_doc;
@@ -336,6 +359,28 @@ export default function DetailPengajuanMasuk() {
           value={customer.is_membership
             ? `Ya (${customer.membership_no || "-"})` : "Tidak"} />
       </Card>
+​
+      {/* Estimasi Harga - card terpisah dari Tinjauan */}
+      {estLines.length > 0 && (
+        <Card title="Estimasi Harga Pengujian">
+          <div className="px-5 py-4">
+            <div className="space-y-1.5">
+              {estLines.map((l, i) => (
+                <div key={i} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="text-[#233B6E] font-medium">{l.qty}x {l.name}</span>
+                  <span className="text-gray-500 whitespace-nowrap">
+                    {rupiah(l.price)} x {l.qty} = <strong className="text-[#233B6E]">{rupiah(l.price * l.qty)}</strong>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-gray-200 mt-3 pt-3">
+              <span className="text-sm font-bold text-[#233B6E]">Total Estimasi</span>
+              <span className="text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</span>
+            </div>
+          </div>
+        </Card>
+      )}
 ​
       {/* ── Tombol Verifikasi — di bawah setelah baca semua info ── */}
       {isPending && (
