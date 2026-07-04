@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { approveSubmission, rejectSubmission } from "../../services/adminServices";
 import { apiFetch } from "../../services/api";
-
+​
 /* ── Helpers ─────────────────────────────────────────────────── */
 const fmt = (iso) => {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID",
     { day: "2-digit", month: "2-digit", year: "numeric" });
 };
-
+​
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -17,7 +17,7 @@ const getDocUrl = (path) => {
     .replace(/\/api\/?$/, "").replace(/\/$/, "");
   return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 };
-
+​
 const STATUS_CFG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100 text-yellow-700" },
   reviewing:            { label: "Kaji Ulang",          bg: "bg-orange-100 text-orange-700" },
@@ -26,7 +26,7 @@ const STATUS_CFG = {
   done:                 { label: "Selesai",             bg: "bg-green-100 text-green-700"  },
   rejected:             { label: "Ditolak",             bg: "bg-red-100 text-red-600"      },
 };
-
+​
 /* ── Sub-components ───────────────────────────────────────────── */
 function Row({ label, value }) {
   return (
@@ -36,7 +36,7 @@ function Row({ label, value }) {
     </div>
   );
 }
-
+​
 function Card({ title, accent = "#233B6E", children }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -48,7 +48,7 @@ function Card({ title, accent = "#233B6E", children }) {
     </div>
   );
 }
-
+​
 function DocLink({ path }) {
   const url = getDocUrl(path);
   if (!url) return null;
@@ -86,19 +86,19 @@ function DocLink({ path }) {
     </a>
   );
 }
-
+​
 /* ── Main component ───────────────────────────────────────────── */
 export default function DetailPengajuanMasuk() {
   const navigate  = useNavigate();
   const { id }    = useParams();
   const { state } = useLocation();
-
+​
   const [submission, setSubmission] = useState(state?.submission ?? null);
   const [fetching,   setFetching]   = useState(true);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
-
+​
   useEffect(() => {
     if (!id) return;
     setFetching(true);
@@ -108,7 +108,7 @@ export default function DetailPengajuanMasuk() {
       .catch(() => {})
       .finally(() => setFetching(false));
   }, [id]);
-
+​
   if (fetching && !submission) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -120,7 +120,7 @@ export default function DetailPengajuanMasuk() {
       </div>
     </div>
   );
-
+​
   if (!submission) return (
     <div className="flex flex-col items-center justify-center h-64 gap-3">
       <p className="text-gray-400 text-sm">Data pengajuan tidak ditemukan.</p>
@@ -128,19 +128,19 @@ export default function DetailPengajuanMasuk() {
         className="text-[#233B6E] text-sm font-semibold hover:underline">← Kembali</button>
     </div>
   );
-
+​
   const status    = submission.process_status;
   const isPending = status === "pending_verification";
   const sCfg      = STATUS_CFG[status] ?? { label: status, bg: "bg-gray-100 text-gray-600" };
-
+​
   const userInfo = submission.user_info ?? {};
   const customer = userInfo.customer   ?? {};
   const samples  = Array.isArray(submission.samples) ? submission.samples : [];
-
+​
   // Dokumen lampiran — bisa string atau array
   const attRaw  = submission.attachment_doc;
   const attDocs = Array.isArray(attRaw) ? attRaw : (attRaw ? [attRaw] : []);
-
+​
   const handleApprove = async () => {
     if (!window.confirm("Setujui pengajuan ini? Otomatis masuk ke Proses Pengujian.")) return;
     setLoading(true); setError(""); setSuccess("");
@@ -153,7 +153,7 @@ export default function DetailPengajuanMasuk() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
-
+​
   const handleReject = async () => {
     if (!window.confirm("Tolak pengajuan ini? Tindakan ini tidak dapat dibatalkan.")) return;
     setLoading(true); setError(""); setSuccess("");
@@ -166,17 +166,17 @@ export default function DetailPengajuanMasuk() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
-
+​
   return (
     <div className="space-y-5">
-
+​
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)}
           className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
             strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
         <div className="flex-1 flex items-center gap-3 flex-wrap">
@@ -187,7 +187,7 @@ export default function DetailPengajuanMasuk() {
         </div>
         <span className="text-xs font-mono text-gray-400">{submission.no_ticket}</span>
       </div>
-
+​
       {/* Feedback */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -199,7 +199,7 @@ export default function DetailPengajuanMasuk() {
           {success}
         </div>
       )}
-
+​
       {/* ── STEP 1: Data Pengajuan ── */}
       <Card title="Data Pengajuan (Step 1)">
         <Row label="No. Tiket"            value={submission.no_ticket} />
@@ -217,7 +217,7 @@ export default function DetailPengajuanMasuk() {
         <Row label="Perlu Diagnosa"       value={submission.diagnosis_required ? "Ya" : "Tidak"} />
         <Row label="Jumlah Sampel"        value={submission.samples_count} />
         {submission.notes && <Row label="Catatan" value={submission.notes} />}
-
+​
         {/* Dokumen Pendukung */}
         {attDocs.length > 0 && (
           <div className="px-5 py-4 border-t border-gray-100">
@@ -232,7 +232,7 @@ export default function DetailPengajuanMasuk() {
           </div>
         )}
       </Card>
-
+​
       {/* ── STEP 2: Data Sampel ── */}
       <Card title={`Data Sampel / Step 2 (${samples.length} sampel)`} accent="#7C3AED">
         {samples.length === 0 ? (
@@ -293,7 +293,7 @@ export default function DetailPengajuanMasuk() {
           </div>
         ))}
       </Card>
-
+​
       {/* ── STEP 3: Data Pelanggan ── */}
       <Card title="Data Pelanggan (Step 3)" accent="#0EA5E9">
         <Row label="Nama Lengkap"          value={userInfo.fullname} />
@@ -314,7 +314,7 @@ export default function DetailPengajuanMasuk() {
           value={customer.is_membership
             ? `Ya (${customer.membership_no || "-"})` : "Tidak"} />
       </Card>
-
+​
       {/* ── Tombol Verifikasi — di bawah setelah baca semua info ── */}
       {isPending && (
         <div className="flex gap-3">
@@ -332,21 +332,21 @@ export default function DetailPengajuanMasuk() {
           </button>
         </div>
       )}
-
+​
       {status === "rejected" && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3
           text-red-600 text-sm font-medium text-center">
           Pengajuan ini telah ditolak.
         </div>
       )}
-
+​
       {!isPending && status !== "rejected" && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
           text-green-700 text-sm font-medium text-center">
           Pengajuan ini sudah disetujui — kelola lanjutan di menu <strong>Proses Pengujian</strong>.
         </div>
       )}
-
+​
     </div>
   );
 }

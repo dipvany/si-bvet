@@ -1,17 +1,19 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { isAuthenticated, getUser } from "../utils/auth";
-
+​
 import Login          from "../pages/auth/Login";
 import Register       from "../pages/auth/Register";
 import LandingPage    from "../pages/LandingPage";
 import ForgotPassword from "../pages/auth/LupaSandi";
 import ResetPassword  from "../pages/auth/ResetSandi";
 import PengaduanPublik from "../pages/PengaduanPublik";
-
+import PenilaianPublik from "../pages/PenilaianPublik";
+import PertanyaanPenilaian from "../pages/PertanyaanPenilaian";
+​
 import AdminLayout      from "../layouts/AdminLayout";
 import SuperAdminLayout from "../layouts/SuperAdminLayout";
 import CustomerLayout   from "../layouts/CustomerLayout";
-
+​
 // ── Admin ─────────────────────────────────────────────────────────
 import AdminBeranda                from "../pages/admin/Beranda";
 import RegistrasiPelanggan         from "../pages/admin/RegistrasiPelanggan";
@@ -24,7 +26,7 @@ import AdminLaporanPengaduan       from "../pages/admin/LaporanPengaduan";
 import AdminDetailLaporanPengaduan from "../pages/admin/DetailLaporanPengaduan";
 import AdminPenilaianPengguna      from "../pages/admin/PenilaianPengguna";
 import AdminProfil                 from "../pages/admin/Profil";
-
+​
 // ── SuperAdmin ────────────────────────────────────────────────────
 import SuperAdminBeranda             from "../pages/superAdmin/Beranda";
 import SuperAdminRegistrasiPelanggan from "../pages/superAdmin/RegistrasiPelanggan";
@@ -39,7 +41,7 @@ import SuperAdminLaporanPengaduan    from "../pages/superAdmin/LaporanPengaduan"
 import SuperAdminDetailLaporan       from "../pages/superAdmin/DetailLaporanPengaduan";
 import SuperAdminPenilaianPengguna   from "../pages/superAdmin/PenilaianPengguna";
 import SuperAdminProfil              from "../pages/superAdmin/Profil";
-
+​
 // ── Customer ──────────────────────────────────────────────────────
 import CustomerBeranda    from "../pages/customer/Beranda";
 import CustomerProfil     from "../pages/customer/Profil";
@@ -51,7 +53,7 @@ import PengajuanSaya      from "../pages/customer/PengajuanSaya";
 import DetailPengajuan    from "../pages/customer/DetailPengajuan";
 import PenilaianKepuasan  from "../pages/customer/PenilaianKepuasan";
 import PengajuanUjiSampel from "../pages/customer/PengajuanUjiSampel";
-
+​
 function PrivateRoute({ children, allowedRoles }) {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
   const user = getUser();
@@ -59,7 +61,7 @@ function PrivateRoute({ children, allowedRoles }) {
   if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/login" replace />;
   return children;
 }
-
+​
 export default function AppRoutes() {
   return (
     <Routes>
@@ -70,7 +72,8 @@ export default function AppRoutes() {
       <Route path="/forgot-password"               element={<ForgotPassword />} />
       <Route path="/reset-password/:userId/:token" element={<ResetPassword />} />
       <Route path="/pengaduan"                     element={<PengaduanPublik />} />
-
+      <Route path="/penilaian"                     element={<PenilaianPublik />} />
+​
       {/* Admin */}
       <Route path="/admin" element={<PrivateRoute allowedRoles={["admin"]}><AdminLayout /></PrivateRoute>}>
         <Route index                               element={<Navigate to="beranda" replace />} />
@@ -84,9 +87,10 @@ export default function AppRoutes() {
         <Route path="laporan-pengaduan"            element={<AdminLaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id"        element={<AdminDetailLaporanPengaduan />} />
         <Route path="penilaian-pengguna"           element={<AdminPenilaianPengguna />} />
+        <Route path="penilaian-pengguna/pertanyaan" element={<PertanyaanPenilaian />} />
         <Route path="profil"                       element={<AdminProfil />} />
       </Route>
-
+​
       {/* SuperAdmin */}
       <Route path="/superadmin" element={<PrivateRoute allowedRoles={["superadmin"]}><SuperAdminLayout /></PrivateRoute>}>
         <Route index                               element={<Navigate to="beranda" replace />} />
@@ -102,9 +106,10 @@ export default function AppRoutes() {
         <Route path="laporan-pengaduan"            element={<SuperAdminLaporanPengaduan />} />
         <Route path="laporan-pengaduan/:id"        element={<SuperAdminDetailLaporan />} />
         <Route path="penilaian-pengguna"           element={<SuperAdminPenilaianPengguna />} />
+        <Route path="penilaian-pengguna/pertanyaan" element={<PertanyaanPenilaian />} />
         <Route path="profil"                       element={<SuperAdminProfil />} />
       </Route>
-
+​
       {/* Customer */}
       <Route path="/customer" element={<PrivateRoute allowedRoles={["customer"]}><CustomerLayout /></PrivateRoute>}>
         <Route index                               element={<Navigate to="beranda" replace />} />
@@ -119,7 +124,7 @@ export default function AppRoutes() {
         <Route path="penilaian/:id"                element={<PenilaianKepuasan />} />
         <Route path="pengaduan"                    element={<CustomerPengaduan />} />
       </Route>
-
+​
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

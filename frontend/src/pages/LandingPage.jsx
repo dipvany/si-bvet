@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import heroImg from "../assets/bvet.jpeg";
@@ -33,6 +33,11 @@ const SERVICES = [
     title: "Pengaduan",
     desc: "Sampaikan pengaduan atau keluhan terkait layanan BVET secara langsung dan transparan.",
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  },
+  {
+    title: "Penilaian",
+    desc: "Sampaikan penilaian dan kepuasan Anda terhadap layanan BVET secara langsung. Tidak perlu login.",
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   },
 ];
 
@@ -219,6 +224,9 @@ function Hero() {
 /* ── LAYANAN ── */
 function Services() {
   const navigate = useNavigate();
+  const scrollRef = useRef(null);
+  const scroll = (dir) =>
+    scrollRef.current?.scrollBy({ left: dir * 340, behavior: "smooth" });
   return (
     <section id="layanan" className="py-24 bg-[#EFF0F4]">
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
@@ -232,10 +240,14 @@ function Services() {
         </div>
 
         {/* Slider horizontal — semua ukuran layar */}
-        <div className="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory
-          [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative group">
+          <div
+            ref={scrollRef}
+            className="flex gap-5 overflow-x-auto pb-3 snap-x snap-mandatory
+            [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
           {SERVICES.map((s, i) => (
-            <div key={i} onClick={() => navigate(s.title === "Pengaduan" ? "/pengaduan" : "/login")}
+            <div key={i} onClick={() => navigate(s.title === "Pengaduan" ? "/pengaduan" : s.title === "Penilaian" ? "/penilaian" : "/login")}
               className="card-hover bg-white rounded-2xl border border-[#D3D6DB]/50 shadow-sm overflow-hidden cursor-pointer group
                 flex-shrink-0 w-[75vw] sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)] snap-start">
               <div className="h-1.5 bg-[#F5C400]" />
@@ -261,6 +273,29 @@ function Services() {
               </div>
             </div>
           ))}
+          </div>
+
+          {/* Panah geser - muncul saat hover, penanda bisa digeser */}
+          <button
+            type="button"
+            onClick={() => scroll(-1)}
+            aria-label="Geser kiri"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 backdrop-blur border border-[#D3D6DB] shadow-lg text-[#233B6E] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white hover:scale-105 transition-all duration-200"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => scroll(1)}
+            aria-label="Geser kanan"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 backdrop-blur border border-[#D3D6DB] shadow-lg text-[#233B6E] flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white hover:scale-105 transition-all duration-200"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
         </div>
       </div>
     </section>

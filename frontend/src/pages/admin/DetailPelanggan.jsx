@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { verifyUser, rejectUser } from "../../services/superAdminServices";
-
+import { verifyUser, rejectUser } from "../../services/adminServices";
+​
 // Helper: path relatif → full URL dokumen
 const getDocUrl = (path) => {
   if (!path) return null;
@@ -12,24 +12,24 @@ const getDocUrl = (path) => {
   const clean = path.startsWith("/") ? path : `/${path}`;
   return `${origin}${clean}`;
 };
-
-
-
-
-
-
+​
+​
+​
+​
+​
+​
 export default function DetailPelanggan() {
   const navigate  = useNavigate();
   const { state } = useLocation();
   const { id }    = useParams();
-
+​
   // Data dikirim via navigate state dari halaman list
   const customer = state?.customer;
-
+​
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [success, setSuccess]   = useState("");
-
+​
   if (!customer) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -41,7 +41,7 @@ export default function DetailPelanggan() {
       </div>
     );
   }
-
+​
   const handleAction = async (action) => {
     setLoading(true);
     setError("");
@@ -62,7 +62,7 @@ export default function DetailPelanggan() {
       setLoading(false);
     }
   };
-
+​
   const fields = [
     { label: "Nama Lengkap",  value: customer.fullname },
     { label: "Email",         value: customer.email },
@@ -70,7 +70,7 @@ export default function DetailPelanggan() {
     { label: "Institusi",     value: customer.institution ?? "-" },
     { label: "Status",        value: customer.is_verified ? "Sudah Diverifikasi" : "Belum Diverifikasi" },
   ];
-
+​
   return (
     <div className="space-y-5 max-w-2xl">
       {/* Header */}
@@ -79,12 +79,12 @@ export default function DetailPelanggan() {
           className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
             strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/>
+            <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
         <h1 className="text-xl font-bold text-[#233B6E]">Detail Pelanggan</h1>
       </div>
-
+​
       {/* Feedback */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -96,7 +96,7 @@ export default function DetailPelanggan() {
           {success}
         </div>
       )}
-
+​
       {/* Info card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
@@ -110,7 +110,7 @@ export default function DetailPelanggan() {
             </div>
           ))}
         </div>
-
+​
         {/* Dokumen */}
         {customer.registration_doc && (
           <div className="px-5 py-4 border-t border-gray-100">
@@ -133,7 +133,7 @@ export default function DetailPelanggan() {
           </div>
         )}
       </div>
-
+​
       {/* Action buttons — hanya tampil jika belum diverifikasi */}
       {!customer.is_verified && (
         <div className="flex gap-3">
@@ -157,7 +157,7 @@ export default function DetailPelanggan() {
           </button>
         </div>
       )}
-
+​
       {customer.is_verified && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
           text-green-700 text-sm font-medium text-center">
