@@ -28,6 +28,14 @@ const STATUS_CFG = {
 };
 ​
 /* ── Sub-components ───────────────────────────────────────────── */
+const VERIF_CFG = {
+  unverified: { label: "Belum Diverifikasi", bg: "bg-yellow-100 text-yellow-700" },
+  verified:   { label: "Sudah Diverifikasi", bg: "bg-green-100 text-green-700" },
+  rejected:   { label: "Ditolak",            bg: "bg-red-100 text-red-600" },
+};
+const verifOf = (s) =>
+  s === "pending_verification" ? "unverified" : s === "rejected" ? "rejected" : "verified";
+​
 function Row({ label, value }) {
   return (
     <div className="px-5 py-3.5 flex gap-4 border-b border-gray-50 last:border-0">
@@ -45,6 +53,19 @@ function Card({ title, accent = "#233B6E", children }) {
         <h2 className="font-bold text-[#233B6E] text-sm">{title}</h2>
       </div>
       <div>{children}</div>
+    </div>
+  );
+}
+​
+function Section({ n, title, accent = "#233B6E", first = false }) {
+  return (
+    <div className={`flex items-center gap-3 px-5 py-3.5 bg-[#F8F9FC] ${first ? "" : "border-t border-gray-100"}`}>
+      <span
+        className="flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold text-white flex-shrink-0"
+        style={ { background: accent } }>
+        {n}
+      </span>
+      <h3 className="font-bold text-sm" style={ { color: accent } }>{title}</h3>
     </div>
   );
 }
@@ -131,7 +152,7 @@ export default function DetailPengajuanMasuk() {
 ​
   const status    = submission.process_status;
   const isPending = status === "pending_verification";
-  const sCfg      = STATUS_CFG[status] ?? { label: status, bg: "bg-gray-100 text-gray-600" };
+  const sCfg      = VERIF_CFG[verifOf(status)];
 ​
   const userInfo = submission.user_info ?? {};
   const customer = userInfo.customer   ?? {};
@@ -149,7 +170,7 @@ export default function DetailPengajuanMasuk() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal menyetujui.");
       setSuccess("Pengajuan berhasil disetujui.");
-      setSubmission(p => ({ ...p, process_status: "reviewing" }));
+      setSubmission(p => ({ ...p, process_status: "approved" }));
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
@@ -200,8 +221,11 @@ export default function DetailPengajuanMasuk() {
         </div>
       )}
 ​
-      {/* ── STEP 1: Data Pengajuan ── */}
-      <Card title="Data Pengajuan (Step 1)">
+      {/* ── Tinjauan Pengajuan Uji Sampel — 1 card, 3 bagian ── */}
+      <Card title="Tinjauan Pengajuan Uji Sampel">
+​
+        {/* 1. Data Pengajuan */}
+        <Section n="1" title="Data Pengajuan" first />
         <Row label="No. Tiket"            value={submission.no_ticket} />
         <Row label="No. Registrasi"       value={submission.no_registration} />
         <Row label="No. EPI"              value={submission.no_epi} />
@@ -231,16 +255,15 @@ export default function DetailPengajuanMasuk() {
             </div>
           </div>
         )}
-      </Card>
 ​
-      {/* ── STEP 2: Data Sampel ── */}
-      <Card title={`Data Sampel / Step 2 (${samples.length} sampel)`} accent="#7C3AED">
+        {/* 2. Data Sampel */}
+        <Section n="2" title={`Data Sampel (${samples.length} sampel)`} accent="#233B6E" />
         {samples.length === 0 ? (
           <div className="px-5 py-4 text-sm text-gray-400">Tidak ada data sampel.</div>
         ) : samples.map((s, i) => (
           <div key={s.id ?? i}
             className="px-5 py-4 border-b border-gray-50 last:border-0">
-            <p className="text-xs font-bold text-[#7C3AED] uppercase tracking-wider mb-3">
+            <p className="text-xs font-bold text-[#233B6E] uppercase tracking-wider mb-3">
               Sampel {i + 1} — {s.sample_code_cust || "-"}
             </p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-0">
@@ -281,7 +304,7 @@ export default function DetailPengajuanMasuk() {
                 <div className="flex flex-wrap gap-1.5">
                   {s.test_requests.map((tr, j) => (
                     <span key={tr.id ?? j}
-                      className="bg-[#7C3AED]/10 text-[#7C3AED] text-[11px]
+                      className="bg-[#233B6E]/10 text-[#233B6E] text-[11px]
                         font-bold px-2.5 py-1 rounded-full">
                       {tr.test_service?.test_name ?? tr.test_service?.name
                         ?? `Test #${tr.test_service_id}`}
@@ -292,10 +315,9 @@ export default function DetailPengajuanMasuk() {
             )}
           </div>
         ))}
-      </Card>
 ​
-      {/* ── STEP 3: Data Pelanggan ── */}
-      <Card title="Data Pelanggan (Step 3)" accent="#0EA5E9">
+        {/* 3. Data Pelanggan */}
+        <Section n="3" title="Data Pelanggan" accent="#233B6E" />
         <Row label="Nama Lengkap"          value={userInfo.fullname} />
         <Row label="Email"                 value={userInfo.email} />
         <Row label="No. Telepon"           value={userInfo.phone} />

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAdminSubmissions, exportSubmissions } from "../../services/superAdminServices";
 import { apiFetch } from "../../services/api";
-
+​
 const STATUS_CONFIG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
   approved:             { label: "Disetujui",            bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
@@ -12,11 +12,22 @@ const STATUS_CONFIG = {
   done:                 { label: "Selesai",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
   rejected:             { label: "Ditolak",             bg: "bg-red-100",    text: "text-red-600",    dot: "bg-red-500"    },
 };
-
-const ALL_STATUSES = Object.entries(STATUS_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label }));
-
+​
+const VERIF_CONFIG = {
+  unverified: { label: "Belum Diverifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
+  verified:   { label: "Sudah Diverifikasi", bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
+  rejected:   { label: "Ditolak",            bg: "bg-red-100",    text: "text-red-600",    dot: "bg-red-500"    },
+};
+​
+// Pengajuan Masuk hanya soal keputusan verifikasi (terima/tolak), seperti Registrasi Pelanggan.
+// Status lanjutan (approved, awaiting_payment, in_process, done, dll) dianggap "sudah diverifikasi".
+const verifOf = (s) =>
+  s === "pending_verification" ? "unverified" : s === "rejected" ? "rejected" : "verified";
+​
+const ALL_STATUSES = Object.entries(VERIF_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label }));
+​
 function StatusPill({ status }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
+  const cfg = VERIF_CONFIG[verifOf(status)] ?? { label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
       text-xs font-semibold whitespace-nowrap ${cfg.bg} ${cfg.text}`}>
@@ -25,7 +36,7 @@ function StatusPill({ status }) {
     </span>
   );
 }
-
+​
 function Spinner() {
   return (
     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -34,7 +45,7 @@ function Spinner() {
     </svg>
   );
 }
-
+​
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -45,19 +56,19 @@ function PBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-
+​
 const PER_PAGE = 20;
-
+​
 export default function PengajuanMasuk() {
   const navigate    = useNavigate();
   const templateRef = useRef(null);
-
+​
   // ── State template ────────────────────────────────────────────────
   const [uploadingTpl, setUploadingTpl] = useState(false);
   const [tplSuccess,   setTplSuccess]   = useState("");
   const [tplError,     setTplError]     = useState("");
   const [showTplModal, setShowTplModal] = useState(false);
-
+​
   // ── State submissions ─────────────────────────────────────────────
   const [submissions,  setSubmissions]  = useState([]);
   const [meta,         setMeta]         = useState({ page: 1, total: 0, total_pages: 1 });
@@ -66,15 +77,15 @@ export default function PengajuanMasuk() {
   const [page,         setPage]         = useState(1);
   const [search,       setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-
+​
   // ── State pilih & export ────────────────────────────────────────────
   const [selectMode,   setSelectMode]   = useState(false);
   const [selectedIds,  setSelectedIds]  = useState(() => new Set());
   const [exporting,    setExporting]    = useState(false);
   const [exportError,  setExportError]  = useState("");
-
+​
   useEffect(() => { fetchData(page); }, [page]);
-
+​
   const fetchData = async (p = 1) => {
     setLoading(true); setError("");
     try {
@@ -90,7 +101,7 @@ export default function PengajuanMasuk() {
       setLoading(false);
     }
   };
-
+​
   /* Upload template ke POST /superadmin/submissions/samples/template */
   const handleUploadTemplate = async (file) => {
     if (!file) return;
@@ -113,11 +124,11 @@ export default function PengajuanMasuk() {
       if (templateRef.current) templateRef.current.value = "";
     }
   };
-
+​
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return submissions.filter(s => {
-      const matchStatus = filterStatus === "all" || s.process_status === filterStatus;
+      const matchStatus = filterStatus === "all" || verifOf(s.process_status) === filterStatus;
       const matchSearch = !q ||
         s.no_ticket?.toLowerCase().includes(q) ||
         s.type_service?.toLowerCase().includes(q) ||
@@ -126,13 +137,13 @@ export default function PengajuanMasuk() {
       return matchStatus && matchSearch;
     });
   }, [submissions, search, filterStatus]);
-
+​
   const countByStatus = useMemo(() => {
     const map = { all: submissions.length };
-    submissions.forEach(s => { map[s.process_status] = (map[s.process_status] ?? 0) + 1; });
+    submissions.forEach(s => { const v = verifOf(s.process_status); map[v] = (map[v] ?? 0) + 1; });
     return map;
   }, [submissions]);
-
+​
   // ── Pilih baris ──────────────────────────────────────────────────
   const toggleSelectOne = (id) => {
     setSelectedIds(prev => {
@@ -141,9 +152,9 @@ export default function PengajuanMasuk() {
       return next;
     });
   };
-
+​
   const allVisibleSelected = filtered.length > 0 && filtered.every(s => selectedIds.has(s.id));
-
+​
   const toggleSelectAllVisible = () => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -155,7 +166,7 @@ export default function PengajuanMasuk() {
       return next;
     });
   };
-
+​
   // ── Mode pilih (dibuka lewat tombol Export) ─────────────────────
   const openSelectMode = () => { setSelectMode(true); setExportError(""); };
   const closeSelectMode = () => {
@@ -163,19 +174,19 @@ export default function PengajuanMasuk() {
     setSelectedIds(new Set());
     setExportError("");
   };
-
+​
   // ── Export ke Excel ─────────────────────────────────────────────
   const handleExport = async (mode) => {
     // mode: "all" | "selected"
     const payload = mode === "all"
       ? { export_all: true }
       : { export_all: false, submission_ids: Array.from(selectedIds) };
-
+​
     if (mode === "selected" && payload.submission_ids.length === 0) {
       setExportError("Pilih minimal 1 pengajuan untuk diekspor.");
       return;
     }
-
+​
     setExporting(true); setExportError("");
     try {
       const res = await exportSubmissions(payload);
@@ -188,13 +199,13 @@ export default function PengajuanMasuk() {
       const disposition = res.headers.get("Content-Disposition") ?? "";
       const match = disposition.match(/filename="?([^"]+)"?/);
       const filename = match ? match[1] : `pengajuan_export_${Date.now()}.xlsx`;
-
+​
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
       window.URL.revokeObjectURL(url);
-
+​
       closeSelectMode();
     } catch (err) {
       setExportError(err.message ?? "Gagal mengekspor data.");
@@ -202,12 +213,12 @@ export default function PengajuanMasuk() {
       setExporting(false);
     }
   };
-
+​
   return (
     <>
       {/* ── Konten utama ─────────────────────────────────────────── */}
       <div className="space-y-5">
-
+​
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -230,7 +241,7 @@ export default function PengajuanMasuk() {
             </button>
           </div>
         </div>
-
+​
         {/* Error export */}
         {exportError && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm
@@ -240,7 +251,7 @@ export default function PengajuanMasuk() {
               className="text-xs font-semibold hover:underline ml-4">Tutup</button>
           </div>
         )}
-
+​
         {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm
@@ -250,7 +261,7 @@ export default function PengajuanMasuk() {
               className="text-xs font-semibold hover:underline ml-4">Coba Lagi</button>
           </div>
         )}
-
+​
         {/* Filter status pills */}
         <div className="flex flex-wrap gap-2">
           <button
@@ -285,7 +296,7 @@ export default function PengajuanMasuk() {
             </button>
           ))}
         </div>
-
+​
         {/* Tabel */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           {/* Search + Template + Export */}
@@ -333,7 +344,7 @@ export default function PengajuanMasuk() {
               )}
             </div>
           </div>
-
+​
           {/* Bar aksi pilih — di dalam card saat mode export aktif */}
           {selectMode && (
             <div className="px-4 py-3 border-b border-gray-100 bg-[#EEF0F8]
@@ -372,7 +383,7 @@ export default function PengajuanMasuk() {
               </div>
             </div>
           )}
-
+​
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
@@ -450,7 +461,7 @@ export default function PengajuanMasuk() {
               </tbody>
             </table>
           </div>
-
+​
           <div className="px-4 py-3 border-t border-gray-100 flex items-center
             justify-between flex-wrap gap-2">
             <span className="text-xs text-gray-400">
@@ -472,7 +483,7 @@ export default function PengajuanMasuk() {
           </div>
         </div>
       </div>
-
+​
       {/* ── Toast notifikasi sukses ───────────────────────────────── */}
       {tplSuccess && (
         <div className="fixed bottom-5 right-5 z-50 max-w-sm bg-green-600 text-white
@@ -491,7 +502,7 @@ export default function PengajuanMasuk() {
           </button>
         </div>
       )}
-
+​
       {/* ── Modal import template ─────────────────────────────────── */}
       {showTplModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -499,7 +510,7 @@ export default function PengajuanMasuk() {
           <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="h-1 bg-[#233B6E] rounded-t-2xl" />
             <div className="px-6 py-5 space-y-4">
-
+​
               {/* Judul + tombol tutup */}
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -516,7 +527,7 @@ export default function PengajuanMasuk() {
                   </svg>
                 </button>
               </div>
-
+​
               {/* Info cara kerja */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3
                 text-xs text-blue-700 space-y-1">
@@ -528,7 +539,7 @@ export default function PengajuanMasuk() {
                   <li>Customer isi template, lalu unggah kembali di Step 2</li>
                 </ol>
               </div>
-
+​
               {/* Error */}
               {tplError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm
@@ -536,7 +547,7 @@ export default function PengajuanMasuk() {
                   {tplError}
                 </div>
               )}
-
+​
               {/* Zona drag & drop */}
               <div
                 className="border-2 border-dashed border-gray-200 rounded-xl p-6
@@ -585,7 +596,7 @@ export default function PengajuanMasuk() {
                   }}
                 />
               </div>
-
+​
               <div className="flex justify-end pt-1">
                 <button onClick={() => setShowTplModal(false)} disabled={uploadingTpl}
                   className="px-4 py-2 text-sm font-semibold text-gray-500
