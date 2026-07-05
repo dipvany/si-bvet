@@ -45,7 +45,7 @@ const NAV_ITEMS = [
   },
 ];
 ​
-export default function AdminSidebar({ isOpen }) {
+export default function AdminSidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
 ​
   const handleLogout = () => {
@@ -54,11 +54,24 @@ export default function AdminSidebar({ isOpen }) {
   };
 ​
   return (
-    <aside className={`
-      flex-shrink-0 flex flex-col bg-white border-r border-gray-100 shadow-sm
-      transition-all duration-300 ease-in-out overflow-hidden
-      ${isOpen ? "w-64" : "w-0"}
-    `}>
+    <>
+      {/* Backdrop overlay — hanya tampil di mobile saat sidebar terbuka */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+        />
+      )}
+​
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white
+        border-r border-gray-100 shadow-lg
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:static lg:z-auto lg:shadow-sm lg:translate-x-0
+        lg:transition-all lg:overflow-hidden lg:flex-shrink-0
+        ${isOpen ? "lg:w-64" : "lg:w-0"}
+      `}>
       <div className="flex flex-col h-full w-64">
 ​
         {/* Logo */}
@@ -110,5 +123,6 @@ export default function AdminSidebar({ isOpen }) {
 ​
       </div>
     </aside>
+    </>
   );
 }

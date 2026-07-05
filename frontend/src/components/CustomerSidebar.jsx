@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { clearAuth, getUser } from "../utils/auth";
 import logo from "../assets/logo.png";
-
+​
 const NAV_ITEMS = [
   {
     to: "/customer/beranda",
@@ -61,32 +61,44 @@ const NAV_ITEMS = [
     ),
   },
 ];
-
-export default function CustomerSidebar({ isOpen }) {
+​
+export default function CustomerSidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const user     = getUser();
-
+​
   const handleLogout = () => {
     clearAuth();
     navigate("/login", { replace: true });
   };
-
+​
   return (
     <>
-      {/* Sidebar — static, mendorong konten ke kanan */}
+      {/* Backdrop overlay — hanya tampil di mobile saat sidebar terbuka */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+        />
+      )}
+​
+      {/* Sidebar — mobile: drawer overlay; desktop: mendorong konten */}
       <aside className={`
-        flex-shrink-0 flex flex-col bg-white border-r border-gray-100 shadow-sm
-        transition-all duration-300 ease-in-out overflow-hidden
-        ${isOpen ? "w-64" : "w-0"}
+        fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white
+        border-r border-gray-100 shadow-lg
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:static lg:z-auto lg:shadow-sm lg:translate-x-0
+        lg:transition-all lg:overflow-hidden lg:flex-shrink-0
+        ${isOpen ? "lg:w-64" : "lg:w-0"}
       `}>
         <div className="flex flex-col h-full w-64">
-
+​
           {/* Logo */}
           <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
             <img src={logo} alt="SI-BVET" className="h-9 w-auto object-contain flex-shrink-0" />
             <span className="font-bold text-[#233B6E] text-sm">SI-BVET</span>
           </div>
-
+​
           {/* Navigasi */}
           <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
             {NAV_ITEMS.map((item) => (
@@ -113,7 +125,7 @@ export default function CustomerSidebar({ isOpen }) {
               </NavLink>
             ))}
           </nav>
-
+​
           {/* Keluar */}
           <div className="px-3 py-4 border-t border-gray-100">
             <button
@@ -131,7 +143,7 @@ export default function CustomerSidebar({ isOpen }) {
               <span className="whitespace-nowrap">Keluar</span>
             </button>
           </div>
-
+​
         </div>
       </aside>
     </>

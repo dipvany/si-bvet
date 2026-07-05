@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { label: "Profil", path: "/superadmin/profil", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>) },
 ];
 ​
-export default function SuperAdminSidebar({ isOpen }) {
+export default function SuperAdminSidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
 ​
   const handleLogout = () => {
@@ -24,11 +24,24 @@ export default function SuperAdminSidebar({ isOpen }) {
   };
 ​
   return (
-    <aside className={`
-      flex-shrink-0 flex flex-col bg-white border-r border-gray-100 shadow-sm
-      transition-all duration-300 ease-in-out overflow-hidden
-      ${isOpen ? "w-64" : "w-0"}
-    `}>
+    <>
+      {/* Backdrop overlay — hanya tampil di mobile saat sidebar terbuka */}
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+        />
+      )}
+​
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white
+        border-r border-gray-100 shadow-lg
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:static lg:z-auto lg:shadow-sm lg:translate-x-0
+        lg:transition-all lg:overflow-hidden lg:flex-shrink-0
+        ${isOpen ? "lg:w-64" : "lg:w-0"}
+      `}>
       <div className="flex flex-col h-full w-64">
 ​
         {/* Logo */}
@@ -72,5 +85,6 @@ export default function SuperAdminSidebar({ isOpen }) {
 ​
       </div>
     </aside>
+    </>
   );
 }
