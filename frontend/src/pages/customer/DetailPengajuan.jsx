@@ -120,7 +120,13 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d) {
-          const steps = d.data?.timeline ?? [];
+          const rawSteps = d.data?.timeline ?? [];
+          // Saat pengajuan selesai, semua tahapan proses (termasuk "LHU
+          // tersedia") ditandai selesai agar lingkaran biru tua penuh dan
+          // garisnya tersambung sampai "Berikan Penilaian".
+          const steps = submissionDone
+            ? rawSteps.map((s) => ({ ...s, status: "done" }))
+            : rawSteps;
           // Tambah step ke-6 "Berikan Penilaian" secara manual
           setTimeline([
             ...steps,
@@ -372,7 +378,7 @@ export default function DetailPengajuan() {
   const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
 ​
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div className="space-y-4">
 ​
       {/* Breadcrumb */}
       <button onClick={() => navigate("/customer/pengajuan-saya")}
@@ -461,20 +467,39 @@ export default function DetailPengajuan() {
                 <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-2">
                   Estimasi Harga Pengujian
                 </p>
-                <div className="space-y-1.5">
-                  {estLines.map((l, i) => (
-                    <div key={i} className="flex items-start justify-between gap-3 text-sm">
-                      <span className="text-[#233B6E] font-medium">{l.qty}x {l.name}</span>
-                      <span className="text-gray-500 whitespace-nowrap">
-                        {rupiah(l.price)} x {l.qty} = <strong className="text-[#233B6E]">{rupiah(l.price * l.qty)}</strong>
-                      </span>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-200">
+                        <th className="py-2 pr-3 font-semibold">Pengujian</th>
+                        <th className="py-2 px-3 font-semibold text-right">Harga Satuan</th>
+                        <th className="py-2 px-3 font-semibold text-center">Jml Sampel</th>
+                        <th className="py-2 pl-3 font-semibold text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200/70">
+                      {estLines.map((l, i) => (
+                        <tr key={i}>
+                          <td className="py-2 pr-3 text-gray-700">{l.name}</td>
+                          <td className="py-2 px-3 text-right text-gray-600">{rupiah(l.price)}</td>
+                          <td className="py-2 px-3 text-center text-gray-600">{l.qty}</td>
+                          <td className="py-2 pl-3 text-right font-semibold text-gray-800">{rupiah(l.price * l.qty)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-gray-200">
+                        <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
+                        <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan={3} className="py-1.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Total Tagihan</td>
+                        <td className="py-1.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(billing.total_amount)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-                <div className="flex items-center justify-between gap-3 border-t border-gray-200 mt-2.5 pt-2.5">
-                  <span className="text-sm font-bold text-[#233B6E]">Total</span>
-                  <span className="text-sm font-extrabold text-[#233B6E]">{rupiah(estTotal)}</span>
-                </div>
+                <p className="text-[11px] text-gray-400 mt-2 italic">*Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.</p>
               </div>
             )}
 ​

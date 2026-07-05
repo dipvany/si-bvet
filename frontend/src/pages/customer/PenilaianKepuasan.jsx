@@ -76,7 +76,7 @@ export default function PenilaianKepuasan() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500"
+          className="text-[#233B6E] hover:opacity-70 flex-shrink-0"
           title="Kembali"
         >
           <svg

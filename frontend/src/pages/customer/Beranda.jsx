@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser } from "../../utils/auth";
 import { getMySubmissions } from "../../services/CustomerServices";
-
+​
 /* ──────────────────────────────────────────────────────────────────
    DonutChart — pure SVG, konsisten dengan halaman admin/superadmin
    ────────────────────────────────────────────────────────────────── */
@@ -13,7 +13,7 @@ function DonutChart({ value, total, color, size = 72 }) {
   const dash = pct * circ;
   const gap  = circ - dash;
   const cx   = size / 2;
-
+​
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
       className="flex-shrink-0">
@@ -35,7 +35,7 @@ function DonutChart({ value, total, color, size = 72 }) {
     </svg>
   );
 }
-
+​
 /* ──────────────────────────────────────────────────────────────────
    StatCard — sesuai desain UI (background biru gelap, teks putih)
    ────────────────────────────────────────────────────────────────── */
@@ -56,39 +56,44 @@ function StatCard({ label, value, total, color, loading, onClick }) {
     </div>
   );
 }
-
+​
 /* ──────────────────────────────────────────────────────────────────
    Status helpers — mapping process_status API ke label kartu
    ────────────────────────────────────────────────────────────────── */
-const STATUS_IN_PROCESS = [
-  "pending_verification",
-  "pending_payment",
-  "payment_verified",
-  "testing_in_progress",
+const STATUS_WAITING_PAYMENT = [
+  "awaiting_payment",
+  "menunggu_pembayaran",
+  "awaiting_verification",
+  "menunggu_verifikasi_pembayaran",
 ];
-
+const STATUS_TESTING = ["processed", "diproses"];
+const STATUS_COMPLETED = ["done", "selesai", "completed"];
+​
 function buildStats(submissions) {
+  const norm = s => (s.process_status ?? "").toLowerCase();
   return {
-    total:      submissions.length,
-    in_process: submissions.filter(s => STATUS_IN_PROCESS.includes(s.process_status)).length,
-    completed:  submissions.filter(s => s.process_status === "completed").length,
-    rejected:   submissions.filter(s => s.process_status === "rejected").length,
+    total:                submissions.length,
+    pending_verification: submissions.filter(s => norm(s) === "pending_verification").length,
+    waiting_payment:      submissions.filter(s => STATUS_WAITING_PAYMENT.includes(norm(s))).length,
+    in_process:           submissions.filter(s => STATUS_TESTING.includes(norm(s))).length,
+    completed:            submissions.filter(s => STATUS_COMPLETED.includes(norm(s))).length,
+    rejected:             submissions.filter(s => norm(s) === "rejected").length,
   };
 }
-
+​
 /* ──────────────────────────────────────────────────────────────────
    CustomerBeranda — main page
    ────────────────────────────────────────────────────────────────── */
 export default function CustomerBeranda() {
   const navigate = useNavigate();
   const user     = getUser();
-
-  const [stats, setStats]     = useState({ total: 0, in_process: 0, completed: 0, rejected: 0 });
+​
+  const [stats, setStats]     = useState({ total: 0, pending_verification: 0, waiting_payment: 0, in_process: 0, completed: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
-
+​
   useEffect(() => { fetchData(); }, []);
-
+​
   const fetchData = async () => {
     setLoading(true);
     setError("");
@@ -104,38 +109,50 @@ export default function CustomerBeranda() {
       setLoading(false);
     }
   };
-
+​
   /* 4 kartu sesuai UI design */
   const CARDS = [
     {
-      label:   "Total Uji Sampel yang Diajukan",
-      key:     "total",
-      color:   "#F5C400",   // kuning — sesuai gambar
-      to:      "/customer/pengajuan-saya",
+      label: "Total Uji Sampel yang Diajukan",
+      key:   "total",
+      color: "#F5C400",
+      to:    "/customer/pengajuan-saya",
     },
     {
-      label:   "Sampel Sedang Diproses",
-      key:     "in_process",
-      color:   "#F97316",   // oranye
-      to:      "/customer/pengajuan-saya",
+      label: "Sampel Menunggu Verifikasi",
+      key:   "pending_verification",
+      color: "#F97316",
+      to:    "/customer/pengajuan-saya",
     },
     {
-      label:   "Sampel Selesai Pengujian",
-      key:     "completed",
-      color:   "#22C55E",   // hijau
-      to:      "/customer/pengajuan-saya",
+      label: "Sampel Menunggu Pembayaran",
+      key:   "waiting_payment",
+      color: "#A78BFA",
+      to:    "/customer/pengajuan-saya",
     },
     {
-      label:   "Pengajuan Uji Sampel Ditolak",
-      key:     "rejected",
-      color:   "#EF4444",   // merah
-      to:      "/customer/pengajuan-saya",
+      label: "Sampel Sedang Pengujian",
+      key:   "in_process",
+      color: "#3B82F6",
+      to:    "/customer/pengajuan-saya",
+    },
+    {
+      label: "Sampel Selesai Pengujian",
+      key:   "completed",
+      color: "#22C55E",
+      to:    "/customer/pengajuan-saya",
+    },
+    {
+      label: "Pengajuan Uji Sampel Ditolak",
+      key:   "rejected",
+      color: "#EF4444",
+      to:    "/customer/pengajuan-saya",
     },
   ];
-
+​
   return (
-    <div className="space-y-6 max-w-2xl">
-
+    <div className="space-y-6">
+​
       {/* Salam */}
       {user && (
         <div>
@@ -147,7 +164,7 @@ export default function CustomerBeranda() {
           </p>
         </div>
       )}
-
+​
       {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm
@@ -159,9 +176,9 @@ export default function CustomerBeranda() {
           </button>
         </div>
       )}
-
+​
       {/* Stat cards — grid 2 kolom persis seperti UI design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {CARDS.map(card => (
           <StatCard
             key={card.key}
@@ -174,7 +191,7 @@ export default function CustomerBeranda() {
           />
         ))}
       </div>
-
+​
     </div>
   );
 }

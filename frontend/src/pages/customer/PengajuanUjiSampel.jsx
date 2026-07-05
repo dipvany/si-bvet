@@ -300,18 +300,6 @@ function StepBar({ step }) {
 }
 ​
 /* ─── Field, Input, Select ─── */
-const BULAN_ID = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-// Format "YYYY-MM-DD" -> "4 Juli 2026" (tanggal dulu, bukan tahun dulu).
-function fmtTanggal(d) {
-  if (!d) return "-";
-  const [y, m, day] = String(d).split("-");
-  if (!y || !m || !day) return d;
-  return `${parseInt(day, 10)} ${BULAN_ID[parseInt(m, 10) - 1] ?? m} ${y}`;
-}
-​
 function Field({ label, required, hint, children }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -837,8 +825,6 @@ export default function PengajuanUjiSampel() {
       if (!step3.city) return "Kabupaten/Kota wajib dipilih.";
       if (!step3.subdistrict) return "Kecamatan wajib dipilih.";
       if (!step3.village) return "Kelurahan/Desa wajib dipilih.";
-      if (!step3.lhu_receiver) return "Nama Penerima LHU wajib diisi.";
-      if (!step3.lhu_contact) return "Kontak Penerima LHU wajib diisi.";
     }
     return null;
   };
@@ -1044,13 +1030,8 @@ export default function PengajuanUjiSampel() {
                 {[
                   { label: "Jenis Layanan", val: step1.type_service },
                   { label: "Tujuan Pengujian", val: step1.purpose_of_test },
-                  { label: "Tanggal Kirim", val: fmtTanggal(step1.date_of_send) },
-                  {
-                    label: "Tanggal Terima",
-                    val: step1.date_of_receive
-                      ? fmtTanggal(step1.date_of_receive)
-                      : "-",
-                  },
+                  { label: "Tanggal Kirim", val: step1.date_of_send },
+                  { label: "Tanggal Terima", val: step1.date_of_receive || "-" },
                   { label: "Nama Kurir", val: step1.courier_name || "-" },
                   { label: "Kontak Kurir", val: step1.courier_contact || "-" },
                   { label: "No. Surat Pelanggan", val: step1.cust_letter_no || "-" },
@@ -1168,72 +1149,93 @@ export default function PengajuanUjiSampel() {
                 ))}
               </div>
             </section>
-​
-            {/* ── Estimasi Harga ── */}
-            {(() => {
-              const lineMap = new Map();
-              samples.forEach((s) => {
-                const qty = Number(s.total_sample) || 1;
-                (s.test_services ?? []).forEach((t) => {
-                  const ex = lineMap.get(t.id);
-                  if (ex) ex.qty += qty;
-                  else
-                    lineMap.set(t.id, {
-                      id: t.id,
-                      test_name: t.test_name,
-                      price: Number(t.price) || 0,
-                      qty,
-                    });
-                });
-              });
-              const lines = [...lineMap.values()];
-              if (lines.length === 0) return null;
-              const totalEst = lines.reduce((a, l) => a + l.price * l.qty, 0);
-              const rupiah = (n) =>
-                new Intl.NumberFormat("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                  maximumFractionDigits: 0,
-                }).format(n ?? 0);
-              return (
-                <section className="border-t border-gray-100 pt-4">
-                  <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
-                    Estimasi Biaya Pengujian
-                  </p>
-                  <div className="border border-[#233B6E]/20 rounded-2xl bg-[#EEF0F8] p-4 space-y-2">
-                    {lines.map((l) => (
-                      <div
-                        key={l.id}
-                        className="flex justify-between items-start gap-2 text-xs"
-                      >
-                        <span className="text-gray-600 flex-1 min-w-0 break-words">
-                          <span className="font-semibold text-[#233B6E]">
-                            {l.qty}×
-                          </span>{" "}
-                          {l.test_name}
-                        </span>
-                        <span className="text-gray-500 whitespace-nowrap text-right">
-                          {rupiah(l.price)} × {l.qty} ={" "}
-                          <span className="font-medium text-[#233B6E]">
-                            {rupiah(l.price * l.qty)}
-                          </span>
-                        </span>
-                      </div>
-                    ))}
-                    <div className="border-t border-[#233B6E]/20 pt-2 flex justify-between items-center text-sm">
-                      <span className="text-gray-600 font-semibold">Total</span>
-                      <span className="font-bold text-[#233B6E]">
-                        {rupiah(totalEst)}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-gray-400">
-                      * Estimasi belum termasuk biaya tambahan. Tagihan resmi
-                      akan dikirim setelah verifikasi.
-                    </p>
-                  </div>
-                </section>
-              );
-            })()}
+            <section className="border-t border-gray-100 pt-4">
+  <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
+    Estimasi Harga
+  </p>
+  {(() => {
+    const rupiah = (n) =>
+      new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        maximumFractionDigits: 0,
+      }).format(n ?? 0);
+    const map = new Map();
+    samples.forEach((s) => {
+      const qty = Number(s.total_sample) || 1;
+      (s.test_services ?? []).forEach((t) => {
+        const key = t.id ?? t.test_name;
+        const prev = map.get(key) ?? {
+          name: t.test_name ?? "-",
+          price: Number(t.price) || 0,
+          qty: 0,
+        };
+        prev.qty += qty;
+        map.set(key, prev);
+      });
+    });
+    const estLines = [...map.values()];
+    if (estLines.length === 0)
+      return (
+        <p className="text-sm text-gray-400">
+          Belum ada pengujian dipilih.
+        </p>
+      );
+    const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
+    return (
+      <div className="border border-[#233B6E]/20 rounded-2xl bg-white overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 bg-[#EEF0F8]">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-4 h-4 flex-shrink-0 text-[#233B6E]"
+          >
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          <p className="text-sm font-bold text-[#233B6E]">
+            Estimasi Harga Pengujian
+          </p>
+        </div>
+        <div className="px-5 py-4">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                <th className="py-2 pr-3 font-semibold">Pengujian</th>
+                <th className="py-2 px-3 font-semibold text-right">Harga Satuan</th>
+                <th className="py-2 px-3 font-semibold text-center">Jml Sampel</th>
+                <th className="py-2 pl-3 font-semibold text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {estLines.map((l, i) => (
+                <tr key={i}>
+                  <td className="py-2 pr-3 text-gray-700">{l.name}</td>
+                  <td className="py-2 px-3 text-right text-gray-600">{rupiah(l.price)}</td>
+                  <td className="py-2 px-3 text-center text-gray-600">{l.qty}</td>
+                  <td className="py-2 pl-3 text-right font-semibold text-gray-800">{rupiah(l.price * l.qty)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-gray-200">
+                <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
+                <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <p className="text-[11px] text-gray-400 mt-2 italic">
+            *Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.
+          </p>
+        </div>
+      </div>
+    );
+  })()}
+</section>
           </div>
         </div>
 ​
@@ -1906,38 +1908,36 @@ export default function PengajuanUjiSampel() {
 ​
               {/* ── Estimasi Harga ── */}
               {(() => {
-                // Agregasi per jenis pengujian: hitung berapa total sampel
-                // yang memakai pengujian tsb, lalu harga × jumlah sampel.
-                const lineMap = new Map();
-                samples.forEach((s) => {
-                  const qty = Number(s.total_sample) || 1;
-                  (s.test_services ?? []).forEach((t) => {
-                    const ex = lineMap.get(t.id);
-                    if (ex) ex.qty += qty;
-                    else
-                      lineMap.set(t.id, {
-                        id: t.id,
-                        test_name: t.test_name,
-                        price: Number(t.price) || 0,
-                        qty,
-                      });
-                  });
-                });
-                const lines = [...lineMap.values()];
-                if (lines.length === 0) return null;
-                const totalEst = lines.reduce(
-                  (a, l) => a + l.price * l.qty,
-                  0,
-                );
                 const rupiah = (n) =>
                   new Intl.NumberFormat("id-ID", {
                     style: "currency",
                     currency: "IDR",
                     maximumFractionDigits: 0,
                   }).format(n ?? 0);
+                // Agregasi per layanan: harga satuan & total jumlah sampel
+                const map = new Map();
+                samples.forEach((s) => {
+                  const qty = Number(s.total_sample) || 1;
+                  (s.test_services ?? []).forEach((t) => {
+                    const key = t.id ?? t.test_name;
+                    const prev = map.get(key) ?? {
+                      name: t.test_name ?? "-",
+                      price: Number(t.price) || 0,
+                      qty: 0,
+                    };
+                    prev.qty += qty;
+                    map.set(key, prev);
+                  });
+                });
+                const estLines = [...map.values()];
+                if (estLines.length === 0) return null;
+                const estTotal = estLines.reduce(
+                  (a, l) => a + l.price * l.qty,
+                  0,
+                );
                 return (
-                  <div className="border border-[#233B6E]/20 rounded-2xl bg-[#EEF0F8] p-4 space-y-3">
-                    <p className="text-sm font-bold text-[#233B6E] flex items-center gap-2">
+                  <div className="border border-[#233B6E]/20 rounded-2xl bg-white overflow-hidden">
+                    <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 bg-[#EEF0F8]">
                       <svg
                         viewBox="0 0 24 24"
                         fill="none"
@@ -1945,44 +1945,46 @@ export default function PengajuanUjiSampel() {
                         strokeWidth="1.8"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="w-4 h-4 flex-shrink-0"
+                        className="w-4 h-4 flex-shrink-0 text-[#233B6E]"
                       >
                         <line x1="12" y1="1" x2="12" y2="23" />
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                       </svg>
-                      Estimasi Biaya Pengujian
-                    </p>
-                    <div className="space-y-2">
-                      {lines.map((l) => (
-                        <div
-                          key={l.id}
-                          className="flex justify-between items-start gap-2 text-xs"
-                        >
-                          <span className="text-gray-600 flex-1 min-w-0 break-words">
-                            <span className="font-semibold text-[#233B6E]">
-                              {l.qty}×
-                            </span>{" "}
-                            {l.test_name}
-                          </span>
-                          <span className="text-gray-500 whitespace-nowrap text-right">
-                            {rupiah(l.price)} × {l.qty} ={" "}
-                            <span className="font-medium text-[#233B6E]">
-                              {rupiah(l.price * l.qty)}
-                            </span>
-                          </span>
-                        </div>
-                      ))}
+                      <p className="text-sm font-bold text-[#233B6E]">
+                        Estimasi Harga Pengujian
+                      </p>
                     </div>
-                    <div className="border-t border-[#233B6E]/20 pt-2 flex justify-between items-center text-sm">
-                      <span className="text-gray-600 font-semibold">Total</span>
-                      <span className="font-bold text-[#233B6E]">
-                        {rupiah(totalEst)}
-                      </span>
+                    <div className="px-5 py-4">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                            <th className="py-2 pr-3 font-semibold">Pengujian</th>
+                            <th className="py-2 px-3 font-semibold text-right">Harga Satuan</th>
+                            <th className="py-2 px-3 font-semibold text-center">Jml Sampel</th>
+                            <th className="py-2 pl-3 font-semibold text-right">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {estLines.map((l, i) => (
+                            <tr key={i}>
+                              <td className="py-2 pr-3 text-gray-700">{l.name}</td>
+                              <td className="py-2 px-3 text-right text-gray-600">{rupiah(l.price)}</td>
+                              <td className="py-2 px-3 text-center text-gray-600">{l.qty}</td>
+                              <td className="py-2 pl-3 text-right font-semibold text-gray-800">{rupiah(l.price * l.qty)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="border-t border-gray-200">
+                            <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
+                            <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                      <p className="text-[11px] text-gray-400 mt-2 italic">
+                        *Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.
+                      </p>
                     </div>
-                    <p className="text-[10px] text-gray-400">
-                      * Estimasi belum termasuk biaya tambahan. Tagihan resmi
-                      akan dikirim setelah verifikasi.
-                    </p>
                   </div>
                 );
               })()}
@@ -2056,14 +2058,14 @@ export default function PengajuanUjiSampel() {
                     placeholder="No. HP narahubung"
                   />
                 </Field>
-                <Field label="Nama Penerima LHU" required>
+                <Field label="Nama Penerima LHU">
                   <Input
                     value={step3.lhu_receiver}
                     onChange={setS3("lhu_receiver")}
                     placeholder="Nama penerima Laporan Hasil Uji"
                   />
                 </Field>
-                <Field label="Kontak Penerima LHU" required>
+                <Field label="Kontak Penerima LHU">
                   <Input
                     value={step3.lhu_contact}
                     onChange={setS3("lhu_contact")}
