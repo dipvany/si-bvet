@@ -155,8 +155,8 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
   if (!timeline.length) return null;
 ​
   return (
-    <div className="w-full overflow-x-auto pb-2">
-      <div className="flex items-start justify-center min-w-[540px] mx-auto">
+    <div className="w-full pb-1">
+      <div className="flex items-start justify-between">
         {timeline.map((t, i) => {
           const isDone     = t.status === "done" || t.status === "completed";
           const isCurrent  = t.status === "current";
@@ -165,22 +165,21 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
 ​
           return (
             <div key={i}
-              className={`relative flex flex-col items-center
-                ${isLast ? "flex-shrink-0 w-[100px]" : "flex-1 max-w-[110px]"}`}>
+              className="relative flex flex-col items-center flex-1 min-w-0">
 ​
               {/* Garis kiri — absolute, di belakang lingkaran */}
               {i > 0 && (
-                <div className={`absolute top-6 right-1/2 w-1/2 h-1 z-0
+                <div className={`absolute top-[18px] right-1/2 w-1/2 h-1 z-0
                   ${lineBeforeDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
               )}
               {/* Garis kanan */}
               {!isLast && (
-                <div className={`absolute top-6 left-1/2 w-1/2 h-1 z-0
+                <div className={`absolute top-[18px] left-1/2 w-1/2 h-1 z-0
                   ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
               )}
 ​
               {/* Circle — solid filled saat selesai, outline saat aktif, abu saat pending */}
-              <div className={`relative z-10 w-12 h-12 rounded-full flex items-center
+              <div className={`relative z-10 w-10 h-10 rounded-full flex items-center
                 justify-center flex-shrink-0 transition-all
                 ${isDone
                   ? "bg-[#233B6E] text-white"
@@ -398,17 +397,17 @@ export default function DetailPengajuan() {
           <div className="flex justify-end mb-2">
             <StatusBadge status={status} />
           </div>
-          {/* No. Tiket kiri & No. EPI kanan — sejajar */}
-          <div className="flex items-start justify-between flex-wrap gap-4">
+          {/* No. Tiket & No. EPI — bertumpuk di mobile, sejajar di desktop */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <p className="text-xs text-gray-400">No. Tiket</p>
-              <p className="text-xl font-extrabold text-[#233B6E] font-mono tracking-wide">
+              <p className="text-lg sm:text-xl font-extrabold text-[#233B6E] font-mono tracking-wide break-all">
                 {sub?.no_ticket ?? "-"}
               </p>
             </div>
-            <div className="text-right">
+            <div className="sm:text-right">
               <p className="text-xs text-gray-400">No. EPI</p>
-              <p className="text-lg font-extrabold text-[#233B6E] font-mono tracking-wide">
+              <p className="text-lg font-extrabold text-[#233B6E] font-mono tracking-wide break-all">
                 {sub?.no_epi ?? "-"}
               </p>
             </div>
@@ -489,12 +488,12 @@ export default function DetailPengajuan() {
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-gray-200">
-                        <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
-                        <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+                        <td colSpan={3} className="py-2.5 pr-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
+                        <td className="py-2.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</td>
                       </tr>
                       <tr>
-                        <td colSpan={3} className="py-1.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Total Tagihan</td>
-                        <td className="py-1.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(billing.total_amount)}</td>
+                        <td colSpan={3} className="py-1.5 pr-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Tagihan</td>
+                        <td className="py-1.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(billing.total_amount)}</td>
                       </tr>
                     </tfoot>
                   </table>

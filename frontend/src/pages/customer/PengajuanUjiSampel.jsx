@@ -246,16 +246,19 @@ const STEP_ICONS = [
 function StepBar({ step }) {
   const steps = ["Data Pengajuan", "Data Sampel", "Data Pelanggan"];
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-start w-full max-w-md mx-auto">
       {steps.map((s, i) => {
         const n = i + 1;
         const done = step > n;
         const active = step === n;
         return (
-          <div key={s} className="flex items-center">
-            <div className="flex flex-col items-center gap-2">
+          <div
+            key={s}
+            className={`flex items-start ${i < steps.length - 1 ? "flex-1" : "flex-none"}`}
+          >
+            <div className="flex flex-col items-center gap-1.5 w-14 flex-shrink-0">
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center
+                className={`w-10 h-10 rounded-full flex items-center justify-center
                 border-2 transition-all
                 ${
                   done
@@ -281,7 +284,7 @@ function StepBar({ step }) {
                 )}
               </div>
               <span
-                className={`text-xs whitespace-nowrap font-semibold
+                className={`text-[10px] text-center leading-tight font-semibold
                 ${active || done ? "text-[#233B6E]" : "text-gray-400"}`}
               >
                 {s}
@@ -289,7 +292,7 @@ function StepBar({ step }) {
             </div>
             {i < steps.length - 1 && (
               <div
-                className={`h-0.5 w-20 mx-3 mb-6 ${step > n ? "bg-[#233B6E]" : "bg-gray-200"}`}
+                className={`flex-1 h-0.5 mt-5 mx-1 ${step > n ? "bg-[#233B6E]" : "bg-gray-200"}`}
               />
             )}
           </div>
@@ -314,6 +317,39 @@ function Field({ label, required, hint, children }) {
 }
 ​
 function Input({ value, onChange, placeholder, type = "text", disabled }) {
+  const base =
+    "w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none " +
+    "transition placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 " +
+    "focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]";
+​
+  if (type === "date") {
+    return (
+      <div className="relative w-full">
+        <input
+          type="date"
+          value={value ?? ""}
+          onChange={onChange}
+          disabled={disabled}
+          className={`${base} pr-10 date-input`}
+        />
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4 text-[#415F9D] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      </div>
+    );
+  }
+​
   return (
     <input
       type={type}
@@ -321,9 +357,7 @@ function Input({ value, onChange, placeholder, type = "text", disabled }) {
       onChange={onChange}
       placeholder={placeholder}
       disabled={disabled}
-      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none
-        transition placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500
-        focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]"
+      className={base}
     />
   );
 }
