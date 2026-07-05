@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getProfile, updateProfile, changePassword } from "../../services/adminServices";
 import { getUser } from "../../utils/auth";
-
+​
 /**
  * Admin Profil — disesuaikan dengan API contract:
  *
@@ -10,7 +10,7 @@ import { getUser } from "../../utils/auth";
  *                   (position & unit_lab tidak ada di contract PATCH — field ini readonly untuk admin)
  * PATCH /auth/change-password → body: { current_password, new_password }
  */
-
+​
 function EyeIcon({ open }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -24,7 +24,7 @@ function EyeIcon({ open }) {
     </svg>
   );
 }
-
+​
 function Field({ label, required, hint, children }) {
   return (
     <div>
@@ -36,7 +36,7 @@ function Field({ label, required, hint, children }) {
     </div>
   );
 }
-
+​
 function TextInput({ value, onChange, placeholder, disabled, type = "text", rightSlot }) {
   return (
     <div className="relative">
@@ -56,7 +56,7 @@ function TextInput({ value, onChange, placeholder, disabled, type = "text", righ
     </div>
   );
 }
-
+​
 function Alert({ type, msg, onClose }) {
   if (!msg) return null;
   const cls = type === "error"
@@ -75,14 +75,14 @@ function Alert({ type, msg, onClose }) {
     </div>
   );
 }
-
+​
 function SectionTitle({ children }) {
   return (
     <h2 className="text-sm font-bold text-[#233B6E] uppercase tracking-wider pb-2
       border-b border-gray-100">{children}</h2>
   );
 }
-
+​
 function Spinner() {
   return (
     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -91,10 +91,10 @@ function Spinner() {
     </svg>
   );
 }
-
+​
 export default function AdminProfil() {
   const localUser = getUser(); // data dari localStorage saat login
-
+​
   const [initLoading, setInitLoading] = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [savingPass,  setSavingPass]  = useState(false);
@@ -102,17 +102,17 @@ export default function AdminProfil() {
   const [success,     setSuccess]     = useState("");
   const [passErr,     setPassErr]     = useState("");
   const [passOk,      setPassOk]      = useState("");
-
+​
   // Field yang bisa diedit — sesuai PATCH /profile body di API contract
   const [fullname, setFullname] = useState("");
   const [phone,    setPhone]    = useState("");
-
+​
   // Field readonly — dari response GET /profile, tidak bisa diedit via API
   const [email,    setEmail]    = useState("");
   const [role,     setRole]     = useState("");
   const [position, setPosition] = useState("");
   const [unitLab,  setUnitLab]  = useState("");
-
+​
   // Ganti kata sandi
   const [currentPass, setCurrentPass] = useState("");
   const [newPass,     setNewPass]     = useState("");
@@ -120,22 +120,23 @@ export default function AdminProfil() {
   const [showCur,     setShowCur]     = useState(false);
   const [showNew,     setShowNew]     = useState(false);
   const [showConf,    setShowConf]    = useState(false);
-
+​
   const initials = (fullname || localUser?.fullname || "A")
     .split(" ").slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
-
+​
   const applyProfile = useCallback((p) => {
     // Backend bisa taruh position/unit_lab langsung di root profile
     // atau di nested object "admin" — cek keduanya
     const adminData = p.admin ?? {};
-    setFullname(p.fullname                          ?? "");
-    setEmail(p.email                                ?? "");
-    setPhone(p.phone                                ?? "");
-    setRole(p.role                                  ?? "");
+    const u = p.user_info ?? p.user ?? p;
+    setFullname(u.fullname   ?? p.fullname           ?? "");
+    setEmail(u.email         ?? p.email              ?? "");
+    setPhone(u.phone         ?? p.phone              ?? "");
+    setRole(u.role           ?? p.role               ?? "");
     setPosition(p.position   ?? adminData.position  ?? "");
     setUnitLab(p.unit_lab    ?? adminData.unit_lab   ?? "");
   }, []);
-
+​
   useEffect(() => {
     (async () => {
       setInitLoading(true);
@@ -151,7 +152,7 @@ export default function AdminProfil() {
       }
     })();
   }, [applyProfile]);
-
+​
   // PATCH /profile — hanya kirim fullname dan phone sesuai API contract
   const handleSave = async (e) => {
     e.preventDefault();
@@ -163,13 +164,20 @@ export default function AdminProfil() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal menyimpan profil.");
       setSuccess("Profil berhasil disimpan.");
+      try {
+        const r2 = await getProfile();
+        const j2 = await r2.json();
+        if (r2.ok) applyProfile(j2.profile ?? j2);
+      } catch {
+        /* abaikan: perubahan sudah tersimpan di server */
+      }
     } catch (err) {
       setError(err.message ?? "Gagal menyimpan.");
     } finally {
       setSaving(false);
     }
   };
-
+​
   // PATCH /auth/change-password
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -191,7 +199,7 @@ export default function AdminProfil() {
       setSavingPass(false);
     }
   };
-
+​
   if (initLoading) return (
     <div className="flex items-center justify-center h-64">
       <span className="flex items-center gap-2 text-gray-400 text-sm">
@@ -199,11 +207,11 @@ export default function AdminProfil() {
       </span>
     </div>
   );
-
+​
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Profil Saya</h1>
-
+​
       {/* Avatar card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6
         flex flex-col sm:flex-row items-center gap-5">
@@ -230,16 +238,16 @@ export default function AdminProfil() {
           </div>
         </div>
       </div>
-
+​
       {/* Data diri */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <form onSubmit={handleSave} className="p-6 space-y-5">
           <Alert type="error"   msg={error}   onClose={() => setError("")} />
           <Alert type="success" msg={success} onClose={() => setSuccess("")} />
-
+​
           <SectionTitle>Data Diri</SectionTitle>
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Bisa diedit */}
             <Field label="Nama Lengkap" required>
@@ -250,7 +258,7 @@ export default function AdminProfil() {
               <TextInput value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder="08XXXXXXXXXX" />
             </Field>
-
+​
             {/* Readonly — tidak ada di body PATCH /profile */}
             <Field label="Email" hint="Email tidak dapat diubah">
               <TextInput value={email} disabled />
@@ -262,7 +270,7 @@ export default function AdminProfil() {
               <TextInput value={unitLab} disabled />
             </Field>
           </div>
-
+​
           <div className="flex justify-end pt-2">
             <button type="submit" disabled={saving}
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -273,7 +281,7 @@ export default function AdminProfil() {
           </div>
         </form>
       </div>
-
+​
       {/* Ganti kata sandi */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
@@ -281,7 +289,7 @@ export default function AdminProfil() {
           <SectionTitle>Ganti Kata Sandi</SectionTitle>
           <Alert type="error"   msg={passErr} onClose={() => setPassErr("")} />
           <Alert type="success" msg={passOk}  onClose={() => setPassOk("")} />
-
+​
           <Field label="Kata Sandi Saat Ini" required>
             <TextInput type={showCur ? "text" : "password"}
               value={currentPass} onChange={e => setCurrentPass(e.target.value)}
@@ -294,7 +302,7 @@ export default function AdminProfil() {
               }
             />
           </Field>
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Kata Sandi Baru" required hint="Minimal 8 karakter">
               <TextInput type={showNew ? "text" : "password"}
@@ -321,7 +329,7 @@ export default function AdminProfil() {
               />
             </Field>
           </div>
-
+​
           <div className="flex justify-end pt-2">
             <button type="submit" disabled={savingPass}
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]

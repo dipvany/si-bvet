@@ -160,12 +160,12 @@ export default function PertanyaanPenilaian() {
   };
 ​
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-500"
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#233B6E] transition-colors"
           title="Kembali"
         >
           <svg

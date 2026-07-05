@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUnverifiedCustomers, verifyUser, rejectUser } from "../../services/adminServices";
-import { apiFetch } from "../../services/api";
 import StatusBadge from "../../components/StatusBadge";
 ​
 const getDocUrl = (path) => {
@@ -54,13 +53,6 @@ export default function RegistrasiPelanggan() {
   const [actionStatus, setActionStatus] = useState({});
   const [actionMsg, setActionMsg]       = useState({});
 ​
-  // Import modal state
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile,      setImportFile]      = useState(null);
-  const [importing,       setImporting]       = useState(false);
-  const [importResult,    setImportResult]    = useState(null);
-  const [importError,     setImportError]     = useState("");
-​
   useEffect(() => { fetchData(); }, []);
 ​
   const fetchData = async () => {
@@ -112,29 +104,6 @@ export default function RegistrasiPelanggan() {
     } catch (err) {
       setActionStatus(p => ({ ...p, [customer.id]: "error" }));
       setActionMsg(p => ({ ...p, [customer.id]: err.message }));
-    }
-  };
-​
-  const handleImport = async () => {
-    if (!importFile) return setImportError("Pilih file terlebih dahulu.");
-    setImporting(true); setImportError(""); setImportResult(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", importFile);
-      const res  = await apiFetch("/superadmin/customers/import", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Gagal mengimpor data.");
-      setImportResult({
-        success: data.success_count ?? data.imported ?? 0,
-        failed:  data.failed_count  ?? data.failed   ?? 0,
-        message: data.message ?? "Import selesai.",
-      });
-      setImportFile(null);
-      await fetchData();
-    } catch (err) {
-      setImportError(err.message ?? "Gagal mengimpor data.");
-    } finally {
-      setImporting(false);
     }
   };
 ​
@@ -217,7 +186,7 @@ export default function RegistrasiPelanggan() {
 ​
           {/* Toolbar */}
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative w-full sm:w-72">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
                 strokeLinecap="round"
                 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -271,26 +240,6 @@ export default function RegistrasiPelanggan() {
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </div>
-            </div>
-​
-            <div className="flex items-center gap-2 ml-auto">
-              <button onClick={() => {
-                setShowImportModal(true);
-                setImportResult(null);
-                setImportError("");
-                setImportFile(null);
-              }}
-                className="flex items-center gap-1.5 bg-white hover:bg-[#EEF0F8]
-                  text-[#233B6E] text-sm font-semibold px-4 py-2 rounded-xl
-                  border border-[#233B6E] shadow-sm transition-colors whitespace-nowrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                Impor Data
-              </button>
             </div>
           </div>
 ​
@@ -474,160 +423,6 @@ export default function RegistrasiPelanggan() {
           </div>
         </div>
       </div>
-​
-      {/* Modal Import — di luar div utama tapi dalam Fragment */}
-      {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowImportModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="h-1 bg-[#233B6E]" />
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <div>
-                <h2 className="font-bold text-[#233B6E] text-base">Impor Data Pelanggan</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Daftarkan pelanggan secara massal via file Excel/CSV
-                </p>
-              </div>
-              <button onClick={() => setShowImportModal(false)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" className="w-5 h-5">
-                  <path d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-​
-            <div className="px-6 py-5 space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3
-                text-sm text-blue-700">
-                <p className="font-semibold mb-1">Format File yang Didukung</p>
-                <ul className="list-disc list-inside text-xs space-y-0.5 text-blue-600">
-                  <li>Format: <strong>.xlsx</strong> atau <strong>.csv</strong></li>
-                  <li>Kolom wajib: <strong>fullname, email, phone, password, institution</strong></li>
-                  <li>Kolom opsional: group, is_active</li>
-                  <li>Maksimal 500 baris per file</li>
-                </ul>
-              </div>
-​
-              {importError && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-sm
-                  rounded-xl px-4 py-3 flex items-start justify-between gap-2">
-                  <span>{importError}</span>
-                  <button onClick={() => setImportError("")}
-                    className="opacity-60 hover:opacity-100 flex-shrink-0">
-                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"
-                      strokeLinecap="round" className="w-3.5 h-3.5">
-                      <path d="M1 1l12 12M13 1L1 13"/>
-                    </svg>
-                  </button>
-                </div>
-              )}
-​
-              {importResult ? (
-                <>
-                  <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                    <p className="text-sm font-bold text-green-700 mb-1">
-                      {importResult.message}
-                    </p>
-                    <div className="flex gap-4 mt-1">
-                      <div className="text-center">
-                        <p className="text-xl font-extrabold text-green-600">
-                          {importResult.success}
-                        </p>
-                        <p className="text-xs text-green-500">Berhasil</p>
-                      </div>
-                      {importResult.failed > 0 && (
-                        <div className="text-center">
-                          <p className="text-xl font-extrabold text-red-500">
-                            {importResult.failed}
-                          </p>
-                          <p className="text-xs text-red-400">Gagal</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button onClick={() => setShowImportModal(false)}
-                    className="w-full bg-[#233B6E] hover:bg-[#1a2d56] text-white
-                      font-bold text-sm py-2.5 rounded-xl transition-all">
-                    Tutup
-                  </button>
-                </>
-              ) : (
-                <>
-                  <label className={`flex flex-col items-center justify-center gap-2
-                    border-2 border-dashed rounded-xl px-4 py-8 cursor-pointer transition-colors
-                    ${importFile
-                      ? "border-green-300 bg-green-50"
-                      : "border-gray-200 hover:border-[#233B6E] hover:bg-[#EEF0F8]"}`}>
-                    <input type="file" accept=".xlsx,.csv,.xls" className="hidden"
-                      onChange={e => {
-                        setImportFile(e.target.files[0] ?? null);
-                        setImportError("");
-                        setImportResult(null);
-                      }} />
-                    {importFile ? (
-                      <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.8"
-                          strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12
-                            a2 2 0 0 0 2-2V8z"/>
-                          <polyline points="14 2 14 8 20 8"/>
-                          <polyline points="9 15 12 18 15 15"/>
-                          <line x1="12" y1="18" x2="12" y2="11"/>
-                        </svg>
-                        <p className="text-sm font-semibold text-green-700 text-center break-all">
-                          {importFile.name}
-                        </p>
-                        <p className="text-xs text-green-500">
-                          {(importFile.size / 1024).toFixed(1)} KB — klik untuk ganti
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.8"
-                          strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                        <p className="text-sm text-gray-500 font-medium">Klik untuk pilih file</p>
-                        <p className="text-xs text-gray-400">.xlsx, .csv, .xls</p>
-                      </>
-                    )}
-                  </label>
-​
-                  <div className="flex gap-3">
-                    <button onClick={() => setShowImportModal(false)}
-                      className="flex-1 border border-gray-200 text-gray-600
-                        hover:bg-gray-50 font-semibold text-sm py-2.5 rounded-xl
-                        transition-colors">
-                      Batal
-                    </button>
-                    <button onClick={handleImport} disabled={importing || !importFile}
-                      className="flex-1 bg-[#233B6E] hover:bg-[#1a2d56] text-white
-                        font-bold text-sm py-2.5 rounded-xl transition-all
-                        disabled:opacity-60 disabled:cursor-not-allowed
-                        inline-flex items-center justify-center gap-2">
-                      {importing ? (
-                        <>
-                          <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10"
-                              stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8v8H4z"/>
-                          </svg>
-                          Mengimpor...
-                        </>
-                      ) : "Impor Sekarang"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

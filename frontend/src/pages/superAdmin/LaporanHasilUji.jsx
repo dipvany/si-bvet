@@ -68,7 +68,7 @@ function InfoRow({ label, value }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 border-b border-gray-100 last:border-0 min-w-0">
       <span className="text-[11px] text-gray-400 uppercase tracking-wide leading-tight">{label}</span>
-      <span className="text-sm font-medium text-gray-800 break-words leading-snug">{value ?? "-"}</span>
+      <span className="text-sm font-medium text-gray-800 break-words leading-snug">{value === "" || value == null ? "-" : value}</span>
     </div>
   );
 }
@@ -208,14 +208,13 @@ function TinjauanCard({ full }) {
                 {attDocs.map((doc, i) => {
                   const raw = typeof doc === "string" ? doc : doc?.path ?? "";
                   const url = resolveFileUrl(raw);
-                  const name = raw.split("/").pop() || `Dokumen ${i + 1}`;
                   return (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-[#233B6E] text-sm font-semibold hover:underline">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 flex-shrink-0">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
                       </svg>
-                      {name}
+                      Lihat Dokumen
                     </a>
                   );
                 })}
@@ -363,7 +362,7 @@ function LhuUploadForm({ submission, existing, onSuccess }) {
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               <span className="text-gray-500 font-medium">Klik untuk pilih file</span>
-              <span className="text-xs text-gray-400">PDF, JPG, PNG \u2014 Maks 10MB</span>
+              <span className="text-xs text-gray-400">PDF, JPG, PNG - Maks 10MB</span>
             </>
           )}
         </button>
@@ -435,7 +434,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <button onClick={onBack}
-          className="w-9 h-9 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-500 flex-shrink-0">
+          className="p-2 rounded-lg hover:bg-white text-gray-500 hover:text-[#233B6E] transition-colors flex-shrink-0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
             <path d="M15 18l-6-6 6-6" />
           </svg>
@@ -479,38 +478,42 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
                 <span className="font-semibold">Pengujian selesai.</span>
               </div>
 ​
-              {loadLhu ? (
-                <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat LHU...</div>
-              ) : lhu ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-green-700 font-semibold">No. LHU: {lhu.no_lhu ?? "-"}</p>
-                    {lhu.file_url && (
-                      <a href={resolveFileUrl(lhu.file_url)} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-green-600 hover:underline mt-0.5 inline-flex items-center gap-1">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                        </svg>
-                        Lihat dokumen LHU
-                      </a>
-                    )}
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full flex-shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    Tersedia
-                  </span>
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  {loadLhu ? (
+                    <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat LHU...</div>
+                  ) : lhu ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-green-700 font-semibold">No. LHU: {lhu.no_lhu ?? "-"}</p>
+                        {lhu.file_url && (
+                          <a href={resolveFileUrl(lhu.file_url)} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-green-600 hover:underline mt-0.5 inline-flex items-center gap-1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Lihat dokumen LHU
+                          </a>
+                        )}
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full flex-shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        Tersedia
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">Belum ada dokumen LHU.</p>
+                  )}
                 </div>
-              ) : (
-                <p className="text-xs text-gray-400 italic">Belum ada dokumen LHU.</p>
-              )}
 ​
-              <button onClick={() => setShowReupload((p) => !p)}
-                className="inline-flex items-center gap-1.5 text-[#233B6E] text-xs font-semibold hover:underline">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                {showReupload ? "Batal perbarui" : "Perbarui LHU"}
-              </button>
+                <button onClick={() => setShowReupload((p) => !p)}
+                  className="inline-flex items-center gap-1.5 text-[#233B6E] text-xs font-semibold hover:underline whitespace-nowrap flex-shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  {lhu ? (showReupload ? "Batal perbarui" : "Perbarui LHU") : (showReupload ? "Batal unggah" : "Unggah LHU")}
+                </button>
+              </div>
 ​
               {showReupload && (
                 <div className="pt-2 border-t border-gray-100">
@@ -526,12 +529,14 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
         <div className="h-1 bg-[#233B6E]" />
         <div className="p-5">
           <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">Informasi Pengajuan</p>
-          <InfoRow label="No. Tiket" value={sub.no_ticket} />
-          <InfoRow label="No. Registrasi" value={sub.no_registration} />
-          <InfoRow label="No. EPI" value={sub.no_epi} />
-          <InfoRow label="Jenis Layanan" value={sub.type_service} />
-          <InfoRow label="Tujuan Pengujian" value={sub.purpose_of_test} />
-          <InfoRow label="Jumlah Sampel" value={sub.samples_count} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
+            <InfoRow label="No. Tiket" value={sub.no_ticket} />
+            <InfoRow label="No. Registrasi" value={sub.no_registration} />
+            <InfoRow label="No. EPI" value={sub.no_epi} />
+            <InfoRow label="Jenis Layanan" value={sub.type_service} />
+            <InfoRow label="Tujuan Pengujian" value={sub.purpose_of_test} />
+            <InfoRow label="Jumlah Sampel" value={sub.samples_count} />
+          </div>
         </div>
       </div>
 ​
@@ -611,6 +616,7 @@ export default function LaporanHasilUji() {
   const [error, setError] = useState("");
   const [flashOk, setFlashOk] = useState("");
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
 ​
@@ -637,14 +643,31 @@ export default function LaporanHasilUji() {
 ​
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    if (!q) return submissions;
-    return submissions.filter((s) =>
-      s.no_ticket?.toLowerCase().includes(q) ||
-      s.no_epi?.toLowerCase().includes(q) ||
-      s.type_service?.toLowerCase().includes(q) ||
-      s.purpose_of_test?.toLowerCase().includes(q)
-    );
-  }, [submissions, search]);
+    return submissions.filter((s) => {
+      const st = (s.process_status ?? "").toLowerCase();
+      const matchStatus =
+        filterStatus === "all" ||
+        (filterStatus === "processed" && STATUS_PROCESS.includes(st)) ||
+        (filterStatus === "done" && STATUS_DONE.includes(st));
+      const matchSearch =
+        !q ||
+        s.no_ticket?.toLowerCase().includes(q) ||
+        s.no_epi?.toLowerCase().includes(q) ||
+        s.type_service?.toLowerCase().includes(q) ||
+        s.purpose_of_test?.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [submissions, search, filterStatus]);
+​
+  const countByStatus = useMemo(() => {
+    const map = { all: submissions.length, processed: 0, done: 0 };
+    submissions.forEach((s) => {
+      const st = (s.process_status ?? "").toLowerCase();
+      if (STATUS_PROCESS.includes(st)) map.processed += 1;
+      else if (STATUS_DONE.includes(st)) map.done += 1;
+    });
+    return map;
+  }, [submissions]);
 ​
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -663,22 +686,59 @@ export default function LaporanHasilUji() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[#233B6E]">Proses Pengujian</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Kelola pengujian yang sedang berjalan \u2014 unggah LHU sekaligus menyelesaikan pengujian.</p>
       </div>
 ​
       <Alert type="error" msg={error} onClose={() => setError("")} />
       <Alert type="success" msg={flashOk} onClose={() => setFlashOk("")} />
 ​
+      <div className="flex flex-wrap gap-2">
+        {[
+          { value: "all", label: "Semua" },
+          { value: "processed", label: "Sedang Diproses" },
+          { value: "done", label: "Selesai" },
+        ].map((opt) => (
+          <button key={opt.value} onClick={() => { setFilterStatus(opt.value); setPage(1); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
+              ${filterStatus === opt.value
+                ? "bg-[#233B6E] text-white border-[#233B6E]"
+                : "bg-white text-gray-500 border-gray-200 hover:border-[#233B6E] hover:text-[#233B6E]"}`}>
+            {opt.label}
+            {(countByStatus[opt.value] ?? 0) > 0 && (
+              <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold
+                ${filterStatus === opt.value ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>
+                {countByStatus[opt.value]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+​
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-          <div className="relative">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari no. tiket / jenis / tujuan..."
-              className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-64" />
+          <span className="text-xs text-gray-400 font-medium whitespace-nowrap">{submissions.length} pengujian</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari no. tiket / jenis / tujuan..."
+                className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-64" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Status:</span>
+              <div className="relative">
+                <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+                  className="w-40 truncate appearance-none border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white pl-3 pr-7 py-2 outline-none cursor-pointer focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]">
+                  <option value="all">Semua Status</option>
+                  <option value="processed">Sedang Diproses</option>
+                  <option value="done">Selesai</option>
+                </select>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
           </div>
-          <span className="text-xs text-gray-400 font-medium">{submissions.length} pengujian</span>
         </div>
 ​
         <div className="overflow-x-auto">

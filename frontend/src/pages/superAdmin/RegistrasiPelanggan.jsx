@@ -217,7 +217,7 @@ export default function RegistrasiPelanggan() {
 ​
           {/* Toolbar */}
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative w-full sm:w-72">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
                 strokeLinecap="round"
                 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">

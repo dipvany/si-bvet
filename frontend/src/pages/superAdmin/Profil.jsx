@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile, changePassword } from "../../services/superAdminServices";
-
+​
 /* ─── tiny helpers ─────────────────────────────────────────────── */
 function EyeIcon({ open }) {
   return (
@@ -16,7 +16,7 @@ function EyeIcon({ open }) {
     </svg>
   );
 }
-
+​
 function Field({ label, required, children, hint }) {
   return (
     <div>
@@ -28,7 +28,7 @@ function Field({ label, required, children, hint }) {
     </div>
   );
 }
-
+​
 function TextInput({ value, onChange, placeholder, disabled, type = "text", rightSlot }) {
   return (
     <div className="relative">
@@ -49,7 +49,7 @@ function TextInput({ value, onChange, placeholder, disabled, type = "text", righ
     </div>
   );
 }
-
+​
 function Alert({ type, msg, onClose }) {
   if (!msg) return null;
   const s = type === "error"
@@ -66,7 +66,7 @@ function Alert({ type, msg, onClose }) {
     </div>
   );
 }
-
+​
 function Section({ title, children }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -78,25 +78,24 @@ function Section({ title, children }) {
     </div>
   );
 }
-
+​
 /* ─── Main Component ───────────────────────────────────────────── */
 export default function SuperAdminProfil() {
   /* profile state */
   const [loading,     setLoading]     = useState(true);
-
+​
   /* editable fields — sesuai API PATCH /profile */
   const [fullname,    setFullname]    = useState("");
   const [phone,       setPhone]       = useState("");
-  const [institution, setInstitution] = useState("");
-
+​
   /* read-only */
   const [email, setEmail] = useState("");
-
+​
   /* profile save */
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileErr,    setProfileErr]    = useState("");
   const [profileOk,     setProfileOk]     = useState("");
-
+​
   /* password — API butuh current_password + new_password */
   const [currentPass,  setCurrentPass]  = useState("");
   const [newPass,      setNewPass]      = useState("");
@@ -107,12 +106,12 @@ export default function SuperAdminProfil() {
   const [savingPass,   setSavingPass]   = useState(false);
   const [passErr,      setPassErr]      = useState("");
   const [passOk,       setPassOk]       = useState("");
-
+​
   const initials = (fullname || "SA")
     .split(" ").slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
-
+​
   useEffect(() => { fetchProfile(); }, []);
-
+​
   const fetchProfile = async () => {
     setLoading(true); setProfileErr("");
     try {
@@ -121,25 +120,25 @@ export default function SuperAdminProfil() {
       const body = await res.json();
       // API response: { profile: { id, fullname, email, phone, role, institution, ... } }
       const p = body.profile ?? body;
-      setFullname(p.fullname       ?? "");
-      setEmail(p.email             ?? "");
-      setPhone(p.phone             ?? "");
-      setInstitution(p.institution ?? "");
+      const u = p.user_info ?? p.user ?? p;
+      setFullname(u.fullname       ?? p.fullname    ?? "");
+      setEmail(u.email             ?? p.email       ?? "");
+      setPhone(u.phone             ?? p.phone       ?? "");
     } catch {
       setProfileErr("Gagal memuat profil. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
   };
-
+​
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setProfileErr(""); setProfileOk("");
     if (!fullname.trim()) { setProfileErr("Nama lengkap wajib diisi."); return; }
-
+​
     setSavingProfile(true);
     try {
-      const res = await updateProfile({ fullname, phone, institution });
+      const res = await updateProfile({ fullname, phone });
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error ?? "Gagal menyimpan profil.");
@@ -152,7 +151,7 @@ export default function SuperAdminProfil() {
       setSavingProfile(false);
     }
   };
-
+​
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setPassErr(""); setPassOk("");
@@ -160,7 +159,7 @@ export default function SuperAdminProfil() {
     if (!newPass)                { setPassErr("Kata sandi baru wajib diisi."); return; }
     if (newPass.length < 8)      { setPassErr("Kata sandi baru minimal 8 karakter."); return; }
     if (newPass !== confirmPass) { setPassErr("Konfirmasi kata sandi tidak cocok."); return; }
-
+​
     setSavingPass(true);
     try {
       // API PATCH /auth/change-password — wajib kirim current_password + new_password
@@ -177,7 +176,7 @@ export default function SuperAdminProfil() {
       setSavingPass(false);
     }
   };
-
+​
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <span className="flex items-center gap-2 text-gray-400 text-sm">
@@ -189,11 +188,11 @@ export default function SuperAdminProfil() {
       </span>
     </div>
   );
-
+​
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Profil Saya</h1>
-
+​
       {/* ── Avatar Card ── */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6
         flex flex-col sm:flex-row items-center gap-5">
@@ -210,13 +209,13 @@ export default function SuperAdminProfil() {
           </span>
         </div>
       </div>
-
+​
       {/* ── Data Diri ── */}
       <Section title="Data Diri">
         <form onSubmit={handleSaveProfile} className="space-y-4">
           <Alert type="error"   msg={profileErr} onClose={() => setProfileErr("")} />
           <Alert type="success" msg={profileOk}  onClose={() => setProfileOk("")} />
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Nama Lengkap" required>
               <TextInput value={fullname} onChange={e => setFullname(e.target.value)}
@@ -226,18 +225,14 @@ export default function SuperAdminProfil() {
               <TextInput value={email} disabled />
             </Field>
           </div>
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="No. Telepon">
               <TextInput value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder="08XXXXXXXXXX" />
             </Field>
-            <Field label="Institusi / Instansi">
-              <TextInput value={institution} onChange={e => setInstitution(e.target.value)}
-                placeholder="Nama institusi" />
-            </Field>
           </div>
-
+​
           <div className="flex justify-end pt-2">
             <button type="submit" disabled={savingProfile}
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -253,13 +248,13 @@ export default function SuperAdminProfil() {
           </div>
         </form>
       </Section>
-
+​
       {/* ── Ganti Kata Sandi ── */}
       <Section title="Ganti Kata Sandi">
         <form onSubmit={handleChangePassword} className="space-y-4">
           <Alert type="error"   msg={passErr} onClose={() => setPassErr("")} />
           <Alert type="success" msg={passOk}  onClose={() => setPassOk("")} />
-
+​
           {/* current_password — wajib sesuai API contract */}
           <Field label="Kata Sandi Saat Ini" required>
             <TextInput
@@ -275,7 +270,7 @@ export default function SuperAdminProfil() {
               }
             />
           </Field>
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Kata Sandi Baru" required hint="Minimal 8 karakter">
               <TextInput
@@ -291,7 +286,7 @@ export default function SuperAdminProfil() {
                 }
               />
             </Field>
-
+​
             <Field label="Konfirmasi Kata Sandi Baru" required>
               <TextInput
                 type={showConfirm ? "text" : "password"}
@@ -307,7 +302,7 @@ export default function SuperAdminProfil() {
               />
             </Field>
           </div>
-
+​
           <div className="flex justify-end pt-2">
             <button type="submit" disabled={savingPass}
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]

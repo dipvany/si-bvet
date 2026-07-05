@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAdminSubmissions, getActivityLogs, getAllComplaints } from "../../services/superAdminServices";
+import { getAdminSubmissions, getActivityLogs, getAllComplaints, getUnverifiedCustomers } from "../../services/superAdminServices";
 
 const CARD_CONFIG = [
   { key: "total",                label: "Total Pengajuan Masuk", color: "#F5C400" },
@@ -254,6 +254,7 @@ export default function SuperAdminBeranda() {
   });
   const [logs, setLogs]         = useState([]);
   const [complaints, setComplaints] = useState({ total: 0, belum: 0 });
+  const [accounts, setAccounts] = useState({ total: 0, verified: 0, unverified: 0 });
   const [loading, setLoading]   = useState(true);
   const [logLoading, setLogLoading] = useState(true);
   const [error, setError]       = useState("");
@@ -263,6 +264,7 @@ export default function SuperAdminBeranda() {
     fetchStats();
     fetchLogs();
     fetchComplaints();
+    fetchCustomers();
   }, []);
 
   const fetchStats = async () => {
@@ -279,7 +281,12 @@ export default function SuperAdminBeranda() {
         in_process: 0, completed: 0,
       };
       data.forEach(s => {
-        if (counts[s.process_status] !== undefined) counts[s.process_status]++;
+        const st = (s.process_status ?? "").toLowerCase();
+        if (st === "pending_verification") counts.pending_verification++;
+        else if (["awaiting_payment", "menunggu_pembayaran", "awaiting_verification", "menunggu_verifikasi_pembayaran"].includes(st))
+          counts.waiting_payment++;
+        else if (["processed", "diproses"].includes(st)) counts.in_process++;
+        else if (["done", "selesai", "completed"].includes(st)) counts.completed++;
       });
       setStats(counts);
     } catch (err) {
@@ -318,6 +325,18 @@ export default function SuperAdminBeranda() {
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      const res  = await getUnverifiedCustomers();
+      const json = await res.json();
+      const list = json.customers ?? json.data ?? [];
+      const verified = list.filter(c => c.is_verified).length;
+      setAccounts({ total: list.length, verified, unverified: list.length - verified });
+    } catch (e) {
+      console.warn("Customers fetch error:", e.message);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Beranda</h1>
@@ -339,6 +358,18 @@ export default function SuperAdminBeranda() {
           <StatCard key={c.key} label={c.label} value={stats[c.key] ?? 0}
             total={stats.total || 1} color={c.color} loading={loading}/>
         ))}
+      </div>
+
+      {/* Stat akun pelanggan */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+          Akun Pelanggan
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <StatCard label="Jumlah Daftar Akun" value={accounts.total} total={Math.max(accounts.total, 1)} color="#3B82F6" loading={loading}/>
+          <StatCard label="Belum Verifikasi" value={accounts.unverified} total={Math.max(accounts.total, 1)} color="#F5C400" loading={loading}/>
+          <StatCard label="Sudah Verifikasi" value={accounts.verified} total={Math.max(accounts.total, 1)} color="#22C55E" loading={loading}/>
+        </div>
       </div>
 
       {/* Stat pengaduan */}
