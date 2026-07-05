@@ -18,10 +18,10 @@ import { resolveFileUrl } from "../../utils/fileUrl";
 const STATUS_CONFIG = {
   approved:              { label: "Disetujui",                      bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500",  order: 0 },
   awaiting_payment:      { label: "Menunggu Pembayaran",            bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   order: 1 },
-  awaiting_verification: { label: "Menunggu Verifikasi Pembayaran", bg: "bg-cyan-100",   text: "text-cyan-700",   dot: "bg-cyan-500",   order: 2 },
-  processed:             { label: "Sedang Diproses",                bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", order: 3 },
+  awaiting_verification: { label: "Verifikasi Pembayaran",           bg: "bg-cyan-100",   text: "text-cyan-700",   dot: "bg-cyan-500",   order: 2 },
+  processed:             { label: "Pembayaran Diterima",             bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500", order: 3 },
   payment_rejected:      { label: "Pembayaran Ditolak",             bg: "bg-red-100",    text: "text-red-700",    dot: "bg-red-500",    order: -1 },
-  done:                  { label: "Pengujian Selesai",              bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500",  order: 4 },
+  done:                  { label: "Pembayaran Diterima",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500",  order: 4 },
 };
 ​
 const ACTIVE_STATUSES = [
@@ -84,7 +84,7 @@ function InfoRow({ label, value }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 border-b border-gray-100 last:border-0 min-w-0">
       <span className="text-[11px] text-gray-400 uppercase tracking-wide leading-tight">{label}</span>
-      <span className="text-sm font-medium text-gray-800 break-words leading-snug">{value ?? "-"}</span>
+      <span className="text-sm font-medium text-gray-800 break-words leading-snug">{value === "" || value == null ? "-" : value}</span>
     </div>
   );
 }
@@ -208,6 +208,59 @@ function StepBar({ status }) {
   );
 }
 ​
+/* ── Estimasi Harga — card terpisah ── */
+function EstimasiCard({ full }) {
+  if (!full) return null;
+  const samples = full.samples ?? [];
+  const estLines = [];
+  samples.forEach(s => {
+    const qty = Number(s.total_sample) || 0;
+    (s.test_requests ?? []).forEach(tr => {
+      const svc = tr.test_service ?? tr;
+      estLines.push({ name: svc?.test_name ?? "-", price: Number(svc?.price) || 0, qty });
+    });
+  });
+  if (estLines.length === 0) return null;
+  const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-[#233B6E] to-[#415F9D]" />
+      <div className="p-5 sm:p-6">
+        <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-4">Estimasi Harga Pengujian</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
+                <th className="py-2 pr-3 font-semibold">Pengujian</th>
+                <th className="py-2 px-3 font-semibold text-right">Harga Satuan</th>
+                <th className="py-2 px-3 font-semibold text-center">Jml Sampel</th>
+                <th className="py-2 pl-3 font-semibold text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {estLines.map((l, i) => (
+                <tr key={i}>
+                  <td className="py-2 pr-3 text-gray-700">{l.name}</td>
+                  <td className="py-2 px-3 text-right text-gray-600">{rupiah(l.price)}</td>
+                  <td className="py-2 px-3 text-center text-gray-600">{l.qty}</td>
+                  <td className="py-2 pl-3 text-right font-semibold text-gray-800">{rupiah(l.price * l.qty)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-gray-200">
+                <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
+                <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <p className="text-[11px] text-gray-400 mt-2 italic">*Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.</p>
+      </div>
+    </div>
+  );
+}
+​
 /* ── Tinjauan card — step 1, 2, 3 ── */
 function TinjauanCard({ full }) {
   if (!full) return (
@@ -268,7 +321,7 @@ function TinjauanCard({ full }) {
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                       </svg>
-                      {name}
+                      Lihat Dokumen
                     </a>
                   );
                 })}
@@ -347,6 +400,7 @@ function TinjauanCard({ full }) {
             </div>
           </section>
         )}
+​
       </div>
     </div>
   );
@@ -495,7 +549,6 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
     finally { setUploadingLHU(false); }
   };
 ​
-​
   /* ── panel billing ── */
   const BillingPanel = () => loadBill ? (
     <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat tagihan...</div>
@@ -540,7 +593,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
         </button>
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-[#233B6E]">Detail Proses Pengujian</h1>
+            <h1 className="text-xl font-bold text-[#233B6E]">Detail Proses Pembayaran</h1>
             <StatusPill status={status} />
           </div>
           <p className="text-xs text-gray-400 mt-0.5 font-mono">{sub.no_ticket ?? `#${sub.id}`}</p>
@@ -550,25 +603,9 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
       {/* Alur Proses — stepper dengan ikon */}
       <StepBar status={status} />
 ​
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Kiri: Info Pengajuan SAJA */}
-        <div className="lg:col-span-1 space-y-5">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="h-1 bg-[#233B6E]" />
-            <div className="p-5">
-              <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">Informasi Pengajuan</p>
-              <InfoRow label="No. Tiket"        value={sub.no_ticket} />
-              <InfoRow label="No. Registrasi"   value={sub.no_registration} />
-              <InfoRow label="No. EPI"          value={sub.no_epi} />
-              <InfoRow label="Jenis Layanan"    value={sub.type_service} />
-              <InfoRow label="Tujuan Pengujian" value={sub.purpose_of_test} />
-              <InfoRow label="Jumlah Sampel"    value={sub.samples_count} />
-            </div>
-          </div>
-        </div>
-​
-        {/* Kanan: Panel aksi */}
-        <div className="lg:col-span-2 space-y-4">
+      <div className="space-y-5">
+        {/* Panel aksi */}
+        <div className="space-y-4">
           <Alert type="error"   msg={err} onClose={() => setErr("")} />
           <Alert type="success" msg={ok}  onClose={() => setOk("")} />
 ​
@@ -684,49 +721,10 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
               <div className="h-1 bg-purple-400" />
               <div className="p-5 space-y-4">
                 <div>
-                  <p className="text-sm font-bold text-purple-800">Tahap: Sedang Diproses</p>
-                  <p className="text-xs text-purple-600 mt-1">Pengujian sedang berjalan. Setelah selesai, unggah LHU untuk menandai pengujian selesai.</p>
+                  <p className="text-sm font-bold text-purple-800">Tahap: Pembayaran Diterima</p>
+                  <p className="text-xs text-purple-600 mt-1">Pembayaran sudah diterima. Pengajuan lanjut ke menu Proses Pengujian untuk pengujian dan unggah LHU.</p>
                 </div>
-                <form onSubmit={handleUploadLHU} className="space-y-3">
-                  <p className="text-xs font-bold text-[#233B6E] uppercase tracking-wider">Upload Laporan Hasil Uji (LHU)</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                        Nomor LHU <span className="text-red-400">*</span>
-                      </label>
-                      <input type="text" value={lhuForm.no_lhu}
-                        onChange={e => setLhuForm(p => ({ ...p, no_lhu: e.target.value }))}
-                        placeholder="LHU-001"
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                        File LHU (PDF) <span className="text-red-400">*</span>
-                      </label>
-                      <button type="button" onClick={() => lhuRef.current.click()}
-                        className="w-full border border-dashed border-gray-300 rounded-xl px-3 py-2.5 text-sm text-left text-gray-400 hover:border-[#233B6E] hover:text-[#233B6E] transition-colors">
-                        {lhuForm.file ? lhuForm.file.name : "Pilih file PDF..."}
-                      </button>
-                      <input ref={lhuRef} type="file" accept=".pdf" className="hidden"
-                        onChange={e => setLhuForm(p => ({ ...p, file: e.target.files[0] ?? null }))} />
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <button type="submit" disabled={uploadingLHU}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
-                      {uploadingLHU ? <><Spinner sm />Mengunggah...</> : (
-                        <>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="17 8 12 3 7 8"/>
-                            <line x1="12" y1="3" x2="12" y2="15"/>
-                          </svg>
-                          Upload LHU & Selesaikan
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
+                <BillingPanel />
               </div>
             </div>
           )}
@@ -735,19 +733,41 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
           {isDone && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-green-400" />
-              <div className="p-5 flex items-center gap-3 text-sm text-green-700">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                Pengujian selesai. LHU sudah tersedia di menu <strong className="mx-1">Laporan Hasil Uji</strong> dan dapat diunduh pelanggan.
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3 text-sm text-green-700">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Pembayaran diterima. Proses pengujian dan unggah LHU dilakukan di menu <strong className="mx-1">Proses Pengujian</strong>.
+                </div>
+                <BillingPanel />
               </div>
             </div>
           )}
         </div>
+        {/* Informasi Pengajuan */}
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="h-1 bg-[#233B6E]" />
+            <div className="p-5">
+              <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">Informasi Pengajuan</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-0">
+                <InfoRow label="No. Tiket"        value={sub.no_ticket} />
+                <InfoRow label="No. Registrasi"   value={sub.no_registration} />
+                <InfoRow label="No. EPI"          value={sub.no_epi} />
+                <InfoRow label="Jenis Layanan"    value={sub.type_service} />
+                <InfoRow label="Tujuan Pengujian" value={sub.purpose_of_test} />
+                <InfoRow label="Jumlah Sampel"    value={sub.samples_count} />
+              </div>
+            </div>
+          </div>
+        </div>
+​
       </div>
 ​
       {/* ✅ TINJAUAN PENGAJUAN — FULL WIDTH di bawah grid */}
       <TinjauanCard full={fullSub} />
+      <EstimasiCard full={fullSub} />
     </div>
   );
 }
@@ -792,7 +812,7 @@ export default function ProsesPengujian() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return submissions.filter(s => {
-      const matchStatus = filterStatus === "all" || s.process_status === filterStatus;
+      const matchStatus = filterStatus === "all" || (STATUS_CONFIG[s.process_status]?.label ?? s.process_status) === filterStatus;
       const matchSearch = !q ||
         s.no_ticket?.toLowerCase().includes(q) ||
         s.type_service?.toLowerCase().includes(q) ||
@@ -803,7 +823,10 @@ export default function ProsesPengujian() {
 ​
   const countByStatus = useMemo(() => {
     const map = { all: submissions.length };
-    submissions.forEach(s => { map[s.process_status] = (map[s.process_status] ?? 0) + 1; });
+    submissions.forEach(s => {
+      const key = STATUS_CONFIG[s.process_status]?.label ?? s.process_status;
+      map[key] = (map[key] ?? 0) + 1;
+    });
     return map;
   }, [submissions]);
 ​
@@ -821,8 +844,7 @@ export default function ProsesPengujian() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-[#233B6E]">Proses Pengujian</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Kelola alur: disetujui → pembayaran → verifikasi → pengujian → selesai</p>
+          <h1 className="text-xl font-bold text-[#233B6E]">Proses Pembayaran</h1>
         </div>
         <button onClick={() => fetchData(page)}
           className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E] bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
@@ -841,7 +863,7 @@ export default function ProsesPengujian() {
       )}
 ​
       <div className="flex flex-wrap gap-2">
-        {[{ value: "all", label: "Semua" }, ...ACTIVE_STATUSES.map(s => ({ value: s, label: STATUS_CONFIG[s]?.label ?? s }))].map(opt => (
+        {[{ value: "all", label: "Semua" }, ...Array.from(new Set(ACTIVE_STATUSES.map(s => STATUS_CONFIG[s]?.label ?? s))).map(lbl => ({ value: lbl, label: lbl }))].map(opt => (
           <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
               ${filterStatus === opt.value
@@ -863,14 +885,32 @@ export default function ProsesPengujian() {
           <p className="text-xs text-gray-400">
             <span className="font-bold text-[#233B6E]">{filtered.length}</span> pengajuan dalam proses
           </p>
-          <div className="relative">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-              className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Cari no. tiket atau layanan..."
-              className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-56" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Cari no. tiket atau layanan..."
+                className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-56" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Status:</span>
+              <div className="relative">
+                <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                  className="w-40 truncate appearance-none border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white pl-3 pr-7 py-2 outline-none cursor-pointer focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]">
+                  <option value="all">Semua Status</option>
+                  {Array.from(new Set(ACTIVE_STATUSES.map(s => STATUS_CONFIG[s]?.label ?? s))).map(lbl => (
+                    <option key={lbl} value={lbl}>{lbl}</option>
+                  ))}
+                </select>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                  className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -903,7 +943,7 @@ export default function ProsesPengujian() {
                   <td className="px-4 py-3"><StatusPill status={s.process_status} /></td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setSelected(s)}
-                      className="flex items-center gap-1.5 text-[#233B6E] text-xs font-semibold bg-[#EEF0F8] hover:bg-[#dde0f0] px-2.5 py-1.5 rounded-lg transition-colors">
+                      className="inline-flex items-center gap-1.5 text-[#233B6E] text-xs font-semibold hover:underline whitespace-nowrap">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                       </svg>

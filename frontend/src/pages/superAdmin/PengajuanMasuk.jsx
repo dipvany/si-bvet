@@ -77,6 +77,7 @@ export default function PengajuanMasuk() {
   const [page,         setPage]         = useState(1);
   const [search,       setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sort, setSort] = useState("terbaru");
 ​
   // ── State pilih & export ────────────────────────────────────────────
   const [selectMode,   setSelectMode]   = useState(false);
@@ -127,7 +128,7 @@ export default function PengajuanMasuk() {
 ​
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return submissions.filter(s => {
+    const base = submissions.filter(s => {
       const matchStatus = filterStatus === "all" || verifOf(s.process_status) === filterStatus;
       const matchSearch = !q ||
         s.no_ticket?.toLowerCase().includes(q) ||
@@ -136,7 +137,13 @@ export default function PengajuanMasuk() {
         String(s.user_id).includes(q);
       return matchStatus && matchSearch;
     });
-  }, [submissions, search, filterStatus]);
+    return [...base].sort((a, b) => {
+      if (sort === "az") return (a.no_ticket ?? "").localeCompare(b.no_ticket ?? "");
+      if (sort === "za") return (b.no_ticket ?? "").localeCompare(a.no_ticket ?? "");
+      if (sort === "terlama") return (a.id ?? 0) - (b.id ?? 0);
+      return (b.id ?? 0) - (a.id ?? 0);
+    });
+  }, [submissions, search, filterStatus, sort]);
 ​
   const countByStatus = useMemo(() => {
     const map = { all: submissions.length };
@@ -316,6 +323,44 @@ export default function PengajuanMasuk() {
                   placeholder="Cari no. tiket, layanan, tujuan..."
                   className="border border-gray-200 rounded-lg pl-9 pr-3 py-2 text-sm
                     outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E] w-56" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Status:</span>
+                <div className="relative">
+                  <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
+                    className="appearance-none border border-gray-200 rounded-lg text-sm font-medium
+                      text-gray-700 bg-white pl-3 pr-7 py-2 outline-none cursor-pointer
+                      focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]">
+                    <option value="all">Semua Status</option>
+                    <option value="unverified">Belum Diverifikasi</option>
+                    <option value="verified">Sudah Diverifikasi</option>
+                    <option value="rejected">Ditolak</option>
+                  </select>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round"
+                    className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2
+                      text-gray-400 pointer-events-none">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Urutkan:</span>
+                <div className="relative">
+                  <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }}
+                    className="appearance-none border border-gray-200 rounded-lg text-sm font-medium
+                      text-gray-700 bg-white pl-3 pr-7 py-2 outline-none cursor-pointer
+                      focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]">
+                    <option value="terbaru">Terbaru</option>
+                    <option value="terlama">Terlama</option>
+                  </select>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round"
+                    className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2
+                      text-gray-400 pointer-events-none">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
               </div>
               <button
                 onClick={() => { setShowTplModal(true); setTplSuccess(""); setTplError(""); }}
