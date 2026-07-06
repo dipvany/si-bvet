@@ -725,7 +725,7 @@ function NavButtons({ step, onBack, onNext }) {
 ​
 /* ═══════════════════════════════════════════════════════
    MAIN PAGE
-═══════════════════════════════════════════════════════ */
+═══════════════════════��═══════════════════════════════ */
 export default function PengajuanUjiSampel() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState(() => getCart());
@@ -1236,7 +1236,7 @@ export default function PengajuanUjiSampel() {
           </p>
         </div>
         <div className="px-5 py-4">
-          <table className="w-full text-sm">
+          <table className="hidden sm:table w-full text-sm">
             <thead>
               <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
                 <th className="py-2 pr-3 font-semibold">Pengujian</th>
@@ -1258,10 +1258,28 @@ export default function PengajuanUjiSampel() {
             <tfoot>
               <tr className="border-t border-gray-200">
                 <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
-                <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+                <td className="py-2.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</td>
               </tr>
             </tfoot>
           </table>
+          {/* Mobile: daftar bertumpuk biar subtotal & total tidak terpotong */}
+          <div className="sm:hidden divide-y divide-gray-100">
+            {estLines.map((l, i) => (
+              <div key={i} className="flex justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-700 break-words leading-snug">{l.name}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {rupiah(l.price)} × {l.qty} sampel
+                  </p>
+                </div>
+                <p className="text-sm font-semibold text-gray-800 whitespace-nowrap">{rupiah(l.price * l.qty)}</p>
+              </div>
+            ))}
+            <div className="flex justify-between items-center pt-3 mt-1 border-t border-gray-200">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+              <span className="text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</span>
+            </div>
+          </div>
           <p className="text-[11px] text-gray-400 mt-2 italic">
             *Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.
           </p>
@@ -1989,7 +2007,7 @@ export default function PengajuanUjiSampel() {
                       </p>
                     </div>
                     <div className="px-5 py-4">
-                      <table className="w-full text-sm">
+                      <table className="hidden sm:table w-full text-sm">
                         <thead>
                           <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
                             <th className="py-2 pr-3 font-semibold">Pengujian</th>
@@ -2011,10 +2029,28 @@ export default function PengajuanUjiSampel() {
                         <tfoot>
                           <tr className="border-t border-gray-200">
                             <td colSpan={3} className="py-2.5 pr-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
-                            <td className="py-2.5 pl-3 text-right text-base font-extrabold text-[#233B6E]">{rupiah(estTotal)}</td>
+                            <td className="py-2.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</td>
                           </tr>
                         </tfoot>
                       </table>
+                      {/* Mobile: daftar bertumpuk biar subtotal & total tidak terpotong */}
+                      <div className="sm:hidden divide-y divide-gray-100">
+                        {estLines.map((l, i) => (
+                          <div key={i} className="flex justify-between gap-3 py-2.5">
+                            <div className="min-w-0">
+                              <p className="text-sm text-gray-700 break-words leading-snug">{l.name}</p>
+                              <p className="text-[11px] text-gray-400 mt-0.5">
+                                {rupiah(l.price)} × {l.qty} sampel
+                              </p>
+                            </div>
+                            <p className="text-sm font-semibold text-gray-800 whitespace-nowrap">{rupiah(l.price * l.qty)}</p>
+                          </div>
+                        ))}
+                        <div className="flex justify-between items-center pt-3 mt-1 border-t border-gray-200">
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+                          <span className="text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</span>
+                        </div>
+                      </div>
                       <p className="text-[11px] text-gray-400 mt-2 italic">
                         *Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.
                       </p>
