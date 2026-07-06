@@ -328,6 +328,10 @@ export default function DetailPengajuan() {
 ​
   const handleUploadProof = async () => {
     if (!proofFile) return;
+    if (proofFile.size > 5 * 1024 * 1024) {
+      setUploadMsg("✗ Ukuran file terlalu besar (maks 5MB). Perkecil / kompres file lalu coba lagi.");
+      return;
+    }
     setUploading(true); setUploadMsg("");
     try {
       const fd = new FormData();
@@ -335,13 +339,16 @@ export default function DetailPengajuan() {
       const res = await apiFetch(`/customer/billings/${id}/proof`, { method: "POST", body: fd });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(d.error ?? "Gagal mengunggah.");
+        throw new Error(d.error ?? `Gagal mengunggah (kode ${res.status}).`);
       }
       setUploadMsg("✓ Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin.");
       setProofFile(null);
       fetchAll();
     } catch (e) {
-      setUploadMsg(`✗ ${e.message}`);
+      const msg = /failed to fetch|load failed|networkerror/i.test(e.message ?? "")
+        ? "Gagal terhubung ke server. Cek koneksi internet & pastikan ukuran file tidak terlalu besar (maks 5MB), lalu coba lagi."
+        : e.message;
+      setUploadMsg(`✗ ${msg}`);
     } finally {
       setUploading(false);
     }
@@ -630,6 +637,7 @@ export default function DetailPengajuan() {
               </button>
             )}
           </div>
+          <p className="text-[11px] text-blue-400">Format: PDF/JPG/PNG, maks 5MB.</p>
           {uploadMsg && (
             <p className={`text-xs font-medium ${uploadMsg.startsWith("✓") ? "text-green-600" : "text-red-500"}`}>
               {uploadMsg}
