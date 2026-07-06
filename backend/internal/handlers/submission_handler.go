@@ -141,6 +141,15 @@ func (h *SubmissionHandler) GetMySubmissions(c *gin.Context) {
 		return
 	}
 
+	// Resolve attachment doc URL
+	if submissions != nil {
+		for i := range submissions {
+			if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, submissions[i].AttachmentDoc); err == nil {
+				submissions[i].AttachmentDoc = resolved
+			}
+		}
+	}
+
 	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", gin.H{
 		"data": submissions,
 		"meta": buildPaginationMeta(page, perPage, total),
@@ -158,6 +167,15 @@ func (h *SubmissionHandler) GetAllSubmissions(c *gin.Context) {
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	// Resolve attachment doc URL
+	if submissions != nil {
+		for i := range submissions {
+			if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, submissions[i].AttachmentDoc); err == nil {
+				submissions[i].AttachmentDoc = resolved
+			}
+		}
 	}
 
 	utils.DataResponse(c, http.StatusOK, "Submissions retrieved successfully", gin.H{
@@ -211,6 +229,11 @@ func (h *SubmissionHandler) GetSubmissionByIDForCustomer(c *gin.Context) {
         utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
         return
     }
+
+	// Resolve attachment doc URL
+	if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, submission.AttachmentDoc); err == nil {
+		submission.AttachmentDoc = resolved
+	}
 
     utils.DataResponse(c, http.StatusOK, "Submission retrieved successfully", buildCustomerSubmissionDetailResponse(submission))
 }
@@ -723,6 +746,10 @@ func (h *SubmissionHandler) GetSubmissionByID(c *gin.Context) {
 		return
 	}
 
+	// Resolve attachment doc URL
+	if resolved, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, submission.AttachmentDoc); err == nil {
+		submission.AttachmentDoc = resolved
+	}
+
 	utils.DataResponse(c, http.StatusOK, "Submission retrieved successfully", submission)
 }
-
