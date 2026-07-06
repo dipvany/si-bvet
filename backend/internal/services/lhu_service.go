@@ -38,7 +38,7 @@ func GetLHuBySubmissionID(submissionID uint) (*models.LhuDocument, error) {
 	return &lhu, nil
 }
 
-func UpdateLHu(submissionID uint, noLhu string, filePath string, dateOfPub string) error {
+func UpdateLHu(submissionID uint, noLhu string, filePath string, dateOfPub *time.Time) error {
 	err := repositories.UpdateLhu(submissionID, noLhu, filePath, dateOfPub)
 	if err == nil {
 		LogSystemActivity(fmt.Sprintf("LHU untuk submission ID %d diperbarui. Nomor LHU: %s", submissionID, noLhu))
@@ -46,23 +46,25 @@ func UpdateLHu(submissionID uint, noLhu string, filePath string, dateOfPub strin
 	return err
 }
 
-func UploadLHU(submissionID uint, noLHU string, filePath string) error {
-	// Validate submission exists first
-	_, err := repositories.GetSubmissionByID(submissionID)
-	if err != nil {
-		return err
-	}
-
+func UploadLHU(submissionID uint, noLHU, filePath string) error {
 	now := time.Now()
 
-	lhu := models.LhuDocument{
-		SubmissionID: submissionID,
-		NoLhu:        noLHU,
-		FilePath:     filePath,
-		DateOfPub:    &now,
+	// Cek apakah LHU sudah ada untuk submission ini (logika upsert)
+	existingLHU, err := repositories.GetLhuBySubmissionID(submissionID)
+	if err == nil && existingLHU.ID != 0 {
+		// Jika sudah ada, perbarui LHU yang ada
+		err = repositories.UpdateLhu(submissionID, noLHU, filePath, &now)
+	} else {
+		// Jika belum ada, buat LHU baru
+		lhu := models.LhuDocument{
+			SubmissionID: submissionID,
+			NoLhu:        noLHU,
+			FilePath:     filePath,
+			DateOfPub:    &now,
+		}
+		err = repositories.CreateLhu(&lhu)
 	}
 
-	err = repositories.CreateLhu(&lhu)
 	if err != nil {
 		return err
 	}

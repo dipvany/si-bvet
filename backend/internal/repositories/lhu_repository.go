@@ -3,6 +3,7 @@ package repositories
 import (
 	"si-bvet/internal/db"
 	"si-bvet/internal/models"
+	"time"
 )
 
 func CreateLhu(lhu *models.LhuDocument) error {
@@ -20,7 +21,7 @@ func GetLhuBySubmissionID(submissionID uint) (models.LhuDocument, error) {
 	return lhu, err
 }
 
-func UpdateLhu(submissionID uint, noLhu string, filePath string, dateOfPub string) error {
+func UpdateLhu(submissionID uint, noLhu string, filePath string, dateOfPub *time.Time) error {
 
 	return db.DB.
 		Model(&models.LhuDocument{}).
@@ -31,4 +32,3 @@ func UpdateLhu(submissionID uint, noLhu string, filePath string, dateOfPub strin
 			"date_of_pub": dateOfPub,
 		}).Error
 }
-
