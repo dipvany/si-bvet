@@ -500,8 +500,8 @@ export default function DetailPengajuan() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Row label="Kode E-Billing"  value={billing.ebilling_code} />
               <Row label="Total Tagihan"   value={rupiah(billing.total_amount)} />
-              <Row label="No. Registrasi"  value={billing.no_registration} />
-              <Row label="No. EPI"         value={billing.no_epi} />
+              <Row label="No. Registrasi"  value={sub?.no_registration} />
+              <Row label="No. EPI"         value={sub?.no_epi} />
             </div>
 ​
             {/* Rincian estimasi harga pengujian */}
@@ -510,38 +510,58 @@ export default function DetailPengajuan() {
                 <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-2">
                   Estimasi Harga Pengujian
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-200">
-                        <th className="py-2 pr-3 font-semibold">Pengujian</th>
-                        <th className="py-2 px-3 font-semibold text-right">Harga Satuan</th>
-                        <th className="py-2 px-3 font-semibold text-center">Jml Sampel</th>
-                        <th className="py-2 pl-3 font-semibold text-right">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200/70">
-                      {estLines.map((l, i) => (
-                        <tr key={i}>
-                          <td className="py-2 pr-3 text-gray-700">{l.name}</td>
-                          <td className="py-2 px-3 text-right text-gray-600">{rupiah(l.price)}</td>
-                          <td className="py-2 px-3 text-center text-gray-600">{l.qty}</td>
-                          <td className="py-2 pl-3 text-right font-semibold text-gray-800">{rupiah(l.price * l.qty)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t border-gray-200">
-                        <td colSpan={3} className="py-2.5 pr-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
-                        <td className="py-2.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</td>
-                      </tr>
-                      <tr>
-                        <td colSpan={3} className="py-1.5 pr-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Tagihan</td>
-                        <td className="py-1.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(billing.total_amount)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                {/* Mobile: daftar bertumpuk biar tak perlu geser */}
+                <div className="sm:hidden divide-y divide-gray-200/70">
+                  {estLines.map((l, i) => (
+                    <div key={i} className="py-2.5 flex justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-700 break-words">{l.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{rupiah(l.price)} × {l.qty} sampel</p>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">{rupiah(l.price * l.qty)}</span>
+                    </div>
+                  ))}
+                  <div className="py-2 flex justify-between items-center border-t border-gray-200">
+                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</span>
+                    <span className="text-sm font-semibold text-[#233B6E] whitespace-nowrap">{rupiah(estTotal)}</span>
+                  </div>
+                  <div className="py-2 flex justify-between items-center">
+                    <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Tagihan</span>
+                    <span className="text-sm font-semibold text-[#233B6E] whitespace-nowrap">{rupiah(billing.total_amount)}</span>
+                  </div>
                 </div>
+​
+                {/* Desktop: tabel */}
+                <table className="hidden sm:table w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-200">
+                      <th className="py-2 pr-3 font-semibold">Pengujian</th>
+                      <th className="py-2 px-3 font-semibold text-right">Harga Satuan</th>
+                      <th className="py-2 px-3 font-semibold text-center">Jml Sampel</th>
+                      <th className="py-2 pl-3 font-semibold text-right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200/70">
+                    {estLines.map((l, i) => (
+                      <tr key={i}>
+                        <td className="py-2 pr-3 text-gray-700">{l.name}</td>
+                        <td className="py-2 px-3 text-right text-gray-600">{rupiah(l.price)}</td>
+                        <td className="py-2 px-3 text-center text-gray-600">{l.qty}</td>
+                        <td className="py-2 pl-3 text-right font-semibold text-gray-800">{rupiah(l.price * l.qty)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-gray-200">
+                      <td colSpan={3} className="py-2.5 pr-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Estimasi Total</td>
+                      <td className="py-2.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(estTotal)}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan={3} className="py-1.5 pr-3 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Tagihan</td>
+                      <td className="py-1.5 pl-3 text-right text-sm font-semibold text-[#233B6E]">{rupiah(billing.total_amount)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
                 <p className="text-[11px] text-gray-400 mt-2 italic">*Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.</p>
               </div>
             )}

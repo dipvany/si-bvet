@@ -573,8 +573,8 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
       <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-2">Data Tagihan</p>
       <InfoRow label="Kode e-Billing"  value={billing.ebilling_code} />
       <InfoRow label="Total Tagihan"   value={rupiah(billing.total_amount)} />
-      <InfoRow label="No. Registrasi"  value={billing.no_registration} />
-      <InfoRow label="No. EPI"         value={billing.no_epi} />
+      <InfoRow label="No. Registrasi"  value={sub?.no_registration} />
+      <InfoRow label="No. EPI"         value={sub?.no_epi} />
       <div className="flex gap-3 py-2.5">
         <span className="text-xs text-gray-400 w-40 flex-shrink-0">Bukti Pembayaran</span>
         <span className="text-sm font-medium flex-1">
