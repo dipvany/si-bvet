@@ -725,7 +725,7 @@ function NavButtons({ step, onBack, onNext }) {
 ​
 /* ═══════════════════════════════════════════════════════
    MAIN PAGE
-═══════════════════════��═══════════════════════════════ */
+══════════════════════════════════════════════════════ */
 export default function PengajuanUjiSampel() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState(() => getCart());
@@ -1471,7 +1471,12 @@ export default function PengajuanUjiSampel() {
               </Field>
 ​
               <Field
-                label="Dokumen Pendukung"
+                label={
+                  <>
+                    Dokumen Pendukung{" "}
+                    <span className="text-gray-400 font-normal text-xs">(KTM/Surat Instansi/KTP)</span>
+                  </>
+                }
                 hint="PDF/JPG/PNG, maks 5MB per file"
               >
                 <div className="space-y-2">
