@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import { resolveFileUrl } from "../../utils/fileUrl";
-​
+
 const fmtDate = (v) => {
   if (!v) return "-";
   return new Date(v).toLocaleDateString("id-ID", {
@@ -13,7 +13,7 @@ const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
-​
+
 /* ── Row info ── */
 function Row({ label, value }) {
   return (
@@ -23,7 +23,7 @@ function Row({ label, value }) {
     </div>
   );
 }
-​
+
 /* ── Card wrapper ── */
 function Card({ title, accent = "#233B6E", children }) {
   return (
@@ -40,7 +40,7 @@ function Card({ title, accent = "#233B6E", children }) {
     </div>
   );
 }
-​
+
 /* ── Status badge ── */
 const STATUS_MAP = {
   pending:               { label: "Menunggu",                       cls: "bg-gray-100   text-gray-600",     dot: "bg-gray-400"    },
@@ -57,7 +57,7 @@ const STATUS_MAP = {
   completed:             { label: "Selesai",                        cls: "bg-green-100  text-green-700",    dot: "bg-green-500"   },
   rejected:              { label: "Ditolak",                        cls: "bg-red-100    text-red-600",      dot: "bg-red-500"     },
 };
-​
+
 function StatusBadge({ status }) {
   const cfg = STATUS_MAP[status] ?? { label: status, cls: "bg-gray-100 text-gray-600", dot: "bg-gray-400" };
   return (
@@ -67,7 +67,7 @@ function StatusBadge({ status }) {
     </span>
   );
 }
-​
+
 /* ── Icons per step timeline ── */
 const TIMELINE_ICONS = [
   // 1. Pengajuan dibuat — dokumen
@@ -109,12 +109,12 @@ const TIMELINE_ICONS = [
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </svg>,
 ];
-​
+
 /* ── Timeline tracking dari API — horizontal solid filled ── */
 function TrackingTimeline({ submissionId, isDone: submissionDone }) {
   const [timeline, setTimeline] = useState([]);
   const [loading,  setLoading]  = useState(true);
-​
+
   useEffect(() => {
     apiFetch(`/customer/submissions/${submissionId}/tracking`)
       .then(r => r.ok ? r.json() : null)
@@ -141,7 +141,7 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [submissionId, submissionDone]);
-​
+
   if (loading) return (
     <div className="flex items-center gap-2 text-gray-400 text-xs py-3">
       <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
@@ -151,34 +151,27 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
       Memuat tracking...
     </div>
   );
-​
+
   if (!timeline.length) return null;
-​
+
   return (
-    <div className="w-full pb-1">
-      <div className="flex items-start justify-between">
+    <>
+      {/* ── Mobile: timeline VERTIKAL biar label lega & tidak saling timpa ── */}
+      <div className="lg:hidden">
         {timeline.map((t, i) => {
-          const isDone     = t.status === "done" || t.status === "completed";
-          const isCurrent  = t.status === "current";
-          const isLast     = i === timeline.length - 1;
-          const lineBeforeDone = isDone || isCurrent;
-​
+          const isDone    = t.status === "done" || t.status === "completed";
+          const isCurrent = t.status === "current";
+          const isLast    = i === timeline.length - 1;
+
           return (
-            <div key={i}
-              className="relative flex flex-col items-center flex-1 min-w-0">
-​
-              {/* Garis kiri — absolute, di belakang lingkaran */}
-              {i > 0 && (
-                <div className={`absolute top-[18px] right-1/2 w-1/2 h-1 z-0
-                  ${lineBeforeDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
-              )}
-              {/* Garis kanan */}
+            <div key={i} className="relative flex gap-3 pb-5 last:pb-0">
+              {/* Garis vertikal penghubung */}
               {!isLast && (
-                <div className={`absolute top-[18px] left-1/2 w-1/2 h-1 z-0
+                <div className={`absolute left-5 top-10 bottom-0 w-0.5 z-0
                   ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
               )}
-​
-              {/* Circle — solid filled saat selesai, outline saat aktif, abu saat pending */}
+
+              {/* Circle */}
               <div className={`relative z-10 w-10 h-10 rounded-full flex items-center
                 justify-center flex-shrink-0 transition-all
                 ${isDone
@@ -188,28 +181,79 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
                     : "bg-white border-2 border-gray-200 text-gray-300"}`}>
                 {TIMELINE_ICONS[i] ?? <span className="text-xs font-bold">{t.step}</span>}
               </div>
-​
-              {/* Label */}
-              <p className={`relative z-10 text-[11px] text-center mt-2.5 leading-tight px-1
-                font-semibold
-                ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
-                {t.label}
-              </p>
-​
-              {/* Tanggal */}
-              {t.date && (
-                <p className="relative z-10 text-[10px] text-gray-400 mt-0.5 text-center">
-                  {fmtDate(t.date)}
+
+              {/* Label + tanggal */}
+              <div className="pt-1.5 min-w-0">
+                <p className={`text-sm font-semibold leading-tight
+                  ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
+                  {t.label}
                 </p>
-              )}
+                {t.date && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">{fmtDate(t.date)}</p>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
-    </div>
+
+      {/* ── Desktop: timeline HORIZONTAL ── */}
+      <div className="hidden lg:block w-full pb-1">
+        <div className="flex items-start justify-between">
+          {timeline.map((t, i) => {
+            const isDone     = t.status === "done" || t.status === "completed";
+            const isCurrent  = t.status === "current";
+            const isLast     = i === timeline.length - 1;
+            const lineBeforeDone = isDone || isCurrent;
+
+            return (
+              <div key={i}
+                className="relative flex flex-col items-center flex-1 min-w-0">
+
+                {/* Garis kiri */}
+                {i > 0 && (
+                  <div className={`absolute top-[18px] right-1/2 w-1/2 h-1 z-0
+                    ${lineBeforeDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
+                )}
+                {/* Garis kanan */}
+                {!isLast && (
+                  <div className={`absolute top-[18px] left-1/2 w-1/2 h-1 z-0
+                    ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
+                )}
+
+                {/* Circle */}
+                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center
+                  justify-center flex-shrink-0 transition-all
+                  ${isDone
+                    ? "bg-[#233B6E] text-white"
+                    : isCurrent
+                      ? "bg-white border-[3px] border-[#233B6E] text-[#233B6E] ring-4 ring-[#233B6E]/10"
+                      : "bg-white border-2 border-gray-200 text-gray-300"}`}>
+                  {TIMELINE_ICONS[i] ?? <span className="text-xs font-bold">{t.step}</span>}
+                </div>
+
+                {/* Label */}
+                <p className={`relative z-10 w-full text-[10px] text-center mt-2 leading-tight px-1
+                  font-semibold break-words
+                  ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
+                  {t.label}
+                </p>
+
+                {/* Tanggal */}
+                {t.date && (
+                  <p className="relative z-10 text-[10px] text-gray-400 mt-0.5 text-center">
+                    {fmtDate(t.date)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }
-​
+
 /* ── Collapsible section ── */
 function Section({ title, children }) {
   return (
@@ -219,14 +263,14 @@ function Section({ title, children }) {
     </div>
   );
 }
-​
+
 /* ══════════════════════════════════════════
    HALAMAN UTAMA
 ══════════════════════════════════════════ */
 export default function DetailPengajuan() {
   const { id }   = useParams();
   const navigate = useNavigate();
-​
+
   const [sub,         setSub]         = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
@@ -237,9 +281,9 @@ export default function DetailPengajuan() {
   const proofRef = useRef();
   const [openReview, setOpenReview] = useState(true);
   const [profile, setProfile] = useState(null);
-​
+
   useEffect(() => { fetchAll(); }, [id]);
-​
+
   // Endpoint detail customer tidak mengirim data pelanggan, jadi ambil dari profil.
   useEffect(() => {
     apiFetch("/profile")
@@ -247,7 +291,7 @@ export default function DetailPengajuan() {
       .then((data) => { if (data) setProfile(data.profile ?? data); })
       .catch(() => {});
   }, []);
-​
+
   const fetchAll = async () => {
     setLoading(true); setError("");
     try {
@@ -259,7 +303,7 @@ export default function DetailPengajuan() {
       const json = await res.json();
       const subData = json.data ?? json;
       setSub(subData);
-​
+
       // Fetch billing terpisah jika belum ada di response submission
       // API: GET /customer/billings/:submission_id
       if (!subData.billing) {
@@ -281,7 +325,7 @@ export default function DetailPengajuan() {
       setLoading(false);
     }
   };
-​
+
   const handleUploadProof = async () => {
     if (!proofFile) return;
     setUploading(true); setUploadMsg("");
@@ -302,7 +346,7 @@ export default function DetailPengajuan() {
       setUploading(false);
     }
   };
-​
+
   const handleDownloadLHU = async () => {
     setDownloading(true);
     try {
@@ -318,7 +362,7 @@ export default function DetailPengajuan() {
       setDownloading(false);
     }
   };
-​
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -330,7 +374,7 @@ export default function DetailPengajuan() {
       </div>
     </div>
   );
-​
+
   if (error) return (
     <div className="max-w-2xl mx-auto mt-10">
       <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-5 py-4 flex items-center justify-between">
@@ -339,7 +383,7 @@ export default function DetailPengajuan() {
       </div>
     </div>
   );
-​
+
   const status        = sub?.process_status;
   // user_info bisa ada di root atau di dalam "user" / "user_info"
   // Data pelanggan: endpoint detail customer tidak mengirim user_info,
@@ -357,7 +401,7 @@ export default function DetailPengajuan() {
   const isAwaitingVerif = status === "awaiting_verification";
   const attRaw        = sub?.attachment_doc;
   const attDocs       = Array.isArray(attRaw) ? attRaw : (attRaw ? [attRaw] : []);
-​
+
   // Estimasi harga dari sampel x layanan pengujian (harga x jumlah sampel)
   const estLines = (() => {
     const map = new Map();
@@ -375,10 +419,10 @@ export default function DetailPengajuan() {
     return Array.from(map.values());
   })();
   const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
-​
+
   return (
     <div className="space-y-4">
-​
+
       {/* Breadcrumb */}
       <button onClick={() => navigate("/customer/pengajuan-saya")}
         className="flex items-center gap-1.5 text-sm text-[#233B6E] font-semibold hover:underline">
@@ -388,7 +432,7 @@ export default function DetailPengajuan() {
         </svg>
         Kembali ke Pengajuan Saya
       </button>
-​
+
       {/* ══ 1. TRACKING TIMELINE ══ */}
       <Card title={undefined}>
                         {/* Header tiket */}
@@ -413,7 +457,7 @@ export default function DetailPengajuan() {
             </div>
           </div>
         </div>
-​
+
         {/* Timeline */}
         <div>
           <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-4">
@@ -422,7 +466,7 @@ export default function DetailPengajuan() {
           <TrackingTimeline submissionId={id} isDone={isDone} />
         </div>
       </Card>
-​
+
       {/* ══ 2. INFORMASI PENGAJUAN ══ */}
       <Card title="Informasi Pengajuan">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -437,7 +481,7 @@ export default function DetailPengajuan() {
           <Row label="Catatan"          value={sub?.notes} />
         </div>
       </Card>
-​
+
             {/* == 3. INFORMASI TAGIHAN == */}
       {billing && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -452,14 +496,14 @@ export default function DetailPengajuan() {
                 {billing.payment_status === "paid" ? "✓ Lunas" : "⏳ Belum Dibayar"}
               </span>
             </div>
-​
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Row label="Kode E-Billing"  value={billing.ebilling_code} />
               <Row label="Total Tagihan"   value={rupiah(billing.total_amount)} />
               <Row label="No. Registrasi"  value={billing.no_registration} />
               <Row label="No. EPI"         value={billing.no_epi} />
             </div>
-​
+
             {/* Rincian estimasi harga pengujian */}
             {estLines.length > 0 && (
               <div className="bg-[#F6F7FB] rounded-xl p-4">
@@ -501,7 +545,7 @@ export default function DetailPengajuan() {
                 <p className="text-[11px] text-gray-400 mt-2 italic">*Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.</p>
               </div>
             )}
-​
+
             {/* Dokumen: invoice & bukti pembayaran tetap tampil walau sudah lunas/terverifikasi */}
             {(billing.invoice_doc || billing.proof_payment) && (
               <div className="flex items-center gap-4 flex-wrap pt-1">
@@ -532,7 +576,7 @@ export default function DetailPengajuan() {
           </div>
         </div>
       )}
-​
+
       {/* ══ 4. UPLOAD BUKTI PEMBAYARAN ══ */}
       {isAwaitingPay && billing && billing.payment_status !== "paid" && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
@@ -573,7 +617,7 @@ export default function DetailPengajuan() {
           )}
         </div>
       )}
-​
+
       {/* Notif menunggu verifikasi pembayaran */}
       {isAwaitingVerif && (
         <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-5 flex items-start gap-3">
@@ -591,7 +635,7 @@ export default function DetailPengajuan() {
           </div>
         </div>
       )}
-​
+
       {/* ══ 5. UNDUH LHU & BERI PENILAIAN ══ */}
       {isDone && (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5 space-y-3">
@@ -639,7 +683,7 @@ export default function DetailPengajuan() {
           </div>
         </div>
       )}
-​
+
       {/* ══ 6. TINJAUAN LENGKAP (Step 1–3) ══ */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#415F9D]" />
@@ -656,10 +700,10 @@ export default function DetailPengajuan() {
             </svg>
           </span>
         </button>
-​
+
         {openReview && (
         <div className="px-5 pb-5 space-y-0">
-​
+
           {/* ── Step 1: Data Pengajuan ── */}
           <Section title="Data Pengajuan" defaultOpen={true}>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -702,7 +746,7 @@ export default function DetailPengajuan() {
               </div>
             )}
           </Section>
-​
+
           {/* ── Step 2: Data Sampel ── */}
           <Section title={`Data Sampel — ${samples.length} sampel`}>
             {samples.length === 0 ? (
@@ -748,7 +792,7 @@ export default function DetailPengajuan() {
               </div>
             ))}
           </Section>
-​
+
           {/* ── Step 3: Data Pelanggan ── */}
           <Section title="Data Pelanggan">
             {/* Tampilkan data yang ada walau nested customer-nya kosong.
@@ -775,7 +819,7 @@ export default function DetailPengajuan() {
               </div>
             )}
           </Section>
-​
+
         </div>
         )}
       </div>
