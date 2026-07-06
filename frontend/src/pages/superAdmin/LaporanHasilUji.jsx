@@ -354,7 +354,7 @@ function LhuUploadForm({ submission, existing, onSuccess }) {
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
               </svg>
               <span className="font-semibold text-green-700 text-center break-all">{file.name}</span>
-              <span className="text-xs text-green-500">{(file.size / 1024 / 1024).toFixed(2)} MB \u2014 klik untuk ganti</span>
+              <span className="text-xs text-green-500">klik untuk ganti</span>
             </>
           ) : (
             <>
@@ -403,7 +403,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
     try {
       const res = await getLHU(sub.id);
       const j = await safeJson(res);
-      if (res.ok) setLhu(j.lhu ?? j.data ?? null);
+      if (res.ok) setLhu(j.lhu ?? j.data ?? j ?? null);
     } catch {
     } finally {
       setLoadLhu(false);
@@ -486,8 +486,8 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
                     <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-green-700 font-semibold">No. LHU: {lhu.no_lhu ?? "-"}</p>
-                        {lhu.file_url && (
-                          <a href={resolveFileUrl(lhu.file_url)} target="_blank" rel="noopener noreferrer"
+                        {lhu.file_path && (
+                          <a href={resolveFileUrl(lhu.file_path)} target="_blank" rel="noopener noreferrer"
                             className="text-xs text-green-600 hover:underline mt-0.5 inline-flex items-center gap-1">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
@@ -555,8 +555,8 @@ function RowLHU({ no, submission, onManage }) {
         const res = await getLHU(submission.id);
         if (res.ok) {
           const data = await safeJson(res);
-          const lhu = data.lhu ?? data.data;
-          setLhuStatus(lhu?.file_url ? "ada" : "belum");
+          const lhu = data.lhu ?? data.data ?? data;
+          setLhuStatus(lhu?.file_path ? "ada" : "belum");
         } else {
           setLhuStatus("belum");
         }
