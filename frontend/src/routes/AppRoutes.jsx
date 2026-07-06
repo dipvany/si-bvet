@@ -9,6 +9,7 @@ import ResetPassword  from "../pages/auth/ResetSandi";
 import PengaduanPublik from "../pages/PengaduanPublik";
 import PenilaianPublik from "../pages/PenilaianPublik";
 import PertanyaanPenilaian from "../pages/PertanyaanPenilaian";
+import DetailPenilaian from "../pages/DetailPenilaian";
 ​
 import AdminLayout      from "../layouts/AdminLayout";
 import SuperAdminLayout from "../layouts/SuperAdminLayout";
@@ -88,6 +89,7 @@ export default function AppRoutes() {
         <Route path="laporan-pengaduan/:id"        element={<AdminDetailLaporanPengaduan />} />
         <Route path="penilaian-pengguna"           element={<AdminPenilaianPengguna />} />
         <Route path="penilaian-pengguna/pertanyaan" element={<PertanyaanPenilaian />} />
+        <Route path="penilaian-pengguna/:id"          element={<DetailPenilaian />} />
         <Route path="profil"                       element={<AdminProfil />} />
       </Route>
 ​
@@ -107,6 +109,7 @@ export default function AppRoutes() {
         <Route path="laporan-pengaduan/:id"        element={<SuperAdminDetailLaporan />} />
         <Route path="penilaian-pengguna"           element={<SuperAdminPenilaianPengguna />} />
         <Route path="penilaian-pengguna/pertanyaan" element={<PertanyaanPenilaian />} />
+        <Route path="penilaian-pengguna/:id"          element={<DetailPenilaian />} />
         <Route path="profil"                       element={<SuperAdminProfil />} />
       </Route>
 ​

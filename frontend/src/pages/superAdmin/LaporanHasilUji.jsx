@@ -362,7 +362,7 @@ function LhuUploadForm({ submission, existing, onSuccess }) {
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               <span className="text-gray-500 font-medium">Klik untuk pilih file</span>
-              <span className="text-xs text-gray-400">PDF - Maks 10MB</span>
+              <span className="text-xs text-gray-400">PDF, JPG, PNG - Maks 10MB</span>
             </>
           )}
         </button>
@@ -478,14 +478,14 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
                 <span className="font-semibold">Pengujian selesai.</span>
               </div>
 ​
-              <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   {loadLhu ? (
                     <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat LHU...</div>
                   ) : lhu ? (
-                    <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-green-700 font-semibold">No. LHU: {lhu.no_lhu ?? "-"}</p>
+                        <p className="text-xs text-green-700 font-semibold break-all min-w-0">No. LHU: {lhu.no_lhu ?? "-"}</p>
                         {lhu.file_path && (
                           <a href={resolveFileUrl(lhu.file_path)} target="_blank" rel="noopener noreferrer"
                             className="text-xs text-green-600 hover:underline mt-0.5 inline-flex items-center gap-1">

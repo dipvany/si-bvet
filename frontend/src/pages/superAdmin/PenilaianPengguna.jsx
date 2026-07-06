@@ -55,7 +55,6 @@ export default function PenilaianPengguna() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [detail, setDetail] = useState(null);
 ​
   useEffect(() => {
     (async () => {
@@ -185,7 +184,7 @@ export default function PenilaianPengguna() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
-                        onClick={() => setDetail(f)}
+                        onClick={() => navigate(String(f.id), { state: { feedback: f } })}
                         className="text-xs font-bold text-[#233B6E] hover:underline"
                       >
                         Lihat Detail
@@ -199,102 +198,6 @@ export default function PenilaianPengguna() {
         )}
       </div>
 ​
-      {/* Modal detail */}
-      {detail && (
-        <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
-              <h3 className="font-bold text-[#233B6E]">Detail Penilaian</h3>
-              <button
-                onClick={() => setDetail(null)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-5 h-5"
-                >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-​
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-gray-400">Nama</p>
-                  <p className="font-semibold text-gray-700">
-                    {detail.fullname ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Email</p>
-                  <p className="font-semibold text-gray-700">
-                    {detail.email ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Jenis Kelamin</p>
-                  <p className="font-semibold text-gray-700">
-                    {detail.gender ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Pendidikan</p>
-                  <p className="font-semibold text-gray-700">
-                    {detail.last_education ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Pekerjaan</p>
-                  <p className="font-semibold text-gray-700">
-                    {detail.occupation ?? "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Jenis Layanan</p>
-                  <p className="font-semibold text-gray-700">
-                    {detail.type_service ?? "-"}
-                  </p>
-                </div>
-              </div>
-​
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-xs font-semibold text-gray-400 mb-3">
-                  Jawaban Penilaian
-                </p>
-                <div className="space-y-3">
-                  {answersOf(detail).length === 0 ? (
-                    <p className="text-sm text-gray-400">Tidak ada jawaban.</p>
-                  ) : (
-                    answersOf(detail).map((a, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between gap-3"
-                      >
-                        <span className="text-sm text-gray-600 flex-1">
-                          {idx + 1}. {questionTextOf(a)}
-                        </span>
-                        <Stars value={a.rating ?? 0} />
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
