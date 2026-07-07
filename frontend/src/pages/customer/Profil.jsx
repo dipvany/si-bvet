@@ -214,8 +214,6 @@ export default function CustomerProfil() {
 
     setSaving(true);
     try {
-      // Sesuaikan dengan kontrak API PATCH /profile
-      // Field names harus PERSIS sama dengan ProfileRequest di backend DTO
       const payload = {
         fullname,
         phone,
@@ -243,8 +241,6 @@ export default function CustomerProfil() {
       if (!res.ok) {
         throw new Error(body.error ?? body.message ?? "Gagal menyimpan profil.");
       }
-
-      // Re-fetch setelah save supaya form langsung reflect data terbaru dari backend
       try {
         const checkRes  = await getProfile();
         const checkData = await checkRes.json();

@@ -26,7 +26,6 @@ export default function ResetPasswordPage() {
   const { userId, token }           = useParams();
   const [searchParams]              = useSearchParams();
 
-  // Query params dari link email: ?expires=...&signature=...
   const expires   = searchParams.get("expires")   ?? "";
   const signature = searchParams.get("signature") ?? "";
 
@@ -38,7 +37,6 @@ export default function ResetPasswordPage() {
   const [success,         setSuccess]         = useState(false);
   const [loading,         setLoading]         = useState(false);
 
-  // Validasi link — pastikan semua param ada
   const isLinkValid = userId && token && expires && signature;
 
   const handleSubmit = async (e) => {
@@ -51,8 +49,6 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      // POST /auth/reset-password/:userId/:token?expires=...&signature=...
-      // body: { password }
       const url = `${BASE_URL}/auth/reset-password/${userId}/${token}?expires=${expires}&signature=${signature}`;
 
       const res  = await fetch(url, {

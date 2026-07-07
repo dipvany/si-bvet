@@ -330,7 +330,7 @@ function Input({ value, onChange, placeholder, type = "text", disabled }) {
           value={value ?? ""}
           onChange={onChange}
           disabled={disabled}
-          className={`${base} pr-10 date-input`}
+          className={`${base} pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:top-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-11 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
         />
         <svg
           viewBox="0 0 24 24"

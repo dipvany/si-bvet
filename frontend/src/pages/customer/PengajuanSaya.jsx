@@ -5,10 +5,6 @@ import { parseSubmissionList } from "../../utils/parseList";
 ​
 const PER_PAGE = 10;
 ​
-// FIX: key di bawah disamakan dengan enum process_status yang sebenarnya
-// dipakai backend (lihat admin/ProsesPengujian.jsx & dokumentasi API).
-// Sebelumnya pakai "waiting_payment"/"completed"/"revision" yang tidak
-// pernah cocok dengan data asli, jadi badge selalu fallback ke label abu-abu.
 const STATUS_CONFIG = {
   pending:               { label: "Menunggu",                       bg: "bg-gray-100",    text: "text-gray-600",    dot: "bg-gray-400"    },
   pending_verification:  { label: "Menunggu Verifikasi",            bg: "bg-yellow-100",  text: "text-yellow-700",  dot: "bg-yellow-500"  },
@@ -70,8 +66,6 @@ export default function PengajuanSaya() {
       const res  = await apiFetch("/customer/submissions/my");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Gagal memuat data pengajuan.");
-      // BUG FIX: pakai helper parseSubmissionList agar robust terhadap
-      // berbagai bentuk response (array langsung / dibungkus "data" / dll)
       setSubmissions(parseSubmissionList(data));
     } catch (err) {
       setError(err.message ?? "Gagal memuat data pengajuan.");
