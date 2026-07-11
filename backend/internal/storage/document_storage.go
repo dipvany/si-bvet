@@ -349,7 +349,9 @@ func NewUploadStorage(ctx context.Context) (DocumentStorage, error) {
 		return NewS3DocumentStorage(ctx, s3Bucket)
 	}
 
-	return NewLocalDocumentStorage(""), nil
+	localUploadDir := os.Getenv("LOCAL_UPLOAD_DIR")
+
+	return NewLocalDocumentStorage(localUploadDir), nil
 }
 
 func gcsLocation(bucketName, objectName string) string {
