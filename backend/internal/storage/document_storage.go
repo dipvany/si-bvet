@@ -36,7 +36,7 @@ type LocalDocumentStorage struct {
 
 func NewLocalDocumentStorage(baseDir string) *LocalDocumentStorage {
 	if baseDir == "" {
-		baseDir = filepath.Join("internal", "uploads")
+		baseDir = "/app/uploads"
 	}
 
 	return &LocalDocumentStorage{baseDir: baseDir}

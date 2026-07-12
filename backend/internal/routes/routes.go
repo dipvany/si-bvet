@@ -41,9 +41,11 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 	billingHandler := mustDependency("billing handler", deps.BillingHandler)
 	activityLogHandler := mustDependency("activity log handler", deps.ActivityLogHandler)
 	
-	// serve uploaded files from internal/uploads for both direct and /api-prefixed URLs
-	r.Static("/uploads", "internal/uploads")
-	r.Static("/api/uploads", "internal/uploads")
+	// Serve uploaded files from the Docker volume mount point.
+	// This path must match LOCAL_UPLOAD_DIR and the volume mount in docker-compose.yml.
+	uploadDir := "/app/uploads"
+	r.Static("/uploads", uploadDir)
+	r.Static("/api/uploads", uploadDir)
 
 	api := r.Group("/api")
 	{
