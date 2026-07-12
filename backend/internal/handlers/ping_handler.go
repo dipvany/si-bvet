@@ -1,0 +1,12 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+// PingHandler adalah handler sederhana untuk health check.
+func PingHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "pong"})
+}

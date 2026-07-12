@@ -165,10 +165,6 @@ func RegisterRoutes(r *gin.Engine, deps Dependencies) {
 
 		}
 
-		api.GET("/ping", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "pong",
-			})
-		})
+		api.GET("/ping", handlers.PingHandler)
 	}
 }

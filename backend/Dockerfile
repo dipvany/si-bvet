@@ -5,12 +5,16 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /src
 
-# Install CA certificates for module downloads and keep the layer cache-friendly.
-RUN apk add --no-cache ca-certificates git
+# Install build tools. openssh-client is needed for private repo access.
+RUN apk add --no-cache ca-certificates git openssh-client
 
 # Download dependencies first so Docker can reuse this layer when source code changes.
 COPY go.mod go.sum ./
-RUN go mod download
+
+# Mount the SSH key secret to download private modules.
+# This requires running `docker-compose build` or `docker build` with BuildKit.
+# We add github.com to known_hosts to avoid interactive prompts.
+RUN --mount=type=ssh,id=default mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com gitlab.com bitbucket.org >> ~/.ssh/known_hosts && go mod download
 
 # Copy the full backend source and build the server entrypoint.
 COPY . .
