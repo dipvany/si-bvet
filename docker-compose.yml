@@ -9,8 +9,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - sibvet-network
 
@@ -18,8 +17,8 @@ services:
   backend:
     build:
       context: ./backend
-      ssh:
-        - default
+      # ssh:
+        # - default
       dockerfile: Dockerfile
     container_name: si-bvet-backend
     ports:
@@ -31,15 +30,15 @@ services:
       # Menyisipkan berkas kunci Akun Layanan GCP secara aman ke dalam kontainer
       - ./secrets:/app/secrets:ro
     depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
+      - postgres
+        # condition: service_healthy
+    # healthcheck:
       # Coba hubungi port 8080 di dalam kontainer backend
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/ping || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      # test: ["CMD-SHELL", "curl -f http://localhost:8080/api/ping || exit 1"]
+      # interval: 10s
+      # timeout: 5s
+      # retries: 5
+      # start_period: 10s
     networks:
       - sibvet-network
 

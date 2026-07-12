@@ -16,6 +16,12 @@ RUN npm install
 # Salin sisa source code aplikasi
 COPY . .
 
+# Terima argument dari docker-compose
+ARG VITE_API_URL
+
+# Jadikan environment variable di dalam container saat build
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build aplikasi untuk production
 RUN npm run build
 
