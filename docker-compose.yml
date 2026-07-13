@@ -28,8 +28,7 @@ services:
     env_file:
       - .env
     volumes:
-      - backend-uploads:/app/uploads
-      # Menyisipkan berkas kunci Akun Layanan GCP secara aman ke dalam kontainer
+      - ./data/uploads:/app/uploads
       - ./secrets:/app/secrets:ro
     depends_on:
       - postgres
