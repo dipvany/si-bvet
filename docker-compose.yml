@@ -3,6 +3,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        - VITE_API_URL=${VITE_API_URL}
       dockerfile: Dockerfile
     container_name: si-bvet-frontend
     restart: always
