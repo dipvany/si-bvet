@@ -527,7 +527,12 @@ func (h *SubmissionHandler) DownloadSampleTemplate(c *gin.Context) {
             uploadedTemplate.FileName = "sample_template.xlsx"
         }
 
-        c.FileAttachment(resolvedLocation, uploadedTemplate.FileName)
+        c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", uploadedTemplate.FileName))
+        c.Data(
+            http.StatusOK,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            templateBytes,
+        )
         return
     }
 
