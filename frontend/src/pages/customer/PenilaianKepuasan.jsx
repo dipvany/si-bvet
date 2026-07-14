@@ -16,13 +16,12 @@ import FormPenilaian from "../../components/FormPenilaian";
  */
 export default function PenilaianKepuasan() {
   const navigate = useNavigate();
-  useParams(); // submissionId (tetap dibaca dari URL agar rute konsisten)
+  useParams();
   const { state } = useLocation();
   const submission = state?.submission;
 ​
   const [success, setSuccess] = useState(false);
 ​
-  // Prefill jenis layanan dari pengajuan bila tersedia
   const defaultValues = {
     type_service: submission?.type_service ?? "Pengujian Sampel",
   };

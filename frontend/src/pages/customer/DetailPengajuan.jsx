@@ -362,7 +362,7 @@ export default function DetailPengajuan() {
       const json = await res.json();
       const downloadUrl = json?.data?.download_url;
       if (!downloadUrl) throw new Error("Tautan LHU tidak tersedia.");
-      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      window.open(resolveFileUrl(downloadUrl), "_blank", "noopener,noreferrer");
     } catch (e) {
       alert(e.message);
     } finally {

@@ -18,9 +18,13 @@ const rupiah = (n) =>
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  const origin = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api")
-    .replace(/\/api\/?$/, "").replace(/\/$/, "");
-  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  const apiBase = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api").replace(/\/$/, "");
+  const origin = apiBase.replace(/\/api\/?$/, "");
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  // Pertahankan prefix /api agar file diteruskan reverse proxy ke backend (/api/uploads),
+  // bukan ditangkap SPA yang membuat halaman balik ke landing page.
+  if (clean.startsWith("/api/")) return `${origin}${clean}`;
+  return `${apiBase}${clean}`;
 };
 ​
 const STATUS_CFG = {
