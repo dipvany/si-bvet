@@ -501,18 +501,29 @@ func (h *SubmissionHandler) DownloadSampleTemplate(c *gin.Context) {
             return
         }
 
-		resolvedLocation, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, uploadedTemplate.FilePath)
+        resolvedLocation, err := ResolveDocumentLocation(c.Request.Context(), h.fileStorage, uploadedTemplate.FilePath)
         if err != nil {
             utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
             return
         }
 
-        if strings.HasPrefix(strings.ToLower(resolvedLocation), "http") || strings.HasPrefix(resolvedLocation, "/uploads/") {
+        if strings.HasPrefix(strings.ToLower(resolvedLocation), "http") {
             c.Redirect(http.StatusFound, resolvedLocation)
             return
         }
 
-        if uploadedTemplate.FileName == "" {
+        // Baca file dari disk dan stream isinya, jangan redirect untuk path lokal
+        templateBytes, err := h.readUploadedTemplateBytes(c, uploadedTemplate.FilePath)
+        if err != nil {
+            utils.ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("failed to read uploaded template: %v", err))
+            return
+        }
+
+        fileName := uploadedTemplate.FileName
+        if strings.TrimSpace(fileName) == "" {
+            fileName = "sample_template.xlsx"
+        }
+        if uploadedTemplate.FileName == "" { // fallback
             uploadedTemplate.FileName = "sample_template.xlsx"
         }
 
@@ -520,7 +531,8 @@ func (h *SubmissionHandler) DownloadSampleTemplate(c *gin.Context) {
         return
     }
 
-	  if len(testServiceIDs) > 0 {
+    // Jika tidak ada template yang diupload, gunakan template default
+    if len(testServiceIDs) > 0 {
         fileBuffer, err := h.Service.GetSampleTemplateWithTestServices(testServiceIDs)
         if err != nil {
             utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -585,8 +597,8 @@ func (h *SubmissionHandler) readUploadedTemplateBytes(c *gin.Context, filePath s
 	}
 
 	if strings.HasPrefix(resolvedLocation, "/uploads/") {
-        relative := strings.TrimPrefix(resolvedLocation, "/uploads/")
-        localPath := filepath.Join("internal", "uploads", filepath.FromSlash(relative))
+        relative := strings.TrimPrefix(resolvedLocation, "/") // Menjadi "uploads/..."
+        localPath := filepath.Join("/app", filepath.FromSlash(relative))
         return os.ReadFile(localPath)
     }
 
