@@ -1,20 +1,20 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { apiFetch } from "../../services/api";
-
+​
 const PER_PAGE = 10;
-
+​
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
-
+​
 const UNIT_LABS = ["Virologi","Bakteriologi","Parasitologi","Patologi","Kesmavet"];
 const EMPTY_FORM = {
   test_name:"", unit_lab:"", target:"", method:"",
   result_type:"", test_reference:"", price:"",
   duration:"", description:"",
 };
-
+​
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -27,16 +27,16 @@ function PBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-
+​
 /* ── FORM PAGE ── */
 function FormPage({ initial, onBack, onSaved }) {
   const isEdit  = !!initial?.id;
   const [form, setForm]     = useState(initial ?? EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState("");
-
+​
   const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
-
+​
   const validate = () => {
     if (!form.test_name)   return "Nama pengujian wajib diisi.";
     if (!form.unit_lab)    return "Unit lab wajib dipilih.";
@@ -48,7 +48,7 @@ function FormPage({ initial, onBack, onSaved }) {
     if (!form.description) return "Deskripsi wajib diisi.";
     return null;
   };
-
+​
   const handleSave = async () => {
     const err = validate();
     if (err) { setError(err); return; }
@@ -57,7 +57,7 @@ function FormPage({ initial, onBack, onSaved }) {
       const body   = { ...form, price: Number(form.price) };
       const url    = isEdit
         ? `/admin/test-services/${initial.id}`
-        : "/admin/test-services";
+        : "/superadmin/test-services";
       const res = await apiFetch(url, {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,7 +74,7 @@ function FormPage({ initial, onBack, onSaved }) {
       setSaving(false);
     }
   };
-
+​
   const Field = ({ label, k, placeholder, type = "text", required = true }) => (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-semibold text-[#233B6E]">
@@ -87,7 +87,7 @@ function FormPage({ initial, onBack, onSaved }) {
           placeholder-gray-400" />
     </div>
   );
-
+​
   const SelectField = ({ label, k, options }) => (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-semibold text-[#233B6E]">
@@ -111,7 +111,7 @@ function FormPage({ initial, onBack, onSaved }) {
       </div>
     </div>
   );
-
+​
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       {/* Header */}
@@ -127,34 +127,34 @@ function FormPage({ initial, onBack, onSaved }) {
           {isEdit ? "Edit Katalog Pengujian" : "Tambah Katalog Pengujian"}
         </h1>
       </div>
-
+​
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <div className="p-6 space-y-5">
-
+​
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600
               text-sm rounded-xl px-4 py-3">{error}</div>
           )}
-
+​
           <Field label="Nama Pengujian"   k="test_name" />
           <SelectField label="Unit Lab"   k="unit_lab"   options={UNIT_LABS} />
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Field label="Target"          k="target" />
             <Field label="Metode"          k="method" />
           </div>
-
+​
           <Field label="Tipe Hasil"        k="result_type"
             placeholder="cth: Kualitatif / Kuantitatif" />
-
+​
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Field label="Harga Uji"       k="price"    type="number"
               placeholder="Masukkan nominal harga" />
             <Field label="Durasi Pengujian" k="duration"
               placeholder="cth: 3 Hari" />
           </div>
-
+​
           {/* Acuan Pengujian */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-[#233B6E]">
@@ -167,7 +167,7 @@ function FormPage({ initial, onBack, onSaved }) {
                 focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]
                 placeholder-gray-400" />
           </div>
-
+​
           {/* Deskripsi */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-[#233B6E]">
@@ -183,7 +183,7 @@ function FormPage({ initial, onBack, onSaved }) {
           </div>
         </div>
       </div>
-
+​
       {/* Tombol simpan */}
       <div className="flex justify-end">
         <button onClick={handleSave} disabled={saving}
@@ -215,7 +215,7 @@ function FormPage({ initial, onBack, onSaved }) {
     </div>
   );
 }
-
+​
 /* ── MAIN TABLE PAGE ── */
 export default function KatalogPengujian() {
   const [services, setServices]   = useState([]);
@@ -229,9 +229,9 @@ export default function KatalogPengujian() {
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const importRef                 = useRef();
-
+​
   useEffect(() => { fetchData(); }, []);
-
+​
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
@@ -244,7 +244,7 @@ export default function KatalogPengujian() {
       setLoading(false);
     }
   };
-
+​
   const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -252,7 +252,7 @@ export default function KatalogPengujian() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res  = await apiFetch("/admin/test-services/import",
+      const res  = await apiFetch("/superadmin/test-services/import",
         { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Gagal import.");
@@ -265,7 +265,7 @@ export default function KatalogPengujian() {
       e.target.value = "";
     }
   };
-
+​
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus katalog ini?")) return;
     setDeleting(id);
@@ -280,12 +280,12 @@ export default function KatalogPengujian() {
       setDeleting(null);
     }
   };
-
+​
   const units = useMemo(() =>
     ["all", ...new Set(services.map(s => s.unit_lab).filter(Boolean))],
     [services]
   );
-
+​
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return services.filter(s => {
@@ -297,10 +297,10 @@ export default function KatalogPengujian() {
       return matchSearch && matchUnit;
     });
   }, [services, search, unitFilter]);
-
+​
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
+​
   // Tampilkan halaman form jika add/edit
   if (view !== null) {
     return (
@@ -311,11 +311,11 @@ export default function KatalogPengujian() {
       />
     );
   }
-
+​
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Katalog Pengujian</h1>
-
+​
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600
           text-sm rounded-xl px-4 py-3 flex justify-between items-center">
@@ -326,7 +326,7 @@ export default function KatalogPengujian() {
           </button>
         </div>
       )}
-
+​
       {importMsg && (
         <div className={`text-sm rounded-xl px-4 py-3 border
           ${importMsg.startsWith("✓")
@@ -335,9 +335,9 @@ export default function KatalogPengujian() {
           {importMsg}
         </div>
       )}
-
+​
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
+​
         {/* Toolbar */}
         <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap
           items-center gap-2">
@@ -355,7 +355,7 @@ export default function KatalogPengujian() {
                 text-sm outline-none bg-[#F6F7FB]
                 focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]" />
           </div>
-
+​
           {/* Filter Unit Lab */}
           <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
             Unit Lab:
@@ -379,7 +379,7 @@ export default function KatalogPengujian() {
               </svg>
             </div>
           </div>
-
+​
           {/* Tambah */}
           <button onClick={() => setView("add")}
             className="flex items-center gap-1.5 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -391,7 +391,7 @@ export default function KatalogPengujian() {
             </svg>
             Tambah
           </button>
-
+​
           {/* Import Data */}
           <button onClick={() => importRef.current.click()} disabled={importing}
             className="flex items-center gap-1.5 border border-[#233B6E]
@@ -418,7 +418,7 @@ export default function KatalogPengujian() {
           <input ref={importRef} type="file" accept=".xlsx,.xls,.csv"
             className="hidden" onChange={handleImport} />
         </div>
-
+​
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -519,7 +519,7 @@ export default function KatalogPengujian() {
             </tbody>
           </table>
         </div>
-
+​
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-gray-100 flex items-center
           justify-between flex-wrap gap-2">

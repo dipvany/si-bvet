@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { clearAuth, getUser } from "../utils/auth";
 import logo from "../assets/logo.png";
-​
+
 const NAV_ITEMS = [
   { label: "Beranda", path: "/superadmin/beranda", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>) },
   { label: "Registrasi Pelanggan", path: "/superadmin/registrasi-pelanggan", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>) },
@@ -14,25 +14,24 @@ const NAV_ITEMS = [
   { label: "Laporan Pengaduan", path: "/superadmin/laporan-pengaduan", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>) },
   { label: "Profil", path: "/superadmin/profil", icon: (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>) },
 ];
-​
+
 export default function SuperAdminSidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
-​
+
   const handleLogout = () => {
     clearAuth();
     navigate("/login", { replace: true });
   };
-​
+
   return (
     <>
-      {/* Backdrop overlay — hanya tampil di mobile saat sidebar terbuka */}
       {isOpen && (
         <div
           onClick={onClose}
           className="fixed inset-0 bg-black/40 z-40 lg:hidden"
         />
       )}
-​
+
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white
         border-r border-gray-100 shadow-lg
@@ -43,13 +42,13 @@ export default function SuperAdminSidebar({ isOpen, onClose }) {
         ${isOpen ? "lg:w-64" : "lg:w-0"}
       `}>
       <div className="flex flex-col h-full w-64">
-​
+
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100">
           <img src={logo} alt="SI-BVET" className="h-8 w-auto object-contain flex-shrink-0" />
           <span className="font-bold text-[#233B6E] text-sm whitespace-nowrap">SI-BVET</span>
         </div>
-​
+
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
           {NAV_ITEMS.map((m) => (
@@ -67,8 +66,8 @@ export default function SuperAdminSidebar({ isOpen, onClose }) {
             </NavLink>
           ))}
         </nav>
-​
-        {/* Keluar saja — tanpa info user */}
+
+        {/* Keluar */}
         <div className="px-2 py-3 border-t border-gray-100">
           <button onClick={handleLogout}
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm
@@ -82,7 +81,7 @@ export default function SuperAdminSidebar({ isOpen, onClose }) {
             <span className="whitespace-nowrap">Keluar</span>
           </button>
         </div>
-​
+
       </div>
     </aside>
     </>

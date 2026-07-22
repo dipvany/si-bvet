@@ -3,12 +3,12 @@ import { Outlet, useLocation } from "react-router-dom";
 import CustomerSidebar from "../components/CustomerSidebar";
 import AppNavbar from "../components/AppNavbar";
 import { apiFetch } from "../services/api";
-​
-/* ── Panel Notifikasi ─────────────────────────────────────────── */
+
+/* Panel Notifikasi */
 function NotifPanel({ onClose }) {
   const [notifs,  setNotifs]  = useState([]);
   const [loading, setLoading] = useState(true);
-​
+
   useEffect(() => {
     setLoading(true);
     apiFetch("/customer/notifications")
@@ -17,24 +17,24 @@ function NotifPanel({ onClose }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-​
+
   const unread = notifs.filter(n => !n.is_read);
   const read   = notifs.filter(n =>  n.is_read);
-​
+
   const markAllRead = async () => {
     try {
       await apiFetch("/customer/notifications/read-all", { method: "PATCH" });
       setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch {}
   };
-​
+
   const markOneRead = async (id) => {
     try {
       await apiFetch(`/customer/notifications/${id}/read`, { method: "PATCH" });
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch {}
   };
-​
+
   const NotifCard = ({ n }) => (
     <button onClick={() => markOneRead(n.id)}
       className={`w-full text-left px-6 py-4 hover:bg-[#F6F7FB]
@@ -69,10 +69,9 @@ function NotifPanel({ onClose }) {
       </div>
     </button>
   );
-​
+
   return (
     <div className="space-y-5">
-      {/* Header — sama persis dengan halaman lain */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <button onClick={onClose}
@@ -105,7 +104,7 @@ function NotifPanel({ onClose }) {
           </button>
         )}
       </div>
-​
+
       {loading ? (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm
           flex items-center justify-center gap-2 py-20 text-gray-400 text-sm">
@@ -149,7 +148,7 @@ function NotifPanel({ onClose }) {
               </div>
             </div>
           )}
-​
+
           {/* ── Sudah Dibaca ── */}
           {read.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -174,21 +173,19 @@ function NotifPanel({ onClose }) {
     </div>
   );
 }
-​
-/* ── Layout ───────────────────────────────────────────────────── */
+
+/* Layout */
 export default function CustomerLayout() {
   const [sidebarOpen,   setSidebarOpen]   = useState(
     () => typeof window !== "undefined" && window.innerWidth >= 1024,
   );
   const [notifExpanded, setNotifExpanded] = useState(false);
   const location = useLocation();
-​
-  // Mobile: tutup sidebar tiap pindah halaman
+
   useEffect(() => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   }, [location.pathname]);
-​
-  // Sinkronkan saat melewati breakpoint desktop/mobile
+
   useEffect(() => {
     let wasDesktop = window.innerWidth >= 1024;
     const onResize = () => {
@@ -201,11 +198,11 @@ export default function CustomerLayout() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-​
+
   return (
     <div className="flex h-screen bg-[#F0F2F8] overflow-hidden">
       <CustomerSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-​
+
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <AppNavbar
           onMenuClick={() => setSidebarOpen(p => !p)}

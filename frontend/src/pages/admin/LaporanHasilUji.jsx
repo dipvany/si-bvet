@@ -1,14 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getAdminSubmissions, getSubmissionByID, uploadLHU, getLHU } from "../../services/adminServices";
 import { resolveFileUrl } from "../../utils/fileUrl";
-​
+
 const PER_PAGE = 10;
-​
+
 const STATUS_DONE = ["done", "completed", "selesai"];
 const STATUS_PROCESS = ["processed"];
 const STATUS_LHU_LIST = [...STATUS_PROCESS, ...STATUS_DONE];
-​
-/* Konfigurasi status untuk stepper (alur proses) */
+
 const STATUS_CONFIG = {
   approved: { label: "Disetujui", order: 0 },
   awaiting_payment: { label: "Pembayaran", order: 1 },
@@ -16,12 +15,12 @@ const STATUS_CONFIG = {
   processed: { label: "Sedang Diproses", order: 3, bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
   done: { label: "Selesai", order: 4, bg: "bg-green-100", text: "text-green-700", dot: "bg-green-500" },
 };
-​
+
 const fmtDate = (v) => {
   if (!v) return "-";
   return new Date(v).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 };
-​
+
 const safeJson = async (res) => {
   try {
     const t = await res.text();
@@ -30,7 +29,7 @@ const safeJson = async (res) => {
     return {};
   }
 };
-​
+
 function Spinner({ sm }) {
   return (
     <svg className={`animate-spin ${sm ? "w-4 h-4" : "w-5 h-5"}`} viewBox="0 0 24 24" fill="none">
@@ -39,7 +38,7 @@ function Spinner({ sm }) {
     </svg>
   );
 }
-​
+
 function Alert({ type, msg, onClose }) {
   if (!msg) return null;
   const cls = type === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-green-50 border-green-200 text-green-700";
@@ -54,7 +53,7 @@ function Alert({ type, msg, onClose }) {
     </div>
   );
 }
-​
+
 function PaginationBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -63,7 +62,7 @@ function PaginationBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-​
+
 function InfoRow({ label, value }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 border-b border-gray-100 last:border-0 min-w-0">
@@ -72,8 +71,8 @@ function InfoRow({ label, value }) {
     </div>
   );
 }
-​
-/* Badge status pengujian */
+
+/* status pengujian */
 function PengujianPill({ status }) {
   const done = STATUS_DONE.includes((status ?? "").toLowerCase());
   return done ? (
@@ -88,8 +87,7 @@ function PengujianPill({ status }) {
     </span>
   );
 }
-​
-/* Ikon stepper (urut sesuai STEPS) */
+
 const STEP_ICONS = [
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
@@ -107,7 +105,7 @@ const STEP_ICONS = [
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>,
 ];
-​
+
 function StepBar({ status }) {
   const STEPS = [
     { key: "approved", label: "Disetujui" },
@@ -156,8 +154,8 @@ function StepBar({ status }) {
     </div>
   );
 }
-​
-/* Kartu tinjauan pengajuan (data pengajuan, sampel, pelanggan) */
+
+/* tinjauan pengajuan */
 function TinjauanCard({ full }) {
   if (!full)
     return (
@@ -166,19 +164,19 @@ function TinjauanCard({ full }) {
         <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat tinjauan...</div>
       </div>
     );
-​
+
   const info = full.user_info;
   const cust = info?.customer;
   const samples = full.samples ?? [];
   const attRaw = full.attachment_doc;
   const attDocs = Array.isArray(attRaw) ? attRaw : attRaw ? [attRaw] : [];
-​
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-[#233B6E] to-[#415F9D]" />
       <div className="p-5 sm:p-6 space-y-6">
         <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider">Tinjauan Pengajuan</p>
-​
+
         <section>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-[#233B6E] text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">1</span>
@@ -222,7 +220,7 @@ function TinjauanCard({ full }) {
             </div>
           )}
         </section>
-​
+
         <section className="border-t border-gray-100 pt-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-[#233B6E] text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">2</span>
@@ -270,7 +268,7 @@ function TinjauanCard({ full }) {
             ))
           )}
         </section>
-​
+
         {info && (
           <section className="border-t border-gray-100 pt-4">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -301,15 +299,15 @@ function TinjauanCard({ full }) {
     </div>
   );
 }
-​
-/* Form unggah LHU (dipakai di kartu tahapan) */
+
+/* Form unggah LHU */
 function LhuUploadForm({ submission, existing, onSuccess }) {
   const [noLhu, setNoLhu] = useState(existing?.no_lhu ?? "");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef();
-​
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -330,7 +328,7 @@ function LhuUploadForm({ submission, existing, onSuccess }) {
       setLoading(false);
     }
   };
-​
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Alert type="error" msg={error} onClose={() => setError("")} />
@@ -383,7 +381,7 @@ function LhuUploadForm({ submission, existing, onSuccess }) {
     </form>
   );
 }
-​
+
 /* Halaman detail proses pengujian */
 function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
   const [sub, setSub] = useState(initialSub);
@@ -393,11 +391,11 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [showReupload, setShowReupload] = useState(false);
-​
+
   const status = sub.process_status;
   const isProcessed = STATUS_PROCESS.includes((status ?? "").toLowerCase());
   const isDone = STATUS_DONE.includes((status ?? "").toLowerCase());
-​
+
   const refetchLhu = async () => {
     setLoadLhu(true);
     try {
@@ -409,7 +407,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
       setLoadLhu(false);
     }
   };
-​
+
   useEffect(() => {
     (async () => {
       try {
@@ -420,7 +418,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
       await refetchLhu();
     })();
   }, [sub.id]);
-​
+
   const handleSuccess = async (msg) => {
     setOk(msg);
     setErr("");
@@ -429,7 +427,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
     await refetchLhu();
     onUpdated?.();
   };
-​
+
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
@@ -447,13 +445,13 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
           <p className="text-xs text-gray-400 mt-0.5 font-mono">{sub.no_ticket ?? `#${sub.id}`}</p>
         </div>
       </div>
-​
+
       <StepBar status={status} />
-​
+
       <div className="space-y-4">
         <Alert type="error" msg={err} onClose={() => setErr("")} />
         <Alert type="success" msg={ok} onClose={() => setOk("")} />
-​
+
         {isProcessed && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="h-1 bg-purple-400" />
@@ -466,7 +464,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
             </div>
           </div>
         )}
-​
+
         {isDone && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="h-1 bg-green-400" />
@@ -477,7 +475,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
                 </svg>
                 <span className="font-semibold">Pengujian selesai.</span>
               </div>
-​
+
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   {loadLhu ? (
@@ -505,7 +503,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
                     <p className="text-xs text-gray-400 italic">Belum ada dokumen LHU.</p>
                   )}
                 </div>
-​
+
                 <button onClick={() => setShowReupload((p) => !p)}
                   className="inline-flex items-center gap-1.5 text-[#233B6E] text-xs font-semibold hover:underline whitespace-nowrap flex-shrink-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
@@ -514,7 +512,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
                   {lhu ? (showReupload ? "Batal perbarui" : "Perbarui LHU") : (showReupload ? "Batal unggah" : "Unggah LHU")}
                 </button>
               </div>
-​
+
               {showReupload && (
                 <div className="pt-2 border-t border-gray-100">
                   <LhuUploadForm submission={sub} existing={lhu} onSuccess={handleSuccess} />
@@ -524,7 +522,7 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
           </div>
         )}
       </div>
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <div className="p-5">
@@ -539,16 +537,15 @@ function DetailPengujian({ submission: initialSub, onBack, onUpdated }) {
           </div>
         </div>
       </div>
-​
+
       <TinjauanCard full={fullSub} />
     </div>
   );
 }
-​
-/* Baris tabel */
+
 function RowLHU({ no, submission, onManage }) {
   const [lhuStatus, setLhuStatus] = useState("loading");
-​
+
   useEffect(() => {
     (async () => {
       try {
@@ -565,7 +562,7 @@ function RowLHU({ no, submission, onManage }) {
       }
     })();
   }, [submission.id]);
-​
+
   return (
     <tr className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={onManage}>
       <td className="px-4 py-3 text-gray-400 text-xs">{no}.</td>
@@ -608,7 +605,7 @@ function RowLHU({ no, submission, onManage }) {
     </tr>
   );
 }
-​
+
 /* Halaman utama */
 export default function LaporanHasilUji() {
   const [submissions, setSubmissions] = useState([]);
@@ -619,11 +616,11 @@ export default function LaporanHasilUji() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
-​
+
   useEffect(() => {
     fetchData();
   }, []);
-​
+
   const fetchData = async () => {
     setLoading(true);
     setError("");
@@ -640,7 +637,7 @@ export default function LaporanHasilUji() {
       setLoading(false);
     }
   };
-​
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return submissions.filter((s) => {
@@ -658,7 +655,7 @@ export default function LaporanHasilUji() {
       return matchStatus && matchSearch;
     });
   }, [submissions, search, filterStatus]);
-​
+
   const countByStatus = useMemo(() => {
     const map = { all: submissions.length, processed: 0, done: 0 };
     submissions.forEach((s) => {
@@ -668,10 +665,10 @@ export default function LaporanHasilUji() {
     });
     return map;
   }, [submissions]);
-​
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-​
+
   if (selected) {
     return (
       <DetailPengujian
@@ -681,16 +678,16 @@ export default function LaporanHasilUji() {
       />
     );
   }
-​
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-[#233B6E]">Proses Pengujian</h1>
       </div>
-​
+
       <Alert type="error" msg={error} onClose={() => setError("")} />
       <Alert type="success" msg={flashOk} onClose={() => setFlashOk("")} />
-​
+
       <div className="flex flex-wrap gap-2">
         {[
           { value: "all", label: "Semua" },
@@ -712,7 +709,7 @@ export default function LaporanHasilUji() {
           </button>
         ))}
       </div>
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <span className="text-xs text-gray-400 font-medium whitespace-nowrap">{submissions.length} pengujian</span>
@@ -740,7 +737,7 @@ export default function LaporanHasilUji() {
             </div>
           </div>
         </div>
-​
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -774,7 +771,7 @@ export default function LaporanHasilUji() {
             </tbody>
           </table>
         </div>
-​
+
         {!loading && filtered.length > 0 && (
           <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs text-gray-400">Halaman ke {page} dari {totalPages} halaman</span>

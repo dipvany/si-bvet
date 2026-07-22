@@ -1,37 +1,29 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { verifyUser, rejectUser } from "../../services/adminServices";
-​
-// Helper: path relatif → full URL dokumen
+
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const apiBase = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api").replace(/\/$/, "");
   const origin = apiBase.replace(/\/api\/?$/, "");
   const clean = path.startsWith("/") ? path : `/${path}`;
-  // Pertahankan prefix /api agar file diteruskan reverse proxy ke backend (/api/uploads),
-  // bukan ditangkap SPA yang membuat halaman balik ke landing page.
   if (clean.startsWith("/api/")) return `${origin}${clean}`;
   return `${apiBase}${clean}`;
 };
-​
-​
-​
-​
-​
-​
+
 export default function DetailPelanggan() {
   const navigate  = useNavigate();
   const { state } = useLocation();
   const { id }    = useParams();
-​
-  // Data dikirim via navigate state dari halaman list
+
+  // Data dikirim dengan navigate state dari halaman list
   const customer = state?.customer;
-​
+
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [success, setSuccess]   = useState("");
-​
+
   if (!customer) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -43,7 +35,7 @@ export default function DetailPelanggan() {
       </div>
     );
   }
-​
+
   const handleAction = async (action) => {
     setLoading(true);
     setError("");
@@ -56,7 +48,6 @@ export default function DetailPelanggan() {
         ? "Akun pelanggan berhasil diverifikasi."
         : "Akun pelanggan berhasil ditolak."
       );
-      // Kembali ke daftar setelah 1.5 detik
       setTimeout(() => navigate("/superadmin/registrasi-pelanggan"), 1500);
     } catch (err) {
       setError(err.message ?? "Terjadi kesalahan. Coba lagi.");
@@ -64,7 +55,7 @@ export default function DetailPelanggan() {
       setLoading(false);
     }
   };
-​
+
   const fields = [
     { label: "Nama Lengkap",  value: customer.fullname },
     { label: "Email",         value: customer.email },
@@ -72,7 +63,7 @@ export default function DetailPelanggan() {
     { label: "Institusi",     value: customer.institution ?? "-" },
     { label: "Status",        value: customer.is_verified ? "Sudah Diverifikasi" : "Belum Diverifikasi" },
   ];
-​
+
   return (
     <div className="space-y-5 max-w-2xl">
       {/* Header */}
@@ -86,7 +77,7 @@ export default function DetailPelanggan() {
         </button>
         <h1 className="text-xl font-bold text-[#233B6E]">Detail Pelanggan</h1>
       </div>
-​
+
       {/* Feedback */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -98,7 +89,7 @@ export default function DetailPelanggan() {
           {success}
         </div>
       )}
-​
+
       {/* Info card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
@@ -112,7 +103,7 @@ export default function DetailPelanggan() {
             </div>
           ))}
         </div>
-​
+
         {/* Dokumen */}
         {customer.registration_doc && (
           <div className="px-5 py-4 border-t border-gray-100">
@@ -135,8 +126,8 @@ export default function DetailPelanggan() {
           </div>
         )}
       </div>
-​
-      {/* Action buttons — hanya tampil jika belum diverifikasi */}
+
+      {/* Action buttons — tampil jika belum diverifikasi */}
       {!customer.is_verified && (
         <div className="flex gap-3">
           <button
@@ -159,7 +150,7 @@ export default function DetailPelanggan() {
           </button>
         </div>
       )}
-​
+
       {customer.is_verified && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
           text-green-700 text-sm font-medium text-center">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAdminSubmissions, getUnverifiedCustomers, getAllComplaints } from "../../services/adminServices";
-​
+
 const CARD_CONFIG = [
   { label: "Total Pengajuan Masuk", key: "total",                color: "#F5C400" },
   { label: "Menunggu Verifikasi",   key: "pending_verification", color: "#F5C400" },
@@ -8,7 +8,7 @@ const CARD_CONFIG = [
   { label: "Sedang Pengujian",      key: "in_process",           color: "#EF4444" },
   { label: "Selesai Pengujian",     key: "completed",            color: "#3B82F6" },
 ];
-​
+
 function DonutChart({ value = 0, total = 0, color = "#F59E0B", size = 64 }) {
   const r    = 24, cx = size / 2, cy = size / 2;
   const circ = 2 * Math.PI * r;
@@ -29,7 +29,7 @@ function DonutChart({ value = 0, total = 0, color = "#F59E0B", size = 64 }) {
     </svg>
   );
 }
-​
+
 function StatCard({ label, value, total, color, loading }) {
   return (
     <div className="bg-gradient-to-br from-[#233B6E] to-[#2d4d8f] rounded-2xl p-4
@@ -42,7 +42,7 @@ function StatCard({ label, value, total, color, loading }) {
     </div>
   );
 }
-​
+
 export default function AdminBeranda() {
   const [stats,      setStats]      = useState({ total: 0, pending_verification: 0, waiting_payment: 0, in_process: 0, completed: 0 });
   const [complaints, setComplaints]  = useState({ total: 0, belum: 0 });
@@ -50,28 +50,26 @@ export default function AdminBeranda() {
   const [accounts,   setAccounts]   = useState({ total: 0, verified: 0, unverified: 0 });
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState("");
-​
+
   useEffect(() => { fetchData(); }, []);
-​
+
   const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
-      // Fetch terpisah supaya error salah satu tidak crash keduanya
       let submissions = [];
       let unv = [];
-​
+
       try {
         const subRes  = await getAdminSubmissions();
         const subText = await subRes.text();
         const subData = JSON.parse(subText);
-        // Handle nested: { data: { data: [...] } } atau { data: [...] }
         submissions = subData?.data?.data ?? subData?.data ?? [];
         if (!Array.isArray(submissions)) submissions = [];
       } catch (e) {
         console.warn("Submissions fetch error:", e.message);
       }
-​
+
       try {
         const unvRes  = await getUnverifiedCustomers();
         const unvText = await unvRes.text();
@@ -81,7 +79,7 @@ export default function AdminBeranda() {
       } catch (e) {
         console.warn("Unverified fetch error:", e.message);
       }
-​
+
       try {
         const cmpRes  = await getAllComplaints();
         const cmpData = await cmpRes.json();
@@ -91,7 +89,7 @@ export default function AdminBeranda() {
       } catch (e) {
         console.warn("Complaints fetch error:", e.message);
       }
-​
+
       const counts = { total: submissions.length, pending_verification: 0, waiting_payment: 0, in_process: 0, completed: 0 };
       submissions.forEach(s => {
         const st = (s.process_status ?? "").toLowerCase();
@@ -101,7 +99,7 @@ export default function AdminBeranda() {
         else if (["processed", "diproses"].includes(st)) counts.in_process++;
         else if (["done", "selesai", "completed"].includes(st)) counts.completed++;
       });
-​
+
       setStats(counts);
       setUnverified(unv);
       const custVerified = unv.filter(c => c.is_verified).length;
@@ -112,11 +110,11 @@ export default function AdminBeranda() {
       setLoading(false);
     }
   };
-​
+
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Beranda</h1>
-​
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl
           px-4 py-3 flex items-center justify-between">
@@ -126,7 +124,7 @@ export default function AdminBeranda() {
           </button>
         </div>
       )}
-​
+
       {/* Stat cards pengajuan */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
         {CARD_CONFIG.map(c => (
@@ -134,7 +132,7 @@ export default function AdminBeranda() {
             total={stats.total || 1} color={c.color} loading={loading}/>
         ))}
       </div>
-​
+
       {/* Stat akun pelanggan */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">
@@ -146,7 +144,7 @@ export default function AdminBeranda() {
           <StatCard label="Sudah Verifikasi" value={accounts.verified} total={Math.max(accounts.total, 1)} color="#22C55E" loading={loading}/>
         </div>
       </div>
-​
+
       {/* Stat pengaduan */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">

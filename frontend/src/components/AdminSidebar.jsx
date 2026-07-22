@@ -55,7 +55,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
 ​
   return (
     <>
-      {/* Backdrop overlay — hanya tampil di mobile saat sidebar terbuka */}
+      {/* Backdrop overlay — tampil di mobile saat sidebar terbuka */}
       {isOpen && (
         <div
           onClick={onClose}

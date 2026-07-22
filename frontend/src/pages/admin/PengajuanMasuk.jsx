@@ -1,16 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAdminSubmissions, exportSubmissions } from "../../services/adminServices";
-​
-/**
- * PengajuanMasuk — daftar pengajuan uji sampel dari customer.
- * Admin bisa melihat, filter, dan klik detail untuk approve/reject.
- *
- * API: GET /admin/submissions?page=1&per_page=20
- * Response: { data: { data: [...], meta: { page, per_page, total, total_pages } } }
- */
-​
-/* ── Status config ───────────────────────────────────────────────── */
+
 const STATUS_CONFIG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
   approved:             { label: "Disetujui",            bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500" },
@@ -20,22 +11,20 @@ const STATUS_CONFIG = {
   done:                 { label: "Selesai",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
   rejected:             { label: "Ditolak",             bg: "bg-red-100",    text: "text-red-600",    dot: "bg-red-500"    },
 };
-​
+
 const VERIF_CONFIG = {
   unverified: { label: "Belum Diverifikasi", bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
   verified:   { label: "Sudah Diverifikasi", bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500"  },
   rejected:   { label: "Ditolak",            bg: "bg-red-100",    text: "text-red-600",    dot: "bg-red-500"    },
 };
-​
-// Pengajuan Masuk hanya soal keputusan verifikasi (terima/tolak), seperti Registrasi Pelanggan.
-// Status lanjutan (approved, awaiting_payment, in_process, done, dll) dianggap "sudah diverifikasi".
+
 const verifOf = (s) =>
   s === "pending_verification" ? "unverified" : s === "rejected" ? "rejected" : "verified";
-​
+
 const ALL_STATUSES = Object.entries(VERIF_CONFIG).map(([value, cfg]) => ({
   value, label: cfg.label,
 }));
-​
+
 function StatusPill({ status }) {
   const cfg = VERIF_CONFIG[verifOf(status)] ?? {
     label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400",
@@ -48,7 +37,7 @@ function StatusPill({ status }) {
     </span>
   );
 }
-​
+
 function Spinner() {
   return (
     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -57,7 +46,7 @@ function Spinner() {
     </svg>
   );
 }
-​
+
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -70,12 +59,11 @@ function PBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-​
+
 const PER_PAGE = 20;
-​
+
 export default function PengajuanMasuk() {
   const navigate = useNavigate();
-​
   const [submissions, setSubmissions] = useState([]);
   const [meta,        setMeta]        = useState({ page: 1, total: 0, total_pages: 1 });
   const [loading,     setLoading]     = useState(true);
@@ -84,15 +72,15 @@ export default function PengajuanMasuk() {
   const [search,      setSearch]      = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sort, setSort] = useState("terbaru");
-​
-  // ── State pilih & export ────────────────────────────────────────────
+
+  // Button pilih & expor
   const [selectMode,  setSelectMode]  = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [exporting,   setExporting]   = useState(false);
   const [exportError, setExportError] = useState("");
-​
+
   useEffect(() => { fetchData(page); }, [page]);
-​
+
   const fetchData = async (p = 1) => {
     setLoading(true); setError("");
     try {
@@ -108,8 +96,8 @@ export default function PengajuanMasuk() {
       setLoading(false);
     }
   };
-​
-  // Filter client-side (search + status)
+
+  // Filter search & status
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     const base = submissions.filter(s => {
@@ -128,8 +116,7 @@ export default function PengajuanMasuk() {
       return (b.id ?? 0) - (a.id ?? 0);
     });
   }, [submissions, search, filterStatus, sort]);
-​
-  // Hitung badge per status
+
   const countByStatus = useMemo(() => {
     const map = { all: submissions.length };
     submissions.forEach(s => {
@@ -137,15 +124,14 @@ export default function PengajuanMasuk() {
     });
     return map;
   }, [submissions]);
-​
+
   const fmt = (iso) => {
     if (!iso) return "-";
     return new Date(iso).toLocaleDateString("id-ID", {
       day: "2-digit", month: "short", year: "numeric",
     });
   };
-​
-  // ── Pilih baris ──────────────────────────────────────────────────
+
   const toggleSelectOne = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -153,9 +139,9 @@ export default function PengajuanMasuk() {
       return next;
     });
   };
-​
+
   const allVisibleSelected = filtered.length > 0 && filtered.every(s => selectedIds.has(s.id));
-​
+
   const toggleSelectAllVisible = () => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -167,27 +153,25 @@ export default function PengajuanMasuk() {
       return next;
     });
   };
-​
-  // ── Mode pilih (dibuka lewat tombol Export) ─────────────────────
+
   const openSelectMode = () => { setSelectMode(true); setExportError(""); };
   const closeSelectMode = () => {
     setSelectMode(false);
     setSelectedIds(new Set());
     setExportError("");
   };
-​
-  // ── Export ke Excel ─────────────────────────────────────────────
+
+  // Expor ke Excel 
   const handleExport = async (mode) => {
-    // mode: "all" | "selected"
     const payload = mode === "all"
       ? { export_all: true }
       : { export_all: false, submission_ids: Array.from(selectedIds) };
-​
+
     if (mode === "selected" && payload.submission_ids.length === 0) {
       setExportError("Pilih minimal 1 pengajuan untuk diekspor.");
       return;
     }
-​
+    
     setExporting(true); setExportError("");
     try {
       const res = await exportSubmissions(payload);
@@ -200,13 +184,12 @@ export default function PengajuanMasuk() {
       const disposition = res.headers.get("Content-Disposition") ?? "";
       const match = disposition.match(/filename="?([^"]+)"?/);
       const filename = match ? match[1] : `pengajuan_export_${Date.now()}.xlsx`;
-​
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
       window.URL.revokeObjectURL(url);
-​
+
       closeSelectMode();
     } catch (err) {
       setExportError(err.message ?? "Gagal mengekspor data.");
@@ -214,10 +197,9 @@ export default function PengajuanMasuk() {
       setExporting(false);
     }
   };
-​
+
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-[#233B6E]">Pengajuan Masuk</h1>
@@ -226,7 +208,6 @@ export default function PengajuanMasuk() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Tombol Refresh */}
           <button onClick={() => fetchData(page)}
             className="flex items-center gap-1.5 text-xs font-semibold text-[#233B6E]
               bg-[#EEF0F8] hover:bg-[#dde0f0] px-3 py-2 rounded-lg transition-colors">
@@ -239,9 +220,8 @@ export default function PengajuanMasuk() {
           </button>
         </div>
       </div>
-​
-​
-      {/* Error export */}
+
+      {/* Error expor */}
       {exportError && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm
           rounded-xl px-4 py-3 flex items-center justify-between">
@@ -250,7 +230,7 @@ export default function PengajuanMasuk() {
             className="text-xs font-semibold hover:underline ml-4">Tutup</button>
         </div>
       )}
-​
+
       {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm
@@ -260,8 +240,8 @@ export default function PengajuanMasuk() {
             className="text-xs font-semibold hover:underline ml-4">Coba Lagi</button>
         </div>
       )}
-​
-      {/* Filter status pills */}
+
+      {/* Filter status */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilterStatus("all")}
@@ -298,10 +278,9 @@ export default function PengajuanMasuk() {
           </button>
         ))}
       </div>
-​
+
       {/* Tabel */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Search + Export */}
         <div className="px-4 py-3 border-b border-gray-100 flex justify-between
           items-center gap-3 flex-wrap">
           <p className="text-xs text-gray-400">
@@ -374,8 +353,7 @@ export default function PengajuanMasuk() {
             )}
           </div>
         </div>
-​
-        {/* Bar aksi pilih — muncul di dalam card saat mode export aktif */}
+
         {selectMode && (
           <div className="px-4 py-3 border-b border-gray-100 bg-[#EEF0F8]
             flex items-center justify-between flex-wrap gap-3">
@@ -413,7 +391,7 @@ export default function PengajuanMasuk() {
             </div>
           </div>
         )}
-​
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -514,8 +492,7 @@ export default function PengajuanMasuk() {
             </tbody>
           </table>
         </div>
-​
-        {/* Pagination server-side */}
+
         <div className="px-4 py-3 border-t border-gray-100 flex items-center
           justify-between flex-wrap gap-2">
           <span className="text-xs text-gray-400">

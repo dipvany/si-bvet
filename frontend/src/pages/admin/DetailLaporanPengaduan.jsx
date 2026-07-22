@@ -91,8 +91,6 @@ export default function DetailLaporanPengaduan() {
     ? resolveFileUrl(complaint.attachment_path)
     : null;
 
-  // Backend mengembalikan subjek pengaduan di field "suggestion" (bukan "subjects")
-  // Terverifikasi dari console.log response GET /admin/complaints
   const subjectsValue = complaint?.suggestion ?? "";
 
   if (loading) {

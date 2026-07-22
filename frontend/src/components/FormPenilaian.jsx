@@ -1,22 +1,5 @@
 import { useState, useEffect } from "react";
 ​
-/**
- * FormPenilaian — form penilaian kepuasan (PUBLIK, tanpa login), 2 langkah.
- *
- * Langkah 1: Data Responden
- * Langkah 2: Penilaian (pertanyaan dinamis dari backend)
- *
- * Endpoint publik:
- *   GET  /feedbacks/questions/active  -> { questions: [{ id, question_text }] }
- *   POST /feedbacks                   -> body: {
- *     fullname, email, gender, last_education, occupation, type_service,
- *     answers: [{ question_id, rating(1-5) }]
- *   }
- *
- * Props:
- *   - defaultValues: nilai awal data responden (opsional)
- *   - onSuccess: callback setelah berhasil kirim
- */
 const API_BASE = (
   import.meta.env.VITE_API_URL ?? "http://localhost:8080/api"
 ).replace(/\/$/, "");

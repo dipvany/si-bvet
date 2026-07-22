@@ -73,7 +73,7 @@ export default function CustomerSidebar({ isOpen, onClose }) {
 ​
   return (
     <>
-      {/* Backdrop overlay — hanya tampil di mobile saat sidebar terbuka */}
+      {/* Backdrop overlay — tampil di mobile saat sidebar terbuka */}
       {isOpen && (
         <div
           onClick={onClose}
@@ -81,7 +81,7 @@ export default function CustomerSidebar({ isOpen, onClose }) {
         />
       )}
 ​
-      {/* Sidebar — mobile: drawer overlay; desktop: mendorong konten */}
+      {/* Sidebar — mobile */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white
         border-r border-gray-100 shadow-lg

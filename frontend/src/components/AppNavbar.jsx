@@ -168,7 +168,7 @@ export default function AppNavbar({ onMenuClick, onNotifExpand }) {
                         Baca semua
                       </button>
                     )}
-                    {/* Tombol perbesar → tampil di area konten */}
+                    {/* Tombol perbesar - tampil di area konten */}
                     <button onClick={handleExpand} title="Lihat semua notifikasi"
                       className="p-1.5 rounded-lg text-gray-400
                         hover:bg-gray-100 hover:text-[#233B6E] transition-colors">

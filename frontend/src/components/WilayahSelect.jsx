@@ -1,32 +1,3 @@
-/**
- * WilayahSelect — komponen dropdown bertingkat:
- * Provinsi → Kabupaten/Kota → Kecamatan → Kelurahan/Desa
- *
- * Props:
- *   value    : { province, city, subdistrict, village }
- *   onChange : (fields) => void  — dipanggil dengan object field yang berubah
- *   required : bool
- *
- * Cara pakai di Profil:
- *   <WilayahSelect
- *     value={{ province, city, subdistrict, village }}
- *     onChange={(f) => {
- *       if ("province"    in f) setProvince(f.province);
- *       if ("city"        in f) setCity(f.city);
- *       if ("subdistrict" in f) setSubdistrict(f.subdistrict);
- *       if ("village"     in f) setVillage(f.village);
- *     }}
- *     required
- *   />
- *
- * Cara pakai di PengajuanUjiSampel (step3):
- *   <WilayahSelect
- *     value={step3}
- *     onChange={(f) => setStep3(p => ({ ...p, ...f }))}
- *     required
- *   />
- */
-
 import { useState, useEffect } from "react";
 import { PROVINCES } from "../utils/refData";
 
@@ -58,7 +29,7 @@ async function fetchWilayah(path, altPath) {
 
 const getId = (o) => o.code ?? o.id ?? "";
 
-/* ── Dropdown satu level ── */
+/* Dropdown */
 function WDD({ label, required, value, onChange, opts, loading, disabled, placeholder, error }) {
   return (
     <div>
@@ -102,7 +73,7 @@ function WDD({ label, required, value, onChange, opts, loading, disabled, placeh
   );
 }
 
-/* ── Komponen utama ── */
+/* Komponen utama */
 export default function WilayahSelect({ value = {}, onChange, required = false }) {
   const [regencies,   setRegencies]   = useState([]);
   const [districts,   setDistricts]   = useState([]);
@@ -117,7 +88,6 @@ export default function WilayahSelect({ value = {}, onChange, required = false }
   const [regId,       setRegId]       = useState("");
   const [distId,      setDistId]      = useState("");
 
-  // Sync provId dari value.province kalau sudah ada (misal dari profil/pre-fill)
   useEffect(() => {
     if (value.province && !provId) {
       const found = PROVINCES.find(
@@ -127,7 +97,7 @@ export default function WilayahSelect({ value = {}, onChange, required = false }
     }
   }, [value.province]);
 
-  // Fetch kabupaten kalau provId berubah
+  // Fetch kabupaten
   useEffect(() => {
     if (!provId) { setRegencies([]); setDistricts([]); setVillages([]); return; }
     setLoadingReg(true); setErrReg("");
@@ -137,7 +107,6 @@ export default function WilayahSelect({ value = {}, onChange, required = false }
       .finally(() => setLoadingReg(false));
   }, [provId]);
 
-  // Sync regId dari value.city kalau regencies sudah ada
   useEffect(() => {
     if (value.city && regencies.length && !regId) {
       const found = regencies.find(
@@ -147,7 +116,7 @@ export default function WilayahSelect({ value = {}, onChange, required = false }
     }
   }, [value.city, regencies]);
 
-  // Fetch kecamatan kalau regId berubah
+  // Fetch kecamatan
   useEffect(() => {
     if (!regId) { setDistricts([]); setVillages([]); return; }
     setLoadingDist(true); setErrDist("");
@@ -157,7 +126,6 @@ export default function WilayahSelect({ value = {}, onChange, required = false }
       .finally(() => setLoadingDist(false));
   }, [regId]);
 
-  // Sync distId dari value.subdistrict kalau districts sudah ada
   useEffect(() => {
     if (value.subdistrict && districts.length && !distId) {
       const found = districts.find(
@@ -167,7 +135,7 @@ export default function WilayahSelect({ value = {}, onChange, required = false }
     }
   }, [value.subdistrict, districts]);
 
-  // Fetch kelurahan kalau distId berubah
+  // Fetch kelurahan
   useEffect(() => {
     if (!distId) { setVillages([]); return; }
     setLoadingVil(true); setErrVil("");
