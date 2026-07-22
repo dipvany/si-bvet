@@ -1,25 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { apiFetch } from "../services/api";
-​
-/**
- * DetailPenilaian — halaman detail penilaian kepuasan (feedback).
- * Dipakai bersama oleh Admin & Super Admin.
- * Menggantikan modal popup: kini tampil sebagai halaman penuh seperti menu lain.
- * Endpoint: GET /admin/feedbacks -> { feedbacks: [...] }
- */
-​
+
 const answersOf = (f) => f?.answers ?? f?.Answers ?? [];
 const questionTextOf = (a) =>
   a?.Question?.question_text ?? a?.question?.question_text ?? "Pertanyaan";
-​
+
 const avgOf = (f) => {
   const arr = answersOf(f);
   if (!arr.length) return 0;
   const sum = arr.reduce((t, a) => t + (a.rating ?? 0), 0);
   return sum / arr.length;
 };
-​
+
 const dateOf = (f) => f?.created_at ?? f?.CreatedAt ?? f?.createdAt ?? null;
 const fmtDate = (d) => {
   if (!d) return "-";
@@ -31,7 +24,7 @@ const fmtDate = (d) => {
     year: "numeric",
   });
 };
-​
+
 function Stars({ value, size = "w-4 h-4" }) {
   return (
     <div className="flex gap-0.5">
@@ -53,7 +46,7 @@ function Stars({ value, size = "w-4 h-4" }) {
     </div>
   );
 }
-​
+
 function Info({ label, value }) {
   return (
     <div className="min-w-0">
@@ -64,16 +57,16 @@ function Info({ label, value }) {
     </div>
   );
 }
-​
+
 export default function DetailPenilaian() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-​
+
   const [feedback, setFeedback] = useState(location.state?.feedback ?? null);
   const [loading, setLoading] = useState(!location.state?.feedback);
   const [error, setError] = useState("");
-​
+
   useEffect(() => {
     if (feedback) return;
     (async () => {
@@ -93,13 +86,12 @@ export default function DetailPenilaian() {
       }
     })();
   }, [id, feedback]);
-​
+
   const avg = useMemo(() => avgOf(feedback), [feedback]);
   const answers = answersOf(feedback);
-​
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(-1)}
@@ -125,13 +117,13 @@ export default function DetailPenilaian() {
           </p>
         </div>
       </div>
-​
+
       {error && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
           {error}
         </div>
       )}
-​
+
       {loading ? (
         <p className="text-sm text-gray-400 py-12 text-center">Memuat...</p>
       ) : !feedback ? (
@@ -166,7 +158,7 @@ export default function DetailPenilaian() {
               <Info label="Pekerjaan" value={feedback.occupation} />
             </div>
           </div>
-​
+
           {/* Jawaban Penilaian */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">

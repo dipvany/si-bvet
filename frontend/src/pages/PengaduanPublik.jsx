@@ -1,17 +1,9 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
-​
-/**
- * PengaduanPublik — formulir pengaduan TANPA login.
- *
- * Endpoint: POST /complaints (publik, tidak perlu Authorization header)
- * Field sesuai API resmi: fullname, email, subjects, description,
- * date_of_complaint, attachment (file, opsional).
- */
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
-​
-/* ── Field row ── */
+
 function Field({ label, required = true, children }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-6">
@@ -22,7 +14,7 @@ function Field({ label, required = true, children }) {
     </div>
   );
 }
-​
+
 function TextInput({ value, onChange, placeholder, type = "text" }) {
   return (
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
@@ -31,7 +23,7 @@ function TextInput({ value, onChange, placeholder, type = "text" }) {
         focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]" />
   );
 }
-​
+
 function TextAreaSection({ label, value, onChange, placeholder }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -45,7 +37,7 @@ function TextAreaSection({ label, value, onChange, placeholder }) {
     </div>
   );
 }
-​
+
 export default function PengaduanPublik() {
   const [form, setForm] = useState({
     fullname: "", email: "", id_number: "", phone: "",
@@ -57,9 +49,9 @@ export default function PengaduanPublik() {
   const [error, setError]           = useState("");
   const [success, setSuccess]       = useState(false);
   const fileRef                     = useRef();
-​
+
   const set = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.value }));
-​
+
   const validate = () => {
     if (!form.fullname)          return "Nama lengkap/perusahaan wajib diisi.";
     if (!form.email)             return "Email wajib diisi (agar kami dapat menghubungi Anda).";
@@ -72,13 +64,13 @@ export default function PengaduanPublik() {
     if (!agreed)                 return "Anda harus menyetujui pernyataan di bawah.";
     return null;
   };
-​
+
   const handleSubmit = async (e) => {
     e?.preventDefault();
     setError("");
     const err = validate();
     if (err) { setError(err); return; }
-​
+
     setLoading(true);
     try {
       const fd = new FormData();
@@ -86,17 +78,16 @@ export default function PengaduanPublik() {
       fd.append("email",             form.email);
       fd.append("id_number",         form.id_number);
       fd.append("phone",             form.phone);
-      fd.append("suggestion",        form.subjects);       // Sumbang Pikiran → endpoint "suggestion"
-      fd.append("description",       form.description);   // Uraian Pengaduan → endpoint "description"
+      fd.append("suggestion",        form.subjects);       
+      fd.append("description",       form.description);   
       fd.append("date_of_complaint", form.date_of_complaint);
       if (attachment) fd.append("attachment", attachment);
-​
-      // Endpoint publik — TIDAK butuh header Authorization
+
       const res = await fetch(`${API_BASE}/complaints`, {
         method: "POST",
         body:   fd,
       });
-​
+
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? d.message ?? "Gagal mengirim pengaduan.");
@@ -108,7 +99,7 @@ export default function PengaduanPublik() {
       setLoading(false);
     }
   };
-​
+
   const resetForm = () => {
     setSuccess(false);
     setForm({ fullname:"", email:"", id_number:"", phone:"", date_of_complaint:"", subjects:"", description:"", suggestion:"" });
@@ -116,8 +107,7 @@ export default function PengaduanPublik() {
     setAgreed(false);
     setError("");
   };
-​
-  /* ── Header sederhana (tanpa sidebar, karena halaman publik) ── */
+
   const PageHeader = () => (
     <div className="bg-[#233B6E] h-[68px] flex items-center px-5 sm:px-8">
       <div className="w-full flex items-center">
@@ -131,8 +121,7 @@ export default function PengaduanPublik() {
       </div>
     </div>
   );
-​
-  /* ── Success ── */
+
   if (success) {
     return (
       <div className="min-h-screen bg-[#F0F2F8]">
@@ -170,12 +159,12 @@ export default function PengaduanPublik() {
       </div>
     );
   }
-​
+
   return (
     <div className="min-h-screen bg-[#F0F2F8]">
       <PageHeader />
       <div className="max-w-4xl mx-auto px-5 sm:px-8 py-8 space-y-5">
-​
+
         <div className="flex items-center gap-3">
           <Link to="/"
             className="p-2 rounded-lg hover:bg-[#EEF0F8] text-[#233B6E] transition-colors flex-shrink-0">
@@ -186,46 +175,46 @@ export default function PengaduanPublik() {
           </Link>
           <h1 className="text-xl font-bold text-[#233B6E]">Pengaduan</h1>
         </div>
-​
+
         <p className="text-sm text-[#415F9D] leading-relaxed">
           Sampaikan pengaduan atau keluhan terkait layanan BVET Lampung. Pastikan email yang Anda
           isi aktif agar kami dapat menindaklanjuti.
         </p>
-​
+
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="h-1 bg-[#233B6E]" />
           <div className="p-6 space-y-5">
             <h2 className="text-lg font-bold text-[#233B6E] pb-3 border-b border-gray-100">
               Formulir Pengajuan Pengaduan
             </h2>
-​
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600
                 text-sm rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
-​
+
             <Field label="Nama Lengkap/Perusahaan">
               <TextInput value={form.fullname} onChange={set("fullname")}
                 placeholder="Masukkan Nama Lengkap Anda" />
             </Field>
-​
+
             <Field label="Email">
               <TextInput type="email" value={form.email} onChange={set("email")}
                 placeholder="Masukkan email aktif Anda" />
             </Field>
-​
+
             <Field label="NIK / No. Identitas">
               <TextInput value={form.id_number} onChange={set("id_number")}
                 placeholder="Masukkan NIK atau No. Identitas Anda" />
             </Field>
-​
+
             <Field label="No. Telepon">
               <TextInput type="tel" value={form.phone} onChange={set("phone")}
                 placeholder="Masukkan No. Telepon aktif Anda" />
             </Field>
-​
+
             <Field label="Tanggal Melapor">
               <input type="date" value={form.date_of_complaint}
                 onChange={set("date_of_complaint")}
@@ -233,24 +222,23 @@ export default function PengaduanPublik() {
                   text-sm text-gray-800 outline-none transition
                   focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]" />
             </Field>
-​
+
             <div className="border-t border-gray-100 pt-1" />
-​
+
             <TextAreaSection
               label="Uraian Pelayanan yang Tidak Sesuai dengan Standar Pelayanan"
               value={form.description}
               onChange={set("description")}
               placeholder="Jelaskan detail pengaduan Anda secara lengkap"
             />
-​
+
             <TextAreaSection
               label="Sumbang Pikiran, Saran, Gagasan, Permintaan Penyelesaian Masalah yang Diajukan"
               value={form.subjects}
               onChange={set("subjects")}
               placeholder="Contoh: Keterlambatan hasil pengujian"
             />
-​
-            {/* Lampiran — opsional sesuai dokumentasi API */}
+
             <div className="flex flex-col gap-1.5">
               <span className="text-sm text-[#415F9D] font-medium">
                 Lampiran Bukti<span className="text-red-500 ml-0.5">*</span>
@@ -279,7 +267,7 @@ export default function PengaduanPublik() {
                 Format: PDF, JPG, PNG. Maks 5MB.
               </p>
             </div>
-​
+
             <div className="flex items-start justify-between gap-4 pt-1">
               <p className="text-sm text-[#415F9D] font-medium leading-snug flex-1">
                 Saya menyatakan bahwa informasi yang saya berikan
@@ -303,7 +291,7 @@ export default function PengaduanPublik() {
             </div>
           </div>
         </div>
-​
+
         <div className="flex justify-end">
           <button onClick={handleSubmit} disabled={loading}
             className="flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]

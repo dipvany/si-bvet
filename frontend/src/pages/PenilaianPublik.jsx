@@ -2,18 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import FormPenilaian from "../components/FormPenilaian";
-​
-/**
- * PenilaianPublik — formulir penilaian kepuasan TANPA login.
- *
- * Endpoint publik (tanpa Authorization):
- *   GET  /feedbacks/questions/active
- *   POST /feedbacks
- */
+
 export default function PenilaianPublik() {
   const navigate = useNavigate();
   const [success, setSuccess] = useState(false);
-​
+
   const PageHeader = () => (
     <div className="bg-[#233B6E] h-[68px] flex items-center px-5 sm:px-8">
       <div className="w-full flex items-center">
@@ -29,7 +22,7 @@ export default function PenilaianPublik() {
       </div>
     </div>
   );
-​
+
   if (success) {
     return (
       <div className="min-h-screen bg-[#F0F2F8]">
@@ -76,7 +69,7 @@ export default function PenilaianPublik() {
       </div>
     );
   }
-​
+
   return (
     <div className="min-h-screen bg-[#F0F2F8]">
       <PageHeader />
@@ -109,7 +102,7 @@ export default function PenilaianPublik() {
             </p>
           </div>
         </div>
-​
+
         <FormPenilaian onSuccess={() => setSuccess(true)} />
       </div>
     </div>

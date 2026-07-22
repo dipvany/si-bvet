@@ -2,17 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import heroImg from "../assets/bvet.jpeg";
-​
-/* ── DATA ── */
+
 const NAV = [
   { label: "Beranda",        href: "#beranda" },
   { label: "Layanan",        href: "#layanan" },
   { label: "Tentang Kami",   href: "#tentang" },
   { label: "Alur Pengajuan", href: "#alur"    },
 ];
-​
+
 const SECTIONS = ["beranda", "layanan", "tentang", "alur", "lokasi"];
-​
+
 const SERVICES = [
   {
     title: "Pengajuan Sampel",
@@ -47,49 +46,47 @@ const STEPS = [
   { num: "03", title: "Verifikasi dan Proses",     desc: "Tim BVET memverifikasi berkas dan memproses permohonan Anda." },
   { num: "04", title: "Hasil dan Laporan",         desc: "Unduh hasil pengujian atau laporan langsung melalui portal SI-BVET." },
 ];
-​
+
 const STATS = [
   { val: "SNI ISO" },
   { val: "KAN",     sub: "Terakreditasi" },
   { val: "150+",    sub: "Jenis Pengujian" },
   { val: "35+",     sub: "Tahun Beroperasi" },
 ];
-​
+
 const CONTACTS = [
   { label: "Alamat",           val: "Jl. Untung Suropati No.2, Rajabasa, Bandar Lampung 35144" },
   { label: "Email",            val: "bvetlampung@pertanian.go.id" },
   { label: "Telepon",          val: "(0721) 783852" },
   { label: "Jam Operasional",  val: "Senin – Jumat: 07.30 – 16.00 WIB" },
 ];
-​
-/* ── STYLES ── */
+
 const STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
   *, body { font-family: 'Plus Jakarta Sans', sans-serif; }
   html { scroll-behavior: smooth; }
-​
+
   .nav-link { position: relative; }
   .nav-link::after {
     content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
     height: 2px; background: #F5C400; border-radius: 2px; opacity: 0;
   }
   .nav-link.active::after { opacity: 1; }
-​
+
   .card-hover { transition: transform .28s ease, box-shadow .28s ease; }
   .card-hover:hover { transform: translateY(-7px); box-shadow: 0 22px 52px rgba(35,59,110,.15); }
   .card-hover:hover .arrow { transform: translateX(4px); }
   .arrow { transition: transform .22s ease; }
-​
+
   .step-card { transition: border-color .22s, box-shadow .22s; }
   .step-card:hover { border-color: #F5C400; box-shadow: 0 8px 28px rgba(245,196,0,.12); }
-​
+
   @keyframes up { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
   .a1 { animation: up .75s .10s both; }
   .a2 { animation: up .75s .28s both; }
   .a3 { animation: up .75s .46s both; }
 `;
-​
-/* ── HOOK ── */
+
 function useScrollSpy() {
   const [active, setActive] = useState("beranda");
   useEffect(() => {
@@ -112,24 +109,23 @@ function useScrollSpy() {
   }, []);
   return active;
 }
-​
-/* ── NAVBAR ── */
+
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const active = useScrollSpy();
-​
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
-​
+
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
-​
+
   const NavLinks = ({ mobile = false }) => NAV.map(n => {
     const isActive = active === n.href.slice(1);
     return (
@@ -143,13 +139,13 @@ function Navbar() {
       </a>
     );
   });
-​
+
   return (
     <>
       <style>{STYLE}</style>
       <nav className={`fixed top-0 inset-x-0 z-50 bg-[#233B6E] transition-all duration-300 ${scrolled ? "shadow-[0_4px_30px_rgba(0,0,0,0.3)]" : ""}`}>
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[68px] flex items-center justify-between">
-​
+
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
             <img src={logo} alt="SI-BVET" className="h-10 w-auto object-contain" />
             <div className="hidden sm:flex flex-col leading-tight">
@@ -157,20 +153,20 @@ function Navbar() {
               <span className="text-white/55 text-[11px]">Laboratorium Balai Veteriner Lampung</span>
             </div>
           </Link>
-​
+
           <div className="hidden lg:flex items-center gap-0.5">
             <NavLinks />
             <div className="w-px h-5 bg-white/20 mx-3" />
             <Link to="/login" className="text-sm font-semibold text-white/85 hover:text-white border border-white/30 hover:border-white/60 px-4 py-1.5 rounded-md transition-all">Masuk</Link>
             <Link to="/register" className="ml-2 text-sm font-bold text-[#233B6E] bg-[#F5C400] hover:bg-[#ffd020] px-5 py-1.5 rounded-md transition-colors shadow-sm">Daftar</Link>
           </div>
-​
+
           <button onClick={() => setOpen(true)} className="lg:hidden text-white/80 hover:text-white p-1.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-6 h-6"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
         </div>
       </nav>
-​
+
       {/* Mobile drawer */}
       <div className={`fixed inset-0 z-[60] ${open ? "pointer-events-auto" : "pointer-events-none"}`}>
         <div onClick={() => setOpen(false)} className={`absolute inset-0 bg-black/55 backdrop-blur-sm transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"}`} />
@@ -197,8 +193,7 @@ function Navbar() {
     </>
   );
 }
-​
-/* ── HERO ── */
+
 function Hero() {
   return (
     <section id="beranda" className="relative min-h-screen flex items-center pt-[68px] overflow-hidden">
@@ -220,7 +215,7 @@ function Hero() {
     </section>
   );
 }
-​
+
 /* ── LAYANAN ── */
 function Services() {
   const navigate = useNavigate();
@@ -238,8 +233,7 @@ function Services() {
             <div className="w-2 h-1 rounded-full bg-[#D3D6DB]" />
           </div>
         </div>
-​
-        {/* Slider horizontal — semua ukuran layar */}
+
         <div className="relative group">
           <div
             ref={scrollRef}
@@ -274,8 +268,7 @@ function Services() {
             </div>
           ))}
           </div>
-​
-          {/* Panah geser - muncul saat hover, penanda bisa digeser */}
+
           <button
             type="button"
             onClick={() => scroll(-1)}
@@ -301,7 +294,7 @@ function Services() {
     </section>
   );
 }
-​
+
 /* ── TENTANG ── */
 function About() {
   const features = [
@@ -320,7 +313,7 @@ function About() {
       <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-[#EFF0F4] pointer-events-none" />
       <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-​
+
           <div className="relative">
             <div className="bg-[#233B6E] rounded-3xl overflow-hidden relative">
               <svg className="absolute inset-0 w-full h-full opacity-[0.06]">
@@ -346,7 +339,7 @@ function About() {
             </div>
             <div className="absolute -bottom-4 -right-4 -z-10 w-full h-full rounded-3xl border-2 border-[#F5C400]/30" />
           </div>
-​
+
           <div>
             <p className="text-xs font-bold text-[#415F9D] tracking-[0.2em] uppercase mb-3">Profil</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#233B6E] mb-5 leading-tight">Tentang Kami</h2>
@@ -372,7 +365,7 @@ function About() {
     </section>
   );
 }
-​
+
 /* ── ALUR ── */
 function Steps() {
   return (
@@ -382,7 +375,7 @@ function Steps() {
           <p className="text-xs font-bold text-[#415F9D] tracking-[0.2em] uppercase mb-3">Tata Cara</p>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#233B6E]">Alur Pengajuan</h2>
         </div>
-​
+
         {/* Desktop */}
         <div className="hidden lg:grid grid-cols-4 gap-6 relative">
           <div className="absolute top-[3.2rem] left-[15%] right-[15%] border-t-2 border-dashed border-[#D3D6DB] z-0" />
@@ -397,7 +390,7 @@ function Steps() {
             </div>
           ))}
         </div>
-​
+
         {/* Mobile */}
         <div className="lg:hidden space-y-4">
           {STEPS.map(s => (
@@ -417,7 +410,7 @@ function Steps() {
     </section>
   );
 }
-​
+
 /* ── LOKASI ── */
 function Location() {
   return (
@@ -450,7 +443,7 @@ function Location() {
     </section>
   );
 }
-​
+
 /* ── FOOTER ── */
 function Footer() {
   const socials = [
@@ -462,7 +455,7 @@ function Footer() {
     <footer className="bg-[#233B6E]">
       <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-16 pb-8">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
-​
+
           <div className="sm:col-span-2 lg:col-span-2">
             <div className="flex items-center gap-3 mb-5">
               <img src={logo} alt="SI-BVET" className="h-12 w-auto object-contain" />
@@ -484,7 +477,7 @@ function Footer() {
               ))}
             </div>
           </div>
-​
+
           <div>
             <h4 className="text-white text-sm font-bold uppercase tracking-widest mb-5">Tautan</h4>
             <ul className="space-y-2.5">
@@ -501,7 +494,7 @@ function Footer() {
               ))}
             </ul>
           </div>
-​
+
           <div>
             <h4 className="text-white text-sm font-bold uppercase tracking-widest mb-5">Kontak</h4>
             <ul className="space-y-3 text-sm text-white/55">
@@ -511,7 +504,7 @@ function Footer() {
               <li>Senin – Jumat: 07.30 – 16.00 WIB</li>
             </ul>
           </div>
-​
+
         </div>
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/35">
           <p>© {new Date().getFullYear()} Balai Veteriner Lampung — Kementerian Pertanian RI. Hak cipta dilindungi.</p>
@@ -521,7 +514,7 @@ function Footer() {
     </footer>
   );
 }
-​
+
 /* ── ROOT ── */
 export default function LandingPage() {
   return (

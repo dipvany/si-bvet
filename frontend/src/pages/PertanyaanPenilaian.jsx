@@ -1,34 +1,24 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
-​
-/**
- * PertanyaanPenilaian — CRUD pertanyaan penilaian (feedback question).
- * Dipakai bersama oleh Admin & Super Admin.
- *
- * Endpoint (RequireRole admin + superadmin):
- *   GET    /admin/feedbacks/questions       -> { questions: [{ id, question_text, is_active }] }
- *   POST   /admin/feedbacks/questions       -> body ARRAY [{ question_text, is_active }]
- *   PATCH  /admin/feedbacks/questions/:id   -> body { question_text, is_active }
- *   DELETE /admin/feedbacks/questions/:id
- */
+
 export default function PertanyaanPenilaian() {
   const navigate = useNavigate();
-​
+
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-​
+
   const [newText, setNewText] = useState("");
   const [adding, setAdding] = useState(false);
-​
+
   const [editId, setEditId] = useState(null);
   const [editText, setEditText] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
-​
+
   const [busyId, setBusyId] = useState(null);
-​
+
   const load = async () => {
     setLoading(true);
     setError("");
@@ -44,16 +34,16 @@ export default function PertanyaanPenilaian() {
       setLoading(false);
     }
   };
-​
+
   useEffect(() => {
     load();
   }, []);
-​
+
   const flash = (msg) => {
     setNotice(msg);
     setTimeout(() => setNotice(""), 2500);
   };
-​
+
   const handleAdd = async () => {
     if (!newText.trim()) return setError("Pertanyaan tidak boleh kosong.");
     setAdding(true);
@@ -76,13 +66,13 @@ export default function PertanyaanPenilaian() {
       setAdding(false);
     }
   };
-​
+
   const startEdit = (q) => {
     setEditId(q.id);
     setEditText(q.question_text);
     setError("");
   };
-​
+
   const handleSaveEdit = async (q) => {
     if (!editText.trim()) return setError("Pertanyaan tidak boleh kosong.");
     setSavingEdit(true);
@@ -109,7 +99,7 @@ export default function PertanyaanPenilaian() {
       setSavingEdit(false);
     }
   };
-​
+
   const handleToggleActive = async (q) => {
     setBusyId(q.id);
     setError("");
@@ -137,7 +127,7 @@ export default function PertanyaanPenilaian() {
       setBusyId(null);
     }
   };
-​
+
   const handleDelete = async (q) => {
     if (!window.confirm(`Hapus pertanyaan ini?\n\n"${q.question_text}"`)) return;
     setBusyId(q.id);
@@ -158,10 +148,9 @@ export default function PertanyaanPenilaian() {
       setBusyId(null);
     }
   };
-​
+
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate(-1)}
@@ -190,7 +179,7 @@ export default function PertanyaanPenilaian() {
           </p>
         </div>
       </div>
-​
+
       {notice && (
         <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
           {notice}
@@ -201,7 +190,7 @@ export default function PertanyaanPenilaian() {
           {error}
         </div>
       )}
-​
+
       {/* Tambah pertanyaan */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-5">
         <h2 className="font-bold text-[#233B6E] text-sm mb-3">
@@ -236,7 +225,7 @@ export default function PertanyaanPenilaian() {
           </button>
         </div>
       </div>
-​
+
       {/* Daftar pertanyaan */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-4">
@@ -245,7 +234,7 @@ export default function PertanyaanPenilaian() {
             {questions.length} pertanyaan
           </span>
         </div>
-​
+
         {loading ? (
           <p className="text-sm text-gray-400 py-8 text-center">Memuat...</p>
         ) : questions.length === 0 ? (
@@ -262,7 +251,7 @@ export default function PertanyaanPenilaian() {
                 <span className="w-6 text-sm font-bold text-gray-300">
                   {idx + 1}
                 </span>
-​
+
                 {editId === q.id ? (
                   <input
                     type="text"
@@ -275,7 +264,7 @@ export default function PertanyaanPenilaian() {
                     {q.question_text}
                   </span>
                 )}
-​
+
                 <span
                   className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
                     q.is_active
@@ -285,7 +274,7 @@ export default function PertanyaanPenilaian() {
                 >
                   {q.is_active ? "Aktif" : "Nonaktif"}
                 </span>
-​
+
                 <div className="flex items-center gap-1.5">
                   {editId === q.id ? (
                     <>
