@@ -10,9 +10,6 @@ import patologiImg     from "../../assets/patologi.png";
 import bakteriologiImg from "../../assets/bakteriologi.png";
 import kesmavetImg     from "../../assets/kesmavet.png";
 
-/* Mapping nama unit lab → gambar masing-masing.
-   Pencocokan tidak peka huruf besar/kecil dan partial match,
-   supaya "Bakteriologi", "Unit Bakteriologi", dll tetap kena. */
 const UNIT_IMAGES = [
   { keyword: "virologi",     img: virologiImg     },
   { keyword: "parasitologi", img: parasitologiImg },
@@ -25,7 +22,7 @@ const UNIT_IMAGES = [
 const getUnitImage = (unitName = "") => {
   const lower = unitName.toLowerCase();
   const match = UNIT_IMAGES.find(u => lower.includes(u.keyword));
-  return match ? match.img : logo; // fallback ke logo kalau tidak match
+  return match ? match.img : logo;
 };
 
 const rupiah = (n) =>
@@ -33,7 +30,6 @@ const rupiah = (n) =>
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
 
-/* ── Detail modal ── */
 function DetailModal({ service, onClose, onCartChange }) {
   if (!service) return null;
   const [inCart, setInCart] = useState(isInCart(service.id));
@@ -114,7 +110,6 @@ function DetailModal({ service, onClose, onCartChange }) {
   );
 }
 
-/* ── Service card ── */
 function ServiceCard({ service, onSelect, onCartChange }) {
   const [inCart, setInCart] = useState(isInCart(service.id));
 
@@ -166,20 +161,17 @@ function ServiceCard({ service, onSelect, onCartChange }) {
   );
 }
 
-/* ── Unit Lab card ── */
 function UnitCard({ unit, count, onClick }) {
   return (
     <div onClick={onClick}
       className="flex-shrink-0 w-36 rounded-xl overflow-hidden cursor-pointer
         border-2 border-[#233B6E]/20 hover:border-[#233B6E] hover:shadow-lg
         transition-all duration-200 group select-none">
-      {/* Area gambar — foto unit lab masing-masing, full cover */}
       <div className="w-full h-28 bg-[#EEF0F8] overflow-hidden">
         <img src={getUnitImage(unit)} alt={unit}
           className="w-full h-full object-cover
             group-hover:scale-105 transition-transform duration-300" />
       </div>
-      {/* Label */}
       <div className="bg-white px-3 py-2.5 flex items-center justify-between gap-1
         group-hover:bg-[#EEF0F8] transition-colors">
         <span className="text-xs font-bold text-[#233B6E] leading-tight flex-1 min-w-0">
@@ -197,7 +189,6 @@ function UnitCard({ unit, count, onClick }) {
   );
 }
 
-/* ── Main page ── */
 export default function CustomerKatalogPengujian() {
   const navigate              = useNavigate();
   const [services, setServices] = useState([]);
@@ -222,13 +213,12 @@ export default function CustomerKatalogPengujian() {
     }
   };
 
-  // Daftar unit lab unik
+  // Daftar unit lab
   const units = useMemo(() =>
     [...new Set(services.map(s => s.unit_lab).filter(Boolean))],
     [services]
   );
 
-  // Hitung jumlah per unit
   const unitCount = useMemo(() => {
     const map = {};
     services.forEach(s => {
@@ -237,7 +227,7 @@ export default function CustomerKatalogPengujian() {
     return map;
   }, [services]);
 
-  // Filter katalog bawah hanya by search (tidak ikut unit)
+  // Filter katalog
   const filteredServices = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return services;
@@ -258,7 +248,7 @@ export default function CustomerKatalogPengujian() {
           text-sm rounded-xl px-4 py-3">{error}</div>
       )}
 
-      {/* ── SECTION 1: Laboratorium — scroll horizontal ── */}
+      {/* Laboratorium */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm
         overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
@@ -291,7 +281,7 @@ export default function CustomerKatalogPengujian() {
         </div>
       </div>
 
-      {/* ── SECTION 2: Katalog Jenis Uji Sampel ── */}
+      {/* Katalog Jenis Uji Sampel */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm
         overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
@@ -300,7 +290,6 @@ export default function CustomerKatalogPengujian() {
             <p className="text-sm font-bold text-[#233B6E]">
               Katalog Jenis Uji Sampel
             </p>
-            {/* Search */}
             <div className="relative">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="1.8" strokeLinecap="round"
@@ -316,8 +305,6 @@ export default function CustomerKatalogPengujian() {
                   focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]" />
             </div>
           </div>
-
-          {/* Grid */}
           {loading ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5
               xl:grid-cols-6 gap-3">

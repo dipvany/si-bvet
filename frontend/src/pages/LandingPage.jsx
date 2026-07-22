@@ -189,7 +189,7 @@ function Navbar() {
           </div>
           <nav className="flex-1 flex flex-col px-4 py-5 gap-0.5"><NavLinks mobile /></nav>
           <div className="px-4 pb-8 flex flex-col gap-3">
-            <Link to="/login" onClick={() => setOpen(false)} className="text-center border border-white/30 hover:bg-white/10 text-white text-sm font-semibold py-2.5 rounded-lg transition-all">Login</Link>
+            <Link to="/login" onClick={() => setOpen(false)} className="text-center border border-white/30 hover:bg-white/10 text-white text-sm font-semibold py-2.5 rounded-lg transition-all">Masuk</Link>
             <Link to="/register" onClick={() => setOpen(false)} className="text-center bg-[#F5C400] hover:bg-[#ffd020] text-[#233B6E] text-sm font-bold py-2.5 rounded-lg transition-colors shadow">Daftar</Link>
           </div>
         </aside>

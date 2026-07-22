@@ -60,14 +60,12 @@ export default function Keranjang() {
                 <div key={s.id}
                   className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50
                     transition-colors">
-                  {/* Logo */}
                   <div className="w-14 h-14 bg-[#EEF0F8] rounded-xl flex items-center
                     justify-center flex-shrink-0 p-2">
                     <img src={logo} alt="BVET"
                       className="h-10 w-auto object-contain opacity-70" />
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[#233B6E] text-sm leading-snug
                       truncate">
@@ -81,7 +79,6 @@ export default function Keranjang() {
                     )}
                   </div>
 
-                  {/* Harga + hapus */}
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
                     <span className="text-sm font-extrabold text-[#233B6E]">
                       {rupiah(s.price)}
@@ -96,7 +93,6 @@ export default function Keranjang() {
               ))}
             </div>
 
-            {/* Total */}
             <div className="px-5 py-4 border-t border-gray-200 bg-gray-50
               flex items-center justify-between">
               <span className="text-sm font-bold text-[#233B6E]">Total Estimasi</span>
@@ -106,7 +102,6 @@ export default function Keranjang() {
             </div>
           </div>
 
-          {/* Aksi */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <button onClick={() => navigate("/customer/katalog-pengujian")}
               className="flex items-center gap-2 text-sm font-semibold text-[#233B6E]

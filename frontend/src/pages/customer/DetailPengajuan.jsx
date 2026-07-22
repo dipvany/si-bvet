@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import { resolveFileUrl } from "../../utils/fileUrl";
-​
+
 const fmtDate = (v) => {
   if (!v) return "-";
   return new Date(v).toLocaleDateString("id-ID", {
@@ -13,8 +13,7 @@ const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
-​
-/* ── Row info ── */
+
 function Row({ label, value }) {
   return (
     <div>
@@ -23,8 +22,7 @@ function Row({ label, value }) {
     </div>
   );
 }
-​
-/* ── Card wrapper ── */
+
 function Card({ title, accent = "#233B6E", children }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -40,8 +38,7 @@ function Card({ title, accent = "#233B6E", children }) {
     </div>
   );
 }
-​
-/* ── Status badge ── */
+
 const STATUS_MAP = {
   pending:               { label: "Menunggu",                       cls: "bg-gray-100   text-gray-600",     dot: "bg-gray-400"    },
   pending_verification:  { label: "Menunggu Verifikasi",            cls: "bg-yellow-100 text-yellow-700",   dot: "bg-yellow-500"  },
@@ -57,7 +54,7 @@ const STATUS_MAP = {
   completed:             { label: "Selesai",                        cls: "bg-green-100  text-green-700",    dot: "bg-green-500"   },
   rejected:              { label: "Ditolak",                        cls: "bg-red-100    text-red-600",      dot: "bg-red-500"     },
 };
-​
+
 function StatusBadge({ status }) {
   const cfg = STATUS_MAP[status] ?? { label: status, cls: "bg-gray-100 text-gray-600", dot: "bg-gray-400" };
   return (
@@ -67,10 +64,9 @@ function StatusBadge({ status }) {
     </span>
   );
 }
-​
-/* ── Icons per step timeline ── */
+
 const TIMELINE_ICONS = [
-  // 1. Pengajuan dibuat — dokumen
+  // 1. Pengajuan dibuat
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -78,56 +74,56 @@ const TIMELINE_ICONS = [
     <line x1="12" y1="13" x2="12" y2="18"/>
     <line x1="9" y1="15.5" x2="15" y2="15.5"/>
   </svg>,
-  // 2. Diverifikasi admin — centang dalam lingkaran
+
+  // 2. Diverifikasi admin
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
     <polyline points="22 4 12 14.01 9 11.01"/>
   </svg>,
-  // 3. Menunggu pembayaran — kartu/billing
+
+  // 3. Menunggu pembayaran
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
     <line x1="1" y1="10" x2="23" y2="10"/>
   </svg>,
-  // 4. Sedang diproses lab — tabung reaksi
+
+  // 4. Sedang diproses lab
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M9 2v6.5L4.5 17a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L15 8.5V2"/>
     <path d="M9 2h6"/><path d="M6.5 14h11"/>
   </svg>,
-  // 5. LHU tersedia — dokumen + centang
+
+  // 5. LHU tersedia 
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
     <polyline points="14 2 14 8 20 8"/>
     <path d="M9 15l2 2 4-4"/>
   </svg>,
-  // 6. Berikan Penilaian — bintang
+
+  // 6. Berikan Penilaian
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </svg>,
 ];
-​
-/* ── Timeline tracking dari API — horizontal solid filled ── */
+
 function TrackingTimeline({ submissionId, isDone: submissionDone }) {
   const [timeline, setTimeline] = useState([]);
   const [loading,  setLoading]  = useState(true);
-​
+
   useEffect(() => {
     apiFetch(`/customer/submissions/${submissionId}/tracking`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d) {
           const rawSteps = d.data?.timeline ?? [];
-          // Saat pengajuan selesai, semua tahapan proses (termasuk "LHU
-          // tersedia") ditandai selesai agar lingkaran biru tua penuh dan
-          // garisnya tersambung sampai "Berikan Penilaian".
           const steps = submissionDone
             ? rawSteps.map((s) => ({ ...s, status: "done" }))
             : rawSteps;
-          // Tambah step ke-6 "Berikan Penilaian" secara manual
           setTimeline([
             ...steps,
             {
@@ -141,7 +137,7 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [submissionId, submissionDone]);
-​
+
   if (loading) return (
     <div className="flex items-center gap-2 text-gray-400 text-xs py-3">
       <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
@@ -151,27 +147,25 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
       Memuat tracking...
     </div>
   );
-​
+
   if (!timeline.length) return null;
-​
+
   return (
     <>
-      {/* ── Mobile: timeline VERTIKAL biar label lega & tidak saling timpa ── */}
+      {/* Mobile Tracking */}
       <div className="lg:hidden">
         {timeline.map((t, i) => {
           const isDone    = t.status === "done" || t.status === "completed";
           const isCurrent = t.status === "current";
           const isLast    = i === timeline.length - 1;
-​
+
           return (
             <div key={i} className="relative flex gap-3 pb-5 last:pb-0">
-              {/* Garis vertikal penghubung */}
               {!isLast && (
                 <div className={`absolute left-5 top-10 bottom-0 w-0.5 z-0
                   ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
               )}
-​
-              {/* Circle */}
+
               <div className={`relative z-10 w-10 h-10 rounded-full flex items-center
                 justify-center flex-shrink-0 transition-all
                 ${isDone
@@ -181,8 +175,7 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
                     : "bg-white border-2 border-gray-200 text-gray-300"}`}>
                 {TIMELINE_ICONS[i] ?? <span className="text-xs font-bold">{t.step}</span>}
               </div>
-​
-              {/* Label + tanggal */}
+
               <div className="pt-1.5 min-w-0">
                 <p className={`text-sm font-semibold leading-tight
                   ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
@@ -196,8 +189,8 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
           );
         })}
       </div>
-​
-      {/* ── Desktop: timeline HORIZONTAL ── */}
+
+      {/* Desktop Tracking */}
       <div className="hidden lg:block w-full pb-1">
         <div className="flex items-start justify-between">
           {timeline.map((t, i) => {
@@ -205,23 +198,20 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
             const isCurrent  = t.status === "current";
             const isLast     = i === timeline.length - 1;
             const lineBeforeDone = isDone || isCurrent;
-​
+
             return (
               <div key={i}
                 className="relative flex flex-col items-center flex-1 min-w-0">
-​
-                {/* Garis kiri */}
+
                 {i > 0 && (
                   <div className={`absolute top-[18px] right-1/2 w-1/2 h-1 z-0
                     ${lineBeforeDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
                 )}
-                {/* Garis kanan */}
                 {!isLast && (
                   <div className={`absolute top-[18px] left-1/2 w-1/2 h-1 z-0
                     ${isDone ? "bg-[#233B6E]" : "bg-gray-200"}`} />
                 )}
-​
-                {/* Circle */}
+
                 <div className={`relative z-10 w-10 h-10 rounded-full flex items-center
                   justify-center flex-shrink-0 transition-all
                   ${isDone
@@ -231,15 +221,13 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
                       : "bg-white border-2 border-gray-200 text-gray-300"}`}>
                   {TIMELINE_ICONS[i] ?? <span className="text-xs font-bold">{t.step}</span>}
                 </div>
-​
-                {/* Label */}
+
                 <p className={`relative z-10 w-full text-[10px] text-center mt-2 leading-tight px-1
                   font-semibold break-words
                   ${isDone || isCurrent ? "text-[#233B6E]" : "text-gray-400"}`}>
                   {t.label}
                 </p>
-​
-                {/* Tanggal */}
+
                 {t.date && (
                   <p className="relative z-10 text-[10px] text-gray-400 mt-0.5 text-center">
                     {fmtDate(t.date)}
@@ -253,8 +241,7 @@ function TrackingTimeline({ submissionId, isDone: submissionDone }) {
     </>
   );
 }
-​
-/* ── Collapsible section ── */
+
 function Section({ title, children }) {
   return (
     <div className="border-t border-gray-100">
@@ -263,14 +250,11 @@ function Section({ title, children }) {
     </div>
   );
 }
-​
-/* ══════════════════════════════════════════
-   HALAMAN UTAMA
-══════════════════════════════════════════ */
+
 export default function DetailPengajuan() {
   const { id }   = useParams();
   const navigate = useNavigate();
-​
+
   const [sub,         setSub]         = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
@@ -281,17 +265,16 @@ export default function DetailPengajuan() {
   const proofRef = useRef();
   const [openReview, setOpenReview] = useState(true);
   const [profile, setProfile] = useState(null);
-​
+
   useEffect(() => { fetchAll(); }, [id]);
-​
-  // Endpoint detail customer tidak mengirim data pelanggan, jadi ambil dari profil.
+
   useEffect(() => {
     apiFetch("/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setProfile(data.profile ?? data); })
       .catch(() => {});
   }, []);
-​
+
   const fetchAll = async () => {
     setLoading(true); setError("");
     try {
@@ -303,16 +286,13 @@ export default function DetailPengajuan() {
       const json = await res.json();
       const subData = json.data ?? json;
       setSub(subData);
-​
-      // Fetch billing terpisah jika belum ada di response submission
-      // API: GET /customer/billings/:submission_id
+
       if (!subData.billing) {
         try {
           const bRes = await apiFetch(`/customer/billings/${id}`);
           if (bRes.ok) {
             const bJson = await bRes.json();
             const bill  = bJson.billing ?? bJson.data ?? bJson;
-            // Pastikan bukan object kosong
             if (bill && bill.ebilling_code) {
               setSub(prev => ({ ...prev, billing: bill }));
             }
@@ -325,7 +305,7 @@ export default function DetailPengajuan() {
       setLoading(false);
     }
   };
-​
+
   const handleUploadProof = async () => {
     if (!proofFile) return;
     if (proofFile.size > 5 * 1024 * 1024) {
@@ -353,7 +333,7 @@ export default function DetailPengajuan() {
       setUploading(false);
     }
   };
-​
+
   const handleDownloadLHU = async () => {
     setDownloading(true);
     try {
@@ -369,7 +349,7 @@ export default function DetailPengajuan() {
       setDownloading(false);
     }
   };
-​
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -381,7 +361,7 @@ export default function DetailPengajuan() {
       </div>
     </div>
   );
-​
+
   if (error) return (
     <div className="max-w-2xl mx-auto mt-10">
       <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-5 py-4 flex items-center justify-between">
@@ -390,16 +370,13 @@ export default function DetailPengajuan() {
       </div>
     </div>
   );
-​
+
   const status        = sub?.process_status;
-  // user_info bisa ada di root atau di dalam "user" / "user_info"
-  // Data pelanggan: endpoint detail customer tidak mengirim user_info,
-  // jadi pakai profil user yang login sebagai sumbernya.
+
   const prof = profile ?? {};
   const profUser = prof.fullname || prof.email ? prof : (prof.User ?? {});
   const profCust = prof.fullname || prof.email ? (prof.customer ?? {}) : prof;
   const info = sub?.user_info ?? sub?.user ?? (profile ? profUser : null);
-  // data customer detail (alamat, PIC, dll) bisa nested di dalam info
   const cust = info?.customer ?? info?.Customer ?? info?.profile ?? profCust;
   const samples       = sub?.samples ?? [];
   const billing       = sub?.billing;
@@ -408,8 +385,7 @@ export default function DetailPengajuan() {
   const isAwaitingVerif = status === "awaiting_verification";
   const attRaw        = sub?.attachment_doc;
   const attDocs       = Array.isArray(attRaw) ? attRaw : (attRaw ? [attRaw] : []);
-​
-  // Estimasi harga dari sampel x layanan pengujian (harga x jumlah sampel)
+
   const estLines = (() => {
     const map = new Map();
     samples.forEach((s) => {
@@ -426,11 +402,10 @@ export default function DetailPengajuan() {
     return Array.from(map.values());
   })();
   const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
-​
+
   return (
     <div className="space-y-4">
-​
-      {/* Breadcrumb */}
+
       <button onClick={() => navigate("/customer/pengajuan-saya")}
         className="flex items-center gap-1.5 text-sm text-[#233B6E] font-semibold hover:underline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
@@ -439,16 +414,13 @@ export default function DetailPengajuan() {
         </svg>
         Kembali ke Pengajuan Saya
       </button>
-​
-      {/* ══ 1. TRACKING TIMELINE ══ */}
+
+      {/* 1. Tracking Timeline */}
       <Card title={undefined}>
-                        {/* Header tiket */}
         <div className="pb-4 border-b border-gray-100">
-          {/* Keterangan status di pojok kanan atas */}
           <div className="flex justify-end mb-2">
             <StatusBadge status={status} />
           </div>
-          {/* No. Tiket & No. EPI — bertumpuk di mobile, sejajar di desktop */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <p className="text-xs text-gray-400">No. Tiket</p>
@@ -464,7 +436,7 @@ export default function DetailPengajuan() {
             </div>
           </div>
         </div>
-​
+
         {/* Timeline */}
         <div>
           <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-4">
@@ -473,8 +445,8 @@ export default function DetailPengajuan() {
           <TrackingTimeline submissionId={id} isDone={isDone} />
         </div>
       </Card>
-​
-      {/* ══ 2. INFORMASI PENGAJUAN ══ */}
+
+      {/* 2. Informasi Pengajuan */}
       <Card title="Informasi Pengajuan">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Row label="Jenis Layanan"    value={sub?.type_service} />
@@ -488,13 +460,12 @@ export default function DetailPengajuan() {
           <Row label="Catatan"          value={sub?.notes} />
         </div>
       </Card>
-​
-            {/* == 3. INFORMASI TAGIHAN == */}
+
+      {/* 3. Informasi Tagihan */}
       {billing && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="h-1 bg-[#3B82F6]" />
           <div className="p-5 space-y-4">
-            {/* Header: judul kiri + status pembayaran di pojok kanan sebaris */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider">
                 Informasi Tagihan
@@ -503,21 +474,21 @@ export default function DetailPengajuan() {
                 {billing.payment_status === "paid" ? "✓ Lunas" : "⏳ Belum Dibayar"}
               </span>
             </div>
-​
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Row label="Kode E-Billing"  value={billing.ebilling_code} />
               <Row label="Total Tagihan"   value={rupiah(billing.total_amount)} />
               <Row label="No. Registrasi"  value={sub?.no_registration} />
               <Row label="No. EPI"         value={sub?.no_epi} />
             </div>
-​
+
             {/* Rincian estimasi harga pengujian */}
             {estLines.length > 0 && (
               <div className="bg-[#F6F7FB] rounded-xl p-4">
                 <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-2">
                   Estimasi Harga Pengujian
                 </p>
-                {/* Mobile: daftar bertumpuk biar tak perlu geser */}
+
                 <div className="sm:hidden divide-y divide-gray-200/70">
                   {estLines.map((l, i) => (
                     <div key={i} className="py-2.5 flex justify-between gap-3">
@@ -537,8 +508,7 @@ export default function DetailPengajuan() {
                     <span className="text-sm font-semibold text-[#233B6E] whitespace-nowrap">{rupiah(billing.total_amount)}</span>
                   </div>
                 </div>
-​
-                {/* Desktop: tabel */}
+
                 <table className="hidden sm:table w-full text-sm">
                   <thead>
                     <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-200">
@@ -572,8 +542,8 @@ export default function DetailPengajuan() {
                 <p className="text-[11px] text-gray-400 mt-2 italic">*Estimasi berdasarkan tarif layanan &amp; jumlah sampel. Total tagihan final ditetapkan admin.</p>
               </div>
             )}
-​
-            {/* Dokumen: invoice & bukti pembayaran tetap tampil walau sudah lunas/terverifikasi */}
+
+            {/* Dokumen invoice & bukti pembayaran */}
             {(billing.invoice_doc || billing.proof_payment) && (
               <div className="flex items-center gap-4 flex-wrap pt-1">
                 {billing.invoice_doc && (
@@ -603,8 +573,8 @@ export default function DetailPengajuan() {
           </div>
         </div>
       )}
-​
-      {/* ══ 4. UPLOAD BUKTI PEMBAYARAN ══ */}
+
+      {/* 4. Upload Bukri Pembayaran */}
       {isAwaitingPay && billing && billing.payment_status !== "paid" && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
           <div>
@@ -645,7 +615,7 @@ export default function DetailPengajuan() {
           )}
         </div>
       )}
-​
+
       {/* Notif menunggu verifikasi pembayaran */}
       {isAwaitingVerif && (
         <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-5 flex items-start gap-3">
@@ -663,8 +633,8 @@ export default function DetailPengajuan() {
           </div>
         </div>
       )}
-​
-      {/* ══ 5. UNDUH LHU & BERI PENILAIAN ══ */}
+
+      {/* 5. Unduh LHU & Penilaian */}
       {isDone && (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5 space-y-3">
           <div className="flex items-center gap-2">
@@ -711,8 +681,8 @@ export default function DetailPengajuan() {
           </div>
         </div>
       )}
-​
-      {/* ══ 6. TINJAUAN LENGKAP (Step 1–3) ══ */}
+
+      {/* 6. Tinjauan */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#415F9D]" />
                 <button onClick={() => setOpenReview((o) => !o)}
@@ -728,11 +698,11 @@ export default function DetailPengajuan() {
             </svg>
           </span>
         </button>
-​
+
         {openReview && (
         <div className="px-5 pb-5 space-y-0">
-​
-          {/* ── Step 1: Data Pengajuan ── */}
+
+          {/* Step 1: Data Pengajuan */}
           <Section title="Data Pengajuan" defaultOpen={true}>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <Row label="Jenis Layanan"    value={sub?.type_service} />
@@ -747,6 +717,7 @@ export default function DetailPengajuan() {
               <Row label="No. Surat"        value={sub?.cust_letter_no} />
               <Row label="Catatan"          value={sub?.notes} />
             </div>
+
             {/* Dokumen pendukung */}
             {attDocs.length > 0 && (
               <div>
@@ -774,8 +745,8 @@ export default function DetailPengajuan() {
               </div>
             )}
           </Section>
-​
-          {/* ── Step 2: Data Sampel ── */}
+
+          {/* Step 2: Data Sampel */}
           <Section title={`Data Sampel — ${samples.length} sampel`}>
             {samples.length === 0 ? (
               <p className="text-sm text-gray-400 italic">Belum ada data sampel.</p>
@@ -801,6 +772,7 @@ export default function DetailPengajuan() {
                   <Row label="Lokasi Pengambilan" value={s.location_smpl} />
                   <Row label="Telah Divaksin"    value={s.is_vaccinated} />
                 </div>
+
                 {/* Jenis Pengujian */}
                 {(s.test_requests ?? s.test_services)?.length > 0 && (
                   <div>
@@ -820,11 +792,9 @@ export default function DetailPengajuan() {
               </div>
             ))}
           </Section>
-​
-          {/* ── Step 3: Data Pelanggan ── */}
+
+          {/* Step 3: Data Pelanggan */}
           <Section title="Data Pelanggan">
-            {/* Tampilkan data yang ada walau nested customer-nya kosong.
-                Minimal tampil nama, email, phone dari user_info. */}
             {!info && !sub?.user_id ? (
               <p className="text-sm text-gray-400 italic">Data pelanggan tidak tersedia.</p>
             ) : (
@@ -833,7 +803,6 @@ export default function DetailPengajuan() {
                 <Row label="Email"            value={info?.email} />
                 <Row label="No. Telepon"      value={info?.phone} />
                 <Row label="Institusi"        value={info?.institution} />
-                {/* Data detail (PIC, LHU, alamat) dari nested customer object */}
                 <Row label="Nama PIC"            value={cust?.pic_name} />
                 <Row label="Kontak PIC"          value={cust?.pic_contact} />
                 <Row label="Penerima LHU"        value={cust?.lhu_receiver_name} />
@@ -847,7 +816,6 @@ export default function DetailPengajuan() {
               </div>
             )}
           </Section>
-​
         </div>
         )}
       </div>

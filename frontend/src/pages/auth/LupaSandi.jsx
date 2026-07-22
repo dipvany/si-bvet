@@ -22,7 +22,6 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      // POST /auth/forgot-password — body: { email }
       const res  = await fetch(`${BASE_URL}/auth/forgot-password`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,8 +33,6 @@ export default function ForgotPasswordPage() {
         throw new Error(data.error ?? "Gagal mengirim email. Coba lagi.");
       }
 
-      // Response: { "message": "If the email exists, a password reset link has been sent" }
-      // Selalu tampilkan success (server tidak membedakan email ada/tidak — security)
       setSuccess(true);
     } catch (err) {
       setError(err.message ?? "Terjadi kesalahan. Coba lagi.");
@@ -48,7 +45,6 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[#233B6E] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[480px] bg-[#EFF0F4] rounded-3xl px-8 sm:px-12 pt-0 pb-10 shadow-2xl">
 
-        {/* Logo */}
         <div className="flex flex-col items-center mb-6 pt-6">
           <img src={logo} alt="SI-BVET Lampung" className="h-20 w-auto object-contain" />
           <p className="text-[#233B6E] font-extrabold text-lg tracking-tight mt-2 leading-tight text-center">
@@ -60,7 +56,6 @@ export default function ForgotPasswordPage() {
         </div>
 
         {success ? (
-          /* ── State sukses ── */
           <div className="flex flex-col items-center gap-4 text-center py-4">
             <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"
@@ -82,10 +77,9 @@ export default function ForgotPasswordPage() {
             </Link>
           </div>
         ) : (
-          /* ── Form ── */
+          /* Form */
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
 
-            {/* Tombol kembali */}
             <Link to="/login"
               className="inline-flex items-center gap-1.5 text-sm text-[#415F9D]
                 hover:text-[#233B6E] transition-colors w-fit">

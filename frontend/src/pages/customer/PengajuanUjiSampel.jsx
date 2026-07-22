@@ -21,7 +21,7 @@ import {
   getAnimalsByGroup,
   PROVINCES,
 } from "../../utils/refData";
-​
+
 const EMPTY_SAMPLE = {
   sample_code_cust: "",
   sample_model: "",
@@ -42,8 +42,8 @@ const EMPTY_SAMPLE = {
   is_vaccinated: "Tidak Diketahui",
   test_services: [],
 };
-​
-/* ─── Download template ─── */
+
+// Download template
 const TEMPLATE_HEADERS = [
   "Kode Sampel",
   "Model Sampel",
@@ -63,7 +63,7 @@ const TEMPLATE_HEADERS = [
   "Lokasi Sampel",
   "Telah Divaksin",
 ];
-​
+
 const downloadTemplate = async () => {
   try {
     const res = await apiFetch("/customer/submissions/samples/template");
@@ -87,10 +87,8 @@ const downloadTemplate = async () => {
   a.click();
   URL.revokeObjectURL(url);
 };
-​
-/* ─── Konversi baris array ke objek sampel ─── */
+
 const rowToSample = (r, cartItems = []) => {
-  // Kolom 13 = "Jenis Uji" — bisa berisi 1 atau beberapa nama dipisah koma/titik koma
   const rawUji = String(r[13] ?? "").trim();
   const test_services = rawUji
     ? rawUji
@@ -101,10 +99,9 @@ const rowToSample = (r, cartItems = []) => {
             c.test_name?.toLowerCase().includes(keyword),
           ),
         )
-        // hilangkan duplikat berdasarkan id
         .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
     : [];
-​
+
   return {
     sample_code_cust: String(r[0] ?? "").trim(),
     sample_model:     String(r[1] ?? "").trim(),
@@ -126,8 +123,7 @@ const rowToSample = (r, cartItems = []) => {
     sampling:         "",
   };
 };
-​
-/* ─── Parse CSV ─── */
+
 const parseCSV = (file, cartItems, callback) => {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -155,8 +151,7 @@ const parseCSV = (file, cartItems, callback) => {
   };
   reader.readAsText(file, "UTF-8");
 };
-​
-/* ─── Parse XLSX / XLS ─── */
+
 const parseXLSX = (file, cartItems, callback) => {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -176,16 +171,13 @@ const parseXLSX = (file, cartItems, callback) => {
   };
   reader.readAsArrayBuffer(file);
 };
-​
+
 const parseFile = (file, cartItems, callback) => {
   const ext = file.name.split(".").pop().toLowerCase();
-  // Fetch semua layanan dari katalog supaya bisa cocokkan nama dari Excel
-  // (tidak hanya yang ada di keranjang)
   apiFetch("/customer/test-services")
     .then((res) => res.json())
     .then((data) => {
       const allServices = data.test_services ?? data.services ?? data ?? [];
-      // gabungkan katalog + cart, hilangkan duplikat
       const merged = [
         ...allServices,
         ...cartItems.filter((c) => !allServices.some((s) => s.id === c.id)),
@@ -194,13 +186,11 @@ const parseFile = (file, cartItems, callback) => {
       else parseCSV(file, merged, callback);
     })
     .catch(() => {
-      // kalau gagal fetch katalog, fallback ke cart saja
       if (ext === "xlsx" || ext === "xls") parseXLSX(file, cartItems, callback);
       else parseCSV(file, cartItems, callback);
     });
 };
-​
-/* ─── StepBar ─── */
+
 const STEP_ICONS = [
   <svg
     viewBox="0 0 24 24"
@@ -242,7 +232,7 @@ const STEP_ICONS = [
     <circle cx="12" cy="7" r="4" />
   </svg>,
 ];
-​
+
 function StepBar({ step }) {
   const steps = ["Data Pengajuan", "Data Sampel", "Data Pelanggan"];
   return (
@@ -301,8 +291,7 @@ function StepBar({ step }) {
     </div>
   );
 }
-​
-/* ─── Field, Input, Select ─── */
+
 function Field({ label, required, hint, children }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -315,13 +304,13 @@ function Field({ label, required, hint, children }) {
     </div>
   );
 }
-​
+
 function Input({ value, onChange, placeholder, type = "text", disabled }) {
   const base =
     "w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none " +
     "transition placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 " +
     "focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]";
-​
+
   if (type === "date") {
     return (
       <div className="relative w-full">
@@ -349,7 +338,7 @@ function Input({ value, onChange, placeholder, type = "text", disabled }) {
       </div>
     );
   }
-​
+
   return (
     <input
       type={type}
@@ -361,7 +350,7 @@ function Input({ value, onChange, placeholder, type = "text", disabled }) {
     />
   );
 }
-​
+
 function Select({ value, onChange, options, placeholder, disabled }) {
   return (
     <div className="relative">
@@ -394,19 +383,18 @@ function Select({ value, onChange, options, placeholder, disabled }) {
     </div>
   );
 }
-​
-/* ─── SearchableSelect ─── */
+
 function SearchableSelect({ value, onChange, options, placeholder }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
-​
+
   const filtered = search
     ? options
         .filter((o) => o.name.toLowerCase().includes(search.toLowerCase()))
         .slice(0, 60)
     : options.slice(0, 80);
-​
+
   useEffect(() => {
     const fn = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -414,7 +402,7 @@ function SearchableSelect({ value, onChange, options, placeholder }) {
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
-​
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -494,19 +482,19 @@ function SearchableSelect({ value, onChange, options, placeholder }) {
     </div>
   );
 }
-​
-/* ─── MultiSelectPengujian ─── */
+
+/* Pilih Pengujian */
 function MultiSelectPengujian({ selected, onChange, cartItems }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
-​
+
   const filtered = search
     ? cartItems.filter((s) =>
         s.test_name?.toLowerCase().includes(search.toLowerCase()),
       )
     : cartItems;
-​
+
   useEffect(() => {
     const fn = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -514,14 +502,14 @@ function MultiSelectPengujian({ selected, onChange, cartItems }) {
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
-​
+
   const toggle = (svc) => {
     const has = selected.some((x) => x.id === svc.id);
     onChange(
       has ? selected.filter((x) => x.id !== svc.id) : [...selected, svc],
     );
   };
-​
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -645,13 +633,13 @@ function MultiSelectPengujian({ selected, onChange, cartItems }) {
     </div>
   );
 }
-​
-/* ─── WilayahSelect — provinsi hardcode, kab/kec/kel fetch API ─── */
+
+/* Wilayah */
 const WILAYAH_APIS = [
   "https://emsifa.github.io/api-wilayah-indonesia/api",
   "https://ibnux.github.io/data-indonesia",
 ];
-​
+
 async function fetchWilayah(path, altPath) {
   try {
     const r = await fetch(`${WILAYAH_APIS[0]}/${path}`);
@@ -671,8 +659,7 @@ async function fetchWilayah(path, altPath) {
   } catch {}
   return [];
 }
-​
-/* ─── NavButtons ─── */
+
 function NavButtons({ step, onBack, onNext }) {
   return (
     <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
@@ -722,22 +709,17 @@ function NavButtons({ step, onBack, onNext }) {
     </div>
   );
 }
-​
-/* ═══════════════════════════════════════════════════════
-   MAIN PAGE
-══════════════════════════════════════════════════════ */
+
 export default function PengajuanUjiSampel() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState(() => getCart());
-​
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-​
   const [docFiles, setDocFiles] = useState([]);
-​
-  /* Step 1 — sample_taker dihapus sesuai permintaan */
+
+  /* Step 1 */
   const [step1, setStep1] = useState({
     type_service: "",
     purpose_of_test: "",
@@ -751,13 +733,13 @@ export default function PengajuanUjiSampel() {
     diagnosis_required: false,
     notes: "",
   });
-​
+
   /* Step 2 */
   const [samples, setSamples] = useState([{ ...EMPTY_SAMPLE }]);
   const [parseMsg, setParseMsg] = useState("");
   const [showImport, setShowImport] = useState(false);
   const xlsxRef = useRef();
-​
+
   /* Step 3 */
   const [profile, setProfile] = useState(null);
   const [step3, setStep3] = useState({
@@ -775,27 +757,22 @@ export default function PengajuanUjiSampel() {
     lhu_receiver: "",
     lhu_contact: "",
   });
-​
+
   useEffect(() => {
     apiFetch("/profile")
       .then((r) => r.json())
       .then((data) => {
         const prof = data.profile ?? data;
-​
-        // Handle dua kemungkinan struktur response backend:
-        // Struktur A (API contract): { fullname, email, customer: { province, ... } }
-        // Struktur B (backend baru): { province, User: { fullname, email } }
+
         let user, c;
         if (prof.fullname || prof.email) {
-          // Struktur A
           user = prof;
           c    = prof.customer ?? {};
         } else {
-          // Struktur B
           user = prof.User ?? {};
           c    = prof;
         }
-​
+
         setProfile({ ...user });
         setStep3({
           fullname:     user.fullname     ?? "",
@@ -815,14 +792,14 @@ export default function PengajuanUjiSampel() {
       })
       .catch(() => {});
   }, []);
-​
+
   const setS1 = (k) => (e) =>
     setStep1((p) => ({
       ...p,
       [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     }));
   const setS3 = (k) => (e) => setStep3((p) => ({ ...p, [k]: e.target.value }));
-​
+
   const setSample = (i, k, v) =>
     setSamples((prev) => {
       const next = [...prev];
@@ -832,7 +809,7 @@ export default function PengajuanUjiSampel() {
   const addSample = () => setSamples((p) => [...p, { ...EMPTY_SAMPLE }]);
   const removeSample = (i) =>
     setSamples((p) => p.filter((_, idx) => idx !== i));
-​
+
   const validate = () => {
     if (step === 1) {
       if (!step1.type_service) return "Jenis layanan wajib dipilih.";
@@ -862,7 +839,7 @@ export default function PengajuanUjiSampel() {
     }
     return null;
   };
-​
+
   const handleNext = () => {
     const err = validate();
     if (err) {
@@ -873,24 +850,17 @@ export default function PengajuanUjiSampel() {
     if (step < 3) setStep((s) => s + 1);
     else setShowPreview(true);
   };
-​
+
   const handleBack = () => {
     setError("");
     if (showPreview) setShowPreview(false);
     else setStep((s) => s - 1);
   };
-​
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setError("");
     try {
-      // ✅ Kirim sebagai multipart/form-data — bukan raw JSON.
-      // Field "samples" (array of object) di-stringify jadi satu field
-      // teks JSON di dalam form. File dokumen pendukung dikirim sebagai
-      // field "attachment_doc" asli (bisa lebih dari satu file).
-      // PENTING: jangan set Content-Type manual — browser otomatis
-      // mengisi header multipart/form-data dengan boundary yang benar
-      // saat body berupa instance FormData.
       const samplesPayload = samples.map((s) => ({
         sample_code_cust: s.sample_code_cust,
         sample_model: s.sample_model,
@@ -916,7 +886,7 @@ export default function PengajuanUjiSampel() {
         condition: s.condition,
         tests: s.test_services?.map((t) => ({ test_service_id: t.id })),
       }));
-​
+
       const fd = new FormData();
       fd.append("type_service", step1.type_service);
       fd.append("purpose_of_test", step1.purpose_of_test);
@@ -934,37 +904,26 @@ export default function PengajuanUjiSampel() {
         String(samples.reduce((a, s) => a + (Number(s.total_sample) || 1), 0)),
       );
       fd.append("samples", JSON.stringify(samplesPayload));
-​
-      // Dokumen pendukung — file asli, bisa lebih dari satu
+
+      // Dokumen pendukung
       docFiles.forEach((f) => fd.append("attachment_doc", f));
-​
+
       const res = await apiFetch("/customer/submissions", {
         method: "POST",
-        body: fd, // jangan set headers Content-Type — biarkan browser yang isi
+        body: fd,
       });
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error ?? d.message ?? "Gagal mengirim pengajuan.");
       }
-​
-      // Hapus dari keranjang hanya pengujian yang benar-benar dipakai di pengajuan ini
+
       const usedTestIds = new Set();
       samples.forEach((s) => {
         (s.test_services ?? []).forEach((t) => usedTestIds.add(t.id));
       });
       usedTestIds.forEach((id) => removeFromCart(id));
       window.dispatchEvent(new Event("cart-updated"));
-​
-      // ── Simpan cache "Tinjauan Sampel" ──
-      // CATATAN: API (POST /customer/submissions) hanya membalas
-      // { message: "Submission created successfully" } — tidak ada id
-      // submission baru, dan tidak ada satupun endpoint GET yang
-      // mengembalikan detail sampel dari submission yang sudah tersimpan.
-      // Supaya pratinjau ini tetap bisa dilihat lagi di halaman Detail
-      // Pengajuan, kita ambil submission terbaru milik user (asumsi id
-      // terbesar = baru saja dibuat) lalu cache data pratinjaunya secara
-      // lokal di browser. Kalau gagal (mis. backend down), submit tetap
-      // dianggap berhasil — cache ini cuma pemanis tampilan.
+
       try {
         const myRes = await apiFetch("/customer/submissions/my");
         const myJson = await myRes.json();
@@ -977,21 +936,15 @@ export default function PengajuanUjiSampel() {
               step1,
               samples,
               step3,
-              // File object tidak bisa di-serialize, simpan nama saja sebagai info
               docFileNames: docFiles.map(f => f.name),
               savedAt: Date.now(),
             }),
           );
         }
       } catch {
-        // Cache gagal disimpan, tidak fatal — lanjut saja.
       }
-​
-      // ✅ Simpan data step3 ke profil secara otomatis setelah submit berhasil.
-      // Kalau user mengubah/mengisi data di step3, data terbaru tersimpan ke profil
-      // supaya pengajuan berikutnya sudah ter-isi otomatis.
+
       try {
-        // updateProfile sudah di-import di atas (static import)
         await updateProfile({
           fullname:             step3.fullname    || undefined,
           phone:                step3.phone       || undefined,
@@ -1008,9 +961,8 @@ export default function PengajuanUjiSampel() {
           // institution tidak ada di ProfileRequest backend
         });
       } catch {
-        // Gagal update profil tidak fatal — pengajuan tetap berhasil
       }
-​
+
       navigate("/customer/pengajuan-saya");
     } catch (e) {
       setError(e.message);
@@ -1018,8 +970,8 @@ export default function PengajuanUjiSampel() {
       setSubmitting(false);
     }
   };
-​
-  /* ── PREVIEW ── */
+
+  /* Pratinjau */
   if (showPreview)
     return (
       <div className="max-w-4xl mx-auto space-y-5">
@@ -1049,13 +1001,13 @@ export default function PengajuanUjiSampel() {
                 Pratinjau Pengajuan Sampel
               </h2>
             </div>
-​
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
-​
+
             <section>
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
                 Data Pengajuan
@@ -1103,7 +1055,7 @@ export default function PengajuanUjiSampel() {
                 )}
               </div>
             </section>
-​
+
             <section className="border-t border-gray-100 pt-4">
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
                 Data Sampel ({samples.length} sampel)
@@ -1137,6 +1089,7 @@ export default function PengajuanUjiSampel() {
                       </div>
                     ))}
                   </div>
+
                   {/* Jenis Pengujian */}
                   {s.test_services?.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-gray-200">
@@ -1154,7 +1107,7 @@ export default function PengajuanUjiSampel() {
                 </div>
               ))}
             </section>
-​
+
             <section className="border-t border-gray-100 pt-4">
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
                 Data Pelanggan
@@ -1262,7 +1215,7 @@ export default function PengajuanUjiSampel() {
               </tr>
             </tfoot>
           </table>
-          {/* Mobile: daftar bertumpuk biar subtotal & total tidak terpotong */}
+
           <div className="sm:hidden divide-y divide-gray-100">
             {estLines.map((l, i) => (
               <div key={i} className="flex justify-between gap-3 py-2.5">
@@ -1290,7 +1243,7 @@ export default function PengajuanUjiSampel() {
 </section>
           </div>
         </div>
-​
+
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-400 italic">
             Silahkan periksa kembali data sebelum pengajuan
@@ -1350,16 +1303,16 @@ export default function PengajuanUjiSampel() {
         </div>
       </div>
     );
-​
-  /* ── STEP FORMS ── */
+
+  /* ── Step Formulir ── */
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-[#233B6E]">Pengajuan Uji Sampel</h1>
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
         <StepBar step={step} />
       </div>
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <div className="p-6">
@@ -1371,8 +1324,8 @@ export default function PengajuanUjiSampel() {
               {error}
             </div>
           )}
-​
-          {/* STEP 1 — ✅ FIX: Field "Pengambil Sampel" dan "Dokumen Pendukung" dihapus */}
+
+          {/* Step 1 */}
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="font-bold text-[#233B6E]">
@@ -1469,7 +1422,7 @@ export default function PengajuanUjiSampel() {
                     focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]"
                 />
               </Field>
-​
+
               <Field
                 label={
                   <>
@@ -1567,8 +1520,8 @@ export default function PengajuanUjiSampel() {
               </Field>
             </div>
           )}
-​
-          {/* STEP 2 */}
+
+          {/* Step 2 */}
           {step === 2 && (
             <div className="space-y-5">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -1581,7 +1534,7 @@ export default function PengajuanUjiSampel() {
                   </span>
                 )}
               </div>
-​
+
               <div
                 className="border border-gray-200 rounded-xl px-4 py-3
                 flex items-center justify-between gap-3 flex-wrap"
@@ -1655,19 +1608,15 @@ export default function PengajuanUjiSampel() {
                             setParseMsg("✗ " + err);
                             return;
                           }
-                          // Kumpulkan semua pengujian unik dari hasil parse
                           const allFromFile = parsed.flatMap((s) => s.test_services ?? []);
                           const unique = [...new Map(allFromFile.map((t) => [t.id, t])).values()];
-​
-                          // Tambah ke cart dan update state cartItems sekaligus
-                          // supaya chip langsung tampil tanpa perlu klik lagi
                           unique.forEach((svc) => addToCart(svc));
                           if (unique.length > 0) setCartItems(getCart());
-​
+
                           setSamples(
                             parsed.length > 0 ? parsed : [{ ...EMPTY_SAMPLE }],
                           );
-​
+
                           const addedCount = unique.filter(
                             (svc) => !cartItems.some((c) => c.id === svc.id)
                           ).length;
@@ -1684,7 +1633,7 @@ export default function PengajuanUjiSampel() {
                   </div>
                 )}
               </div>
-​
+
               {parseMsg && (
                 <p
                   className={`text-xs font-medium px-1
@@ -1699,7 +1648,7 @@ export default function PengajuanUjiSampel() {
                   {parseMsg}
                 </p>
               )}
-​
+
               {samples.map((s, i) => (
                 <div
                   key={i}
@@ -1730,7 +1679,7 @@ export default function PengajuanUjiSampel() {
                       </button>
                     )}
                   </div>
-​
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Kode Sampel Pelanggan" required>
                       <Input
@@ -1910,7 +1859,7 @@ export default function PengajuanUjiSampel() {
                       />
                     </Field>
                   </div>
-​
+
                   <Field
                     label="Jenis Pengujian Sampel"
                     required
@@ -1942,7 +1891,7 @@ export default function PengajuanUjiSampel() {
                   </Field>
                 </div>
               ))}
-​
+
               <button
                 onClick={addSample}
                 className="w-full border-2 border-dashed border-[#233B6E]/30
@@ -1962,8 +1911,8 @@ export default function PengajuanUjiSampel() {
                 </svg>
                 Tambah Sampel
               </button>
-​
-              {/* ── Estimasi Harga ── */}
+
+              {/* Estimasi Harga */}
               {(() => {
                 const rupiah = (n) =>
                   new Intl.NumberFormat("id-ID", {
@@ -1971,7 +1920,6 @@ export default function PengajuanUjiSampel() {
                     currency: "IDR",
                     maximumFractionDigits: 0,
                   }).format(n ?? 0);
-                // Agregasi per layanan: harga satuan & total jumlah sampel
                 const map = new Map();
                 samples.forEach((s) => {
                   const qty = Number(s.total_sample) || 1;
@@ -2038,7 +1986,7 @@ export default function PengajuanUjiSampel() {
                           </tr>
                         </tfoot>
                       </table>
-                      {/* Mobile: daftar bertumpuk biar subtotal & total tidak terpotong */}
+                    
                       <div className="sm:hidden divide-y divide-gray-100">
                         {estLines.map((l, i) => (
                           <div key={i} className="flex justify-between gap-3 py-2.5">
@@ -2065,8 +2013,8 @@ export default function PengajuanUjiSampel() {
               })()}
             </div>
           )}
-​
-          {/* STEP 3 */}
+
+          {/* Step 3 */}
           {step === 3 && (
             <div className="space-y-4">
               <h2 className="font-bold text-[#233B6E]">
@@ -2150,7 +2098,7 @@ export default function PengajuanUjiSampel() {
               </div>
             </div>
           )}
-​
+
           <NavButtons step={step} onBack={handleBack} onNext={handleNext} />
         </div>
       </div>

@@ -30,7 +30,6 @@ const rupiah = (n) =>
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
 
-/* ── Detail modal ── */
 function DetailModal({ service, onClose, onCartChange }) {
   if (!service) return null;
   const [inCart, setInCart] = useState(isInCart(service.id));
@@ -111,7 +110,6 @@ function DetailModal({ service, onClose, onCartChange }) {
   );
 }
 
-/* ── Service card ── */
 function ServiceCard({ service, onSelect, onCartChange }) {
   const [inCart, setInCart] = useState(isInCart(service.id));
 
@@ -163,7 +161,6 @@ function ServiceCard({ service, onSelect, onCartChange }) {
   );
 }
 
-/* ── Main ── */
 export default function KatalogPerLab() {
   const { unit }              = useParams();
   const navigate              = useNavigate();
@@ -204,7 +201,6 @@ export default function KatalogPerLab() {
 
   return (
     <div className="space-y-5">
-      {/* Header dengan back */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate("/customer/katalog-pengujian")}
           className="p-1.5 rounded-lg hover:bg-gray-200 transition-colors text-gray-500">
@@ -228,7 +224,6 @@ export default function KatalogPerLab() {
         overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <div className="p-5">
-          {/* Search */}
           <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
             <p className="text-sm font-bold text-[#233B6E]">
               Katalog Jenis Uji Sampel
@@ -248,7 +243,6 @@ export default function KatalogPerLab() {
             </div>
           </div>
 
-          {/* Grid */}
           {loading ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5
               xl:grid-cols-6 gap-3">

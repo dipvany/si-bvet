@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser } from "../../utils/auth";
 import { getMySubmissions } from "../../services/CustomerServices";
-​
-/* ──────────────────────────────────────────────────────────────────
-   DonutChart — pure SVG, konsisten dengan halaman admin/superadmin
-   ────────────────────────────────────────────────────────────────── */
+
 function DonutChart({ value, total, color, size = 72 }) {
   const r    = (size - 10) / 2;
   const circ = 2 * Math.PI * r;
@@ -13,21 +10,18 @@ function DonutChart({ value, total, color, size = 72 }) {
   const dash = pct * circ;
   const gap  = circ - dash;
   const cx   = size / 2;
-​
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
       className="flex-shrink-0">
-      {/* Track */}
       <circle cx={cx} cy={cx} r={r} fill="none"
         stroke="rgba(255,255,255,0.2)" strokeWidth="6" />
-      {/* Progress */}
       <circle cx={cx} cy={cx} r={r} fill="none"
         stroke={color} strokeWidth="6" strokeLinecap="round"
         strokeDasharray={`${dash} ${gap}`}
         strokeDashoffset={circ / 4}
         style={{ transition: "stroke-dasharray 0.6s ease" }}
       />
-      {/* Angka tengah */}
       <text x={cx} y={cx + 5} textAnchor="middle"
         fontSize="16" fontWeight="700" fill="white" fontFamily="inherit">
         {value}
@@ -35,10 +29,7 @@ function DonutChart({ value, total, color, size = 72 }) {
     </svg>
   );
 }
-​
-/* ──────────────────────────────────────────────────────────────────
-   StatCard — sesuai desain UI (background biru gelap, teks putih)
-   ────────────────────────────────────────────────────────────────── */
+
 function StatCard({ label, value, total, color, loading, onClick }) {
   return (
     <div
@@ -56,10 +47,7 @@ function StatCard({ label, value, total, color, loading, onClick }) {
     </div>
   );
 }
-​
-/* ──────────────────────────────────────────────────────────────────
-   Status helpers — mapping process_status API ke label kartu
-   ────────────────────────────────────────────────────────────────── */
+
 const STATUS_WAITING_PAYMENT = [
   "awaiting_payment",
   "menunggu_pembayaran",
@@ -68,7 +56,7 @@ const STATUS_WAITING_PAYMENT = [
 ];
 const STATUS_TESTING = ["processed", "diproses"];
 const STATUS_COMPLETED = ["done", "selesai", "completed"];
-​
+
 function buildStats(submissions) {
   const norm = s => (s.process_status ?? "").toLowerCase();
   return {
@@ -80,20 +68,17 @@ function buildStats(submissions) {
     rejected:             submissions.filter(s => norm(s) === "rejected").length,
   };
 }
-​
-/* ──────────────────────────────────────────────────────────────────
-   CustomerBeranda — main page
-   ────────────────────────────────────────────────────────────────── */
+
 export default function CustomerBeranda() {
   const navigate = useNavigate();
   const user     = getUser();
-​
+
   const [stats, setStats]     = useState({ total: 0, pending_verification: 0, waiting_payment: 0, in_process: 0, completed: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState("");
-​
+
   useEffect(() => { fetchData(); }, []);
-​
+
   const fetchData = async () => {
     setLoading(true);
     setError("");
@@ -109,8 +94,7 @@ export default function CustomerBeranda() {
       setLoading(false);
     }
   };
-​
-  /* 4 kartu sesuai UI design */
+
   const CARDS = [
     {
       label: "Total Uji Sampel yang Diajukan",
@@ -149,11 +133,10 @@ export default function CustomerBeranda() {
       to:    "/customer/pengajuan-saya",
     },
   ];
-​
+
   return (
     <div className="space-y-6">
-​
-      {/* Salam */}
+
       {user && (
         <div>
           <h2 className="text-xl font-extrabold text-[#233B6E]">
@@ -164,8 +147,7 @@ export default function CustomerBeranda() {
           </p>
         </div>
       )}
-​
-      {/* Error */}
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm
           rounded-xl px-4 py-3 flex items-center justify-between">
@@ -176,8 +158,7 @@ export default function CustomerBeranda() {
           </button>
         </div>
       )}
-​
-      {/* Stat cards — grid 2 kolom persis seperti UI design */}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {CARDS.map(card => (
           <StatCard
@@ -191,7 +172,6 @@ export default function CustomerBeranda() {
           />
         ))}
       </div>
-​
     </div>
   );
 }

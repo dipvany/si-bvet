@@ -1,31 +1,19 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import FormPenilaian from "../../components/FormPenilaian";
-​
-/**
- * PenilaianKepuasan — halaman penilaian kepuasan pelanggan (setelah pengujian selesai).
- *
- * Alur:
- *   DetailPengajuan (status selesai)
- *     → navigate("/customer/penilaian/:submissionId", { state: { submission } })
- *     → halaman ini tampil
- *
- * Pertanyaan diambil dinamis dari backend (GET /feedbacks/questions/active)
- * dan jawaban dikirim ke endpoint publik (POST /feedbacks) melalui
- * komponen bersama <FormPenilaian />.
- */
+
 export default function PenilaianKepuasan() {
   const navigate = useNavigate();
   useParams();
   const { state } = useLocation();
   const submission = state?.submission;
-​
+
   const [success, setSuccess] = useState(false);
-​
+
   const defaultValues = {
     type_service: submission?.type_service ?? "Pengujian Sampel",
   };
-​
+
   if (success) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
@@ -68,7 +56,7 @@ export default function PenilaianKepuasan() {
       </div>
     );
   }
-​
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -100,7 +88,7 @@ export default function PenilaianKepuasan() {
           </p>
         </div>
       </div>
-​
+
       <FormPenilaian
         defaultValues={defaultValues}
         onSuccess={() => setSuccess(true)}

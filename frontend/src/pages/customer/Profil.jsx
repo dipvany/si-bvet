@@ -103,7 +103,7 @@ export default function CustomerProfil() {
   const [passErr,     setPassErr]     = useState("");
   const [passOk,      setPassOk]      = useState("");
 
-  /* ── profile fields ── */
+  /* profil */
   const [fullname,     setFullname]     = useState("");
   const [email,        setEmail]        = useState("");
   const [phone,        setPhone]        = useState("");
@@ -124,7 +124,7 @@ export default function CustomerProfil() {
   const [lhuReceiver,  setLhuReceiver]  = useState("");
   const [lhuContact,   setLhuContact]   = useState("");
 
-  /* ── password ── */
+  /* password */
   const [currentPass, setCurrentPass] = useState("");
   const [newPass,     setNewPass]     = useState("");
   const [confirmPass, setConfirmPass] = useState("");
@@ -135,7 +135,6 @@ export default function CustomerProfil() {
   const initials = (fullname || "U")
     .split(" ").slice(0, 2).map(w => w[0]?.toUpperCase()).join("");
 
-  /* ── applyData: set state dari object parsed ── */
   const applyData = useCallback((p, c) => {
     setFullname(p.fullname       ?? "");
     setEmail(p.email             ?? "");
@@ -158,11 +157,9 @@ export default function CustomerProfil() {
     setLhuContact(c.lhu_receiver_contact ?? c.lhu_contact   ?? "");
   }, []);
 
-  /* ── Normalise response — handle semua kemungkinan struktur backend ── */
   const parseProfileResponse = useCallback((data) => {
     const prof = data.profile ?? data;
 
-    // Struktur A (API contract resmi):
     if (prof.fullname || prof.email) {
       return {
         p: {
@@ -173,7 +170,6 @@ export default function CustomerProfil() {
       };
     }
 
-    // Struktur B (backend baru — User nested, customer flat):
     const user = prof.User ?? {};
     return {
       p: {
@@ -188,7 +184,6 @@ export default function CustomerProfil() {
     };
   }, []);
 
-  /* ── GET /profile — hanya saat pertama buka ── */
   useEffect(() => {
     (async () => {
       setInitLoading(true);
@@ -206,7 +201,6 @@ export default function CustomerProfil() {
     })();
   }, [applyData, parseProfileResponse]);
 
-  /* ── PATCH /profile ── */
   const handleSave = async (e) => {
     e.preventDefault();
     setError(""); setSuccess("");
@@ -257,7 +251,6 @@ export default function CustomerProfil() {
     }
   };
 
-  /* ── PATCH /auth/change-password ── */
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setPassErr(""); setPassOk("");
@@ -297,7 +290,6 @@ export default function CustomerProfil() {
     <div className="max-w-3xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Profil Saya</h1>
 
-      {/* Avatar */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6
         flex flex-col sm:flex-row items-center gap-5">
         <div className="w-20 h-20 rounded-full bg-[#233B6E] text-white text-2xl

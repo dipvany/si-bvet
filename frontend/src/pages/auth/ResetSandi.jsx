@@ -59,11 +59,9 @@ export default function ResetPasswordPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Response error: { "error": "password reset link invalid" }
         throw new Error(data.error ?? "Link reset tidak valid atau sudah kedaluwarsa.");
       }
 
-      // Response success: { "message": "Password reset successfully" }
       setSuccess(true);
       setTimeout(() => navigate("/login", { replace: true }), 3000);
     } catch (err) {
@@ -77,7 +75,6 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-[#233B6E] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[480px] bg-[#EFF0F4] rounded-3xl px-8 sm:px-12 pt-0 pb-10 shadow-2xl">
 
-        {/* Logo */}
         <div className="flex flex-col items-center mb-6 pt-6">
           <img src={logo} alt="SI-BVET Lampung" className="h-20 w-auto object-contain" />
           <p className="text-[#233B6E] font-extrabold text-lg tracking-tight mt-2 leading-tight text-center">
@@ -88,7 +85,6 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        {/* Link tidak valid */}
         {!isLinkValid ? (
           <div className="flex flex-col items-center gap-4 text-center py-4">
             <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
@@ -114,7 +110,6 @@ export default function ResetPasswordPage() {
           </div>
 
         ) : success ? (
-          /* ── Sukses ── */
           <div className="flex flex-col items-center gap-4 text-center py-4">
             <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"
@@ -136,7 +131,7 @@ export default function ResetPasswordPage() {
           </div>
 
         ) : (
-          /* ── Form Reset ── */
+          /* Form Reset */
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
             <div>
               <h1 className="text-[#233B6E] font-extrabold text-xl">Reset Kata Sandi</h1>

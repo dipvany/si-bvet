@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
 import { parseSubmissionList } from "../../utils/parseList";
-​
+
 const PER_PAGE = 10;
-​
+
 const STATUS_CONFIG = {
   pending:               { label: "Menunggu",                       bg: "bg-gray-100",    text: "text-gray-600",    dot: "bg-gray-400"    },
   pending_verification:  { label: "Menunggu Verifikasi",            bg: "bg-yellow-100",  text: "text-yellow-700",  dot: "bg-yellow-500"  },
@@ -20,7 +20,7 @@ const STATUS_CONFIG = {
   completed:             { label: "Selesai",                        bg: "bg-green-100",   text: "text-green-700",   dot: "bg-green-500"   },
   rejected:              { label: "Ditolak",                        bg: "bg-red-100",     text: "text-red-600",     dot: "bg-red-500"     },
 };
-​
+
 function StatusBadge({ status }) {
   const c = STATUS_CONFIG[status] ?? { label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
   return (
@@ -31,7 +31,7 @@ function StatusBadge({ status }) {
     </span>
   );
 }
-​
+
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -43,13 +43,13 @@ function PBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-​
+
 const formatDate = (iso) => {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID",
     { day: "2-digit", month: "2-digit", year: "numeric" });
 };
-​
+
 export default function PengajuanSaya() {
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState([]);
@@ -57,9 +57,9 @@ export default function PengajuanSaya() {
   const [error, setError]             = useState("");
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
-​
+
   useEffect(() => { fetchData(); }, []);
-​
+
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
@@ -73,7 +73,7 @@ export default function PengajuanSaya() {
       setLoading(false);
     }
   };
-​
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return submissions.filter(s =>
@@ -84,14 +84,14 @@ export default function PengajuanSaya() {
       s.type_service?.toLowerCase().includes(q)
     );
   }, [submissions, search]);
-​
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-​
+
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Riwayat Pengajuan Saya</h1>
-​
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm
           rounded-xl px-4 py-3 flex justify-between items-center">
@@ -102,7 +102,7 @@ export default function PengajuanSaya() {
           </button>
         </div>
       )}
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="px-4 py-3 border-b border-gray-100 flex items-center
@@ -131,8 +131,7 @@ export default function PengajuanSaya() {
             Ajukan Baru
           </button>
         </div>
-​
-        {/* Table */}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -206,8 +205,7 @@ export default function PengajuanSaya() {
             </tbody>
           </table>
         </div>
-​
-        {/* Pagination */}
+        
         <div className="px-4 py-3 border-t border-gray-100 flex items-center
           justify-between flex-wrap gap-2">
           <span className="text-xs text-gray-400">
