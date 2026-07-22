@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../../services/api";
-​
+
 const PER_PAGE = 10;
-​
+
 const formatDate = (iso) => {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID", {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
 };
-​
+
 function PaginationBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -23,11 +23,11 @@ function PaginationBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-​
+
 function isResolved(c) {
   return c.status === "resolved" || !!c.admin_response;
 }
-​
+
 function StatusBadge({ complaint }) {
   if (isResolved(complaint)) {
     return (
@@ -54,13 +54,13 @@ function StatusBadge({ complaint }) {
     </span>
   );
 }
-​
+
 const TAB_CONFIG = [
   { key: "semua",       label: "Semua" },
   { key: "belum",       label: "Belum Ditanggapi" },
   { key: "ditanggapi",  label: "Sudah Ditanggapi" },
 ];
-​
+
 export default function LaporanPengaduan() {
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
@@ -70,9 +70,9 @@ export default function LaporanPengaduan() {
   const [sort, setSort]             = useState("terbaru");
   const [activeTab, setActiveTab]   = useState("semua");
   const [page, setPage]             = useState(1);
-​
+
   useEffect(() => { fetchData(); }, []);
-​
+
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
@@ -85,13 +85,13 @@ export default function LaporanPengaduan() {
       setLoading(false);
     }
   };
-​
+
   const counts = useMemo(() => ({
     semua:      complaints.length,
     belum:      complaints.filter(c => !isResolved(c)).length,
     ditanggapi: complaints.filter(c =>  isResolved(c)).length,
   }), [complaints]);
-​
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     const base = complaints.filter(c => {
@@ -112,14 +112,14 @@ export default function LaporanPengaduan() {
       return new Date(b.date_of_complaint) - new Date(a.date_of_complaint);
     });
   }, [complaints, search, sort, activeTab]);
-​
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-​
+
   return (
     <div className="space-y-5">
       <h1 className="text-xl font-bold text-[#233B6E]">Laporan Pengaduan</h1>
-​
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600
           text-sm rounded-xl px-4 py-3 flex justify-between items-center">
@@ -128,8 +128,7 @@ export default function LaporanPengaduan() {
             className="text-xs font-semibold hover:underline ml-4">Coba Lagi</button>
         </div>
       )}
-​
-      {/* Tab filter — mirip gaya "Daftar Akun Registrasi" */}
+
       <div className="flex flex-wrap gap-2">
         {TAB_CONFIG.map(tab => {
           const active = activeTab === tab.key;
@@ -150,10 +149,9 @@ export default function LaporanPengaduan() {
           );
         })}
       </div>
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-​
-        {/* Toolbar */}
+
         <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
           <div className="relative w-full sm:w-72">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -210,8 +208,8 @@ export default function LaporanPengaduan() {
             </div>
           </div>
         </div>
-​
-        {/* Table */}
+
+        {/* Tabel */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
@@ -273,8 +271,7 @@ export default function LaporanPengaduan() {
             </tbody>
           </table>
         </div>
-​
-        {/* Pagination */}
+
         <div className="px-4 py-3 border-t border-gray-100 flex items-center
           justify-between flex-wrap gap-2">
           <span className="text-xs text-gray-400">

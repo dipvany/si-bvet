@@ -6,10 +6,7 @@ import {
 } from "../../services/superAdminServices";
 import { apiFetch } from "../../services/api";
 import { resolveFileUrl } from "../../utils/fileUrl";
-​
-/* ══════════════════════════════
-   STATUS CONFIG — sesuai backend
-══════════════════════════════ */
+
 const STATUS_CONFIG = {
   approved:              { label: "Disetujui",                      bg: "bg-orange-100", text: "text-orange-700", dot: "bg-orange-500",  order: 0 },
   awaiting_payment:      { label: "Menunggu Pembayaran",            bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   order: 1 },
@@ -18,25 +15,24 @@ const STATUS_CONFIG = {
   payment_rejected:      { label: "Pembayaran Ditolak",             bg: "bg-red-100",    text: "text-red-700",    dot: "bg-red-500",    order: -1 },
   done:                  { label: "Pembayaran Diterima",             bg: "bg-green-100",  text: "text-green-700",  dot: "bg-green-500",  order: 4 },
 };
-​
+
 const ACTIVE_STATUSES = [
   "approved", "awaiting_payment", "awaiting_verification",
   "processed", "payment_rejected", "done"
 ];
-​
+
 const PER_PAGE = 20;
-​
+
 const safeJson = async (res) => {
   try {
     const text = await res.text();
     return text ? JSON.parse(text) : {};
   } catch { return {}; }
 };
-​
+
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n ?? 0);
-​
-/* ── Komponen kecil ── */
+
 function StatusPill({ status }) {
   const c = STATUS_CONFIG[status] ?? { label: status, bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
   return (
@@ -46,7 +42,7 @@ function StatusPill({ status }) {
     </span>
   );
 }
-​
+
 function Spinner({ sm }) {
   return (
     <svg className={`animate-spin ${sm ? "w-3.5 h-3.5" : "w-4 h-4"}`} viewBox="0 0 24 24" fill="none">
@@ -55,7 +51,7 @@ function Spinner({ sm }) {
     </svg>
   );
 }
-​
+
 function Alert({ type, msg, onClose }) {
   if (!msg) return null;
   const cls = type === "error"
@@ -74,7 +70,7 @@ function Alert({ type, msg, onClose }) {
     </div>
   );
 }
-​
+
 function InfoRow({ label, value }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 border-b border-gray-100 last:border-0 min-w-0">
@@ -83,7 +79,7 @@ function InfoRow({ label, value }) {
     </div>
   );
 }
-​
+
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -94,14 +90,12 @@ function PBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-​
-/* ── helpers ── */
+
 const fmtDate = (v) => {
   if (!v) return "-";
   return new Date(v).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 };
-​
-/* ── Stepper icons (sesuai urutan STEPS) ── */
+
 const STEP_ICONS = [
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
@@ -119,7 +113,7 @@ const STEP_ICONS = [
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </svg>,
 ];
-​
+
 function StepBar({ status }) {
   const STEPS = [
     { key: "approved",              label: "Disetujui"  },
@@ -128,9 +122,9 @@ function StepBar({ status }) {
     { key: "processed",             label: "Pengujian"  },
     { key: "done",                  label: "Selesai"    },
   ];
-​
+
   const currentOrder = STATUS_CONFIG[status]?.order ?? 0;
-​
+
   if (status === "payment_rejected") {
     return (
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -146,7 +140,7 @@ function StepBar({ status }) {
       </div>
     );
   }
-​
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
       <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-5">Alur Proses</p>
@@ -192,8 +186,8 @@ function StepBar({ status }) {
     </div>
   );
 }
-​
-/* ── Estimasi Harga — card terpisah ── */
+
+/* Estimasi Harga */
 function EstimasiCard({ full }) {
   if (!full) return null;
   const samples = full.samples ?? [];
@@ -212,7 +206,7 @@ function EstimasiCard({ full }) {
       <div className="h-1 bg-gradient-to-r from-[#233B6E] to-[#415F9D]" />
       <div className="p-5 sm:p-6">
         <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-4">Estimasi Harga Pengujian</p>
-        {/* Mobile: daftar bertumpuk biar tak perlu geser */}
+
         <div className="sm:hidden divide-y divide-gray-100">
           {estLines.map((l, i) => (
             <div key={i} className="py-3 flex justify-between gap-3">
@@ -228,8 +222,7 @@ function EstimasiCard({ full }) {
             <span className="text-sm font-bold text-[#233B6E] whitespace-nowrap">{rupiah(estTotal)}</span>
           </div>
         </div>
-​
-        {/* Desktop: tabel */}
+
         <table className="hidden sm:table w-full text-sm">
           <thead>
             <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
@@ -261,8 +254,8 @@ function EstimasiCard({ full }) {
     </div>
   );
 }
-​
-/* ── Tinjauan card — step 1, 2, 3 (FULL WIDTH) ── */
+
+/* Tinjauan Pengajuan */
 function TinjauanCard({ full }) {
   if (!full) return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -270,20 +263,20 @@ function TinjauanCard({ full }) {
       <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat tinjauan...</div>
     </div>
   );
-​
+
   const info  = full.user_info;
   const cust  = info?.customer;
   const samples = full.samples ?? [];
   const attRaw  = full.attachment_doc;
   const attDocs = Array.isArray(attRaw) ? attRaw : (attRaw ? [attRaw] : []);
-​
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-[#233B6E] to-[#415F9D]" />
       <div className="p-5 sm:p-6 space-y-6">
         <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider">Tinjauan Pengajuan</p>
-​
-        {/* ── STEP 1 — Data Pengajuan ── */}
+
+        {/* Step 1 — Data Pengajuan */}
         <section>
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-[#233B6E] text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">1</span>
@@ -330,8 +323,8 @@ function TinjauanCard({ full }) {
             </div>
           )}
         </section>
-​
-        {/* ── STEP 2 — Data Sampel ── */}
+
+        {/* Step 2 — Data Sampel */}
         <section className="border-t border-gray-100 pt-4">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-[#233B6E] text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">2</span>
@@ -375,8 +368,8 @@ function TinjauanCard({ full }) {
               </div>
           ))}
         </section>
-​
-        {/* ── STEP 3 — Data Pelanggan ── */}
+
+        {/* Step 3 — Data Pelanggan */}
         {info && (
           <section className="border-t border-gray-100 pt-4">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -401,15 +394,11 @@ function TinjauanCard({ full }) {
             </div>
           </section>
         )}
-​
       </div>
     </div>
   );
 }
-​
-/* ══════════════════════════════════════════════════════════════════
-   DETAIL
-══════════════════════════════════════════════════════════════════ */
+
 function DetailProses({ submission: initialSub, onBack, onUpdated }) {
   const [sub,          setSub]          = useState(initialSub);
   const [fullSub,      setFullSub]      = useState(null);
@@ -426,7 +415,6 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
   });
   const [lhuForm, setLhuForm] = useState({ no_lhu: "", file: null });
   const lhuRef = useRef();
-​
   const status                = sub.process_status;
   const isReviewing           = status === "approved";
   const isAwaitingPay         = status === "awaiting_payment";
@@ -434,7 +422,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
   const isProcessed           = status === "processed";
   const isPaymentRejected     = status === "payment_rejected";
   const isDone                = status === "done";
-​
+
   useEffect(() => {
     (async () => {
       try {
@@ -442,7 +430,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
         const j   = await safeJson(res);
         if (res.ok) setFullSub(j.data ?? j);
       } catch {}
-​
+
       setLoadBill(true);
       try {
         const res = await getBilling(sub.id);
@@ -463,7 +451,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
       finally { setLoadBill(false); }
     })();
   }, [sub.id]);
-​
+
   const handleSaveBilling = async (e) => {
     e.preventDefault();
     if (!billForm.ebilling_code) { setErr("Kode e-billing wajib diisi."); return; }
@@ -481,7 +469,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
         : await createBilling(sub.id, body);
       const json = await safeJson(res);
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal menyimpan tagihan.");
-​
+
       setBilling(json.billing ?? json.data ?? body);
       if (!billing) {
         setSub(p => ({ ...p, process_status: "awaiting_payment" }));
@@ -492,7 +480,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
     } catch (e) { setErr(e.message); }
     finally { setSavingBill(false); }
   };
-​
+
   const handleVerifyPayment = async () => {
     if (!window.confirm("Verifikasi pembayaran? Status akan berubah ke Sedang Diproses.")) return;
     setActionLoad(true); setErr(""); setOk("");
@@ -506,7 +494,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
     } catch (e) { setErr(e.message); }
     finally { setActionLoad(false); }
   };
-​
+
   const handleRejectPayment = async () => {
     if (!window.confirm("Tolak pembayaran? Pelanggan perlu upload ulang.")) return;
     setActionLoad(true); setErr(""); setOk("");
@@ -520,7 +508,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
     } catch (e) { setErr(e.message); }
     finally { setActionLoad(false); }
   };
-​
+
   const handleUploadLHU = async (e) => {
     e.preventDefault();
     if (!lhuForm.no_lhu) { setErr("Nomor LHU wajib diisi."); return; }
@@ -540,8 +528,7 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
     } catch (e) { setErr(e.message); }
     finally { setUploadingLHU(false); }
   };
-​
-  /* ── panel billing ── */
+
   const BillingPanel = () => loadBill ? (
     <div className="flex items-center gap-2 text-gray-400 text-xs"><Spinner sm />Memuat tagihan...</div>
   ) : billing ? (
@@ -571,10 +558,9 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
       </div>
     </div>
   ) : null;
-​
+
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={onBack}
           className="p-2 rounded-lg hover:bg-white text-gray-500 hover:text-[#233B6E] transition-colors">
@@ -591,17 +577,15 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
           <p className="text-xs text-gray-400 mt-0.5 font-mono">{sub.no_ticket ?? `#${sub.id}`}</p>
         </div>
       </div>
-​
-      {/* Alur Proses — stepper dengan ikon */}
+
       <StepBar status={status} />
-​
+
       <div className="space-y-5">
-        {/* Panel aksi */}
         <div className="space-y-4">
           <Alert type="error"   msg={err} onClose={() => setErr("")} />
           <Alert type="success" msg={ok}  onClose={() => setOk("")} />
-​
-          {/* 1. DISETUJUI */}
+
+          {/* 1. Disetujui */}
           {isReviewing && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-orange-400" />
@@ -651,8 +635,8 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
               </div>
             </div>
           )}
-​
-          {/* 2. MENUNGGU PEMBAYARAN */}
+
+          {/* 2. Menunggu Pembayaran */}
           {isAwaitingPay && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-blue-400" />
@@ -665,8 +649,8 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
               </div>
             </div>
           )}
-​
-          {/* 3. MENUNGGU VERIFIKASI */}
+
+          {/* 3. Menunggu Verifikasi */}
           {isAwaitingVerif && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-cyan-400" />
@@ -692,8 +676,8 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
               </div>
             </div>
           )}
-​
-          {/* 4. PEMBAYARAN DITOLAK */}
+
+          {/* 4. Pembayaran Ditolak */}
           {isPaymentRejected && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-red-400" />
@@ -706,8 +690,8 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
               </div>
             </div>
           )}
-​
-          {/* 5. SEDANG DIPROSES */}
+
+          {/* 5. Sedang Proses */}
           {isProcessed && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-purple-400" />
@@ -720,8 +704,8 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
               </div>
             </div>
           )}
-​
-          {/* 6. SELESAI */}
+
+          {/* 6. Selesai */}
           {isDone && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="h-1 bg-green-400" />
@@ -754,19 +738,15 @@ function DetailProses({ submission: initialSub, onBack, onUpdated }) {
             </div>
           </div>
         </div>
-​
+
       </div>
-​
-      {/* ✅ TINJAUAN PENGAJUAN — FULL WIDTH di bawah grid */}
+
       <TinjauanCard full={fullSub} />
       <EstimasiCard full={fullSub} />
     </div>
   );
 }
-​
-/* ══════════════════════════════════════════════════════════════════
-   HALAMAN UTAMA
-══════════════════════════════════════════════════════════════════ */
+
 export default function ProsesPengujian() {
   const [submissions,  setSubmissions]  = useState([]);
   const [meta,         setMeta]         = useState({ page: 1, total: 0, total_pages: 1 });
@@ -776,9 +756,9 @@ export default function ProsesPengujian() {
   const [search,       setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selected,     setSelected]     = useState(null);
-​
+
   useEffect(() => { fetchData(page); }, [page]);
-​
+
   const fetchData = async (p = 1) => {
     setLoading(true); setError("");
     try {
@@ -795,12 +775,12 @@ export default function ProsesPengujian() {
       setLoading(false);
     }
   };
-​
+
   const handleUpdated = (id, newStatus) => {
     setSubmissions(prev => prev.map(s => s.id === id ? { ...s, process_status: newStatus } : s));
     setSelected(prev => prev?.id === id ? { ...prev, process_status: newStatus } : prev);
   };
-​
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return submissions.filter(s => {
@@ -812,7 +792,7 @@ export default function ProsesPengujian() {
       return matchStatus && matchSearch;
     });
   }, [submissions, search, filterStatus]);
-​
+
   const countByStatus = useMemo(() => {
     const map = { all: submissions.length };
     submissions.forEach(s => {
@@ -821,7 +801,7 @@ export default function ProsesPengujian() {
     });
     return map;
   }, [submissions]);
-​
+
   if (selected) {
     return (
       <DetailProses
@@ -831,7 +811,7 @@ export default function ProsesPengujian() {
       />
     );
   }
-​
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -846,14 +826,14 @@ export default function ProsesPengujian() {
           Refresh
         </button>
       </div>
-​
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 flex items-center justify-between">
           {error}
           <button onClick={() => fetchData(page)} className="text-xs font-semibold hover:underline ml-4">Coba Lagi</button>
         </div>
       )}
-​
+
       <div className="flex flex-wrap gap-2">
         {[{ value: "all", label: "Semua" }, ...Array.from(new Set(ACTIVE_STATUSES.map(s => STATUS_CONFIG[s]?.label ?? s))).map(lbl => ({ value: lbl, label: lbl }))].map(opt => (
           <button key={opt.value} onClick={() => setFilterStatus(opt.value)}
@@ -871,7 +851,7 @@ export default function ProsesPengujian() {
           </button>
         ))}
       </div>
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center gap-3 flex-wrap">
           <p className="text-xs text-gray-400">

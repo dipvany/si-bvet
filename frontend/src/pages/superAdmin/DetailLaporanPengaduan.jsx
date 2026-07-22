@@ -47,10 +47,6 @@ export default function DetailLaporanPengaduan() {
   const [success, setSuccess]     = useState("");
 
   useEffect(() => {
-    // Selalu fetch ulang dari backend supaya status "Sudah Ditanggapi"
-    // tidak pernah hilang meski user bolak-balik halaman. Kalau hanya
-    // mengandalkan location.state, data yang ditampilkan adalah snapshot
-    // lama dari list dan status "resolved" tidak ikut terbawa.
     fetchDetail();
   }, [id]);
 
@@ -85,8 +81,6 @@ export default function DetailLaporanPengaduan() {
         throw new Error(d.error ?? "Gagal mengirim tanggapan.");
       }
       setSuccess("Tanggapan berhasil dikirim.");
-      // Re-fetch dari backend agar status "resolved" persisten dan
-      // tidak hilang saat user kembali ke halaman ini.
       await fetchDetail();
     } catch (err) {
       setError(err.message);
@@ -95,9 +89,6 @@ export default function DetailLaporanPengaduan() {
     }
   };
 
-  // Anggap "sudah ditanggapi" jika status resolved ATAU admin_response terisi.
-  // Ini fallback kalau backend tidak selalu mengembalikan status: "resolved"
-  // tapi admin_response sudah ada nilainya.
   const isResolved = complaint?.status === "resolved" || !!complaint?.admin_response;
 
   const docUrl = complaint?.attachment_path

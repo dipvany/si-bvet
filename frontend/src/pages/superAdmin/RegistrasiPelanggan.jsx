@@ -3,34 +3,32 @@ import { useNavigate } from "react-router-dom";
 import { getUnverifiedCustomers, verifyUser, rejectUser } from "../../services/superAdminServices";
 import { apiFetch } from "../../services/api";
 import StatusBadge from "../../components/StatusBadge";
-​
+
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const apiBase = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api").replace(/\/$/, "");
   const origin = apiBase.replace(/\/api\/?$/, "");
   const clean = path.startsWith("/") ? path : `/${path}`;
-  // Pertahankan prefix /api agar file diteruskan reverse proxy ke backend (/api/uploads),
-  // bukan ditangkap SPA yang membuat halaman balik ke landing page.
   if (clean.startsWith("/api/")) return `${origin}${clean}`;
   return `${apiBase}${clean}`;
 };
-​
+
 const PER_PAGE = 10;
-​
+
 const FILTER_OPTIONS = [
   { value: "all",      label: "Semua" },
   { value: "pending",  label: "Belum Verifikasi" },
   { value: "approved", label: "Sudah Verifikasi" },
   { value: "rejected", label: "Ditolak" },
 ];
-​
+
 function getStatusKey(customer) {
   if (customer._localRejected) return "rejected";
   if (customer._localVerified || customer.is_verified) return "approved";
   return "pending";
 }
-​
+
 function PaginationBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -43,10 +41,10 @@ function PaginationBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-​
+
 export default function RegistrasiPelanggan() {
   const navigate = useNavigate();
-​
+
   const [allCustomers, setAllCustomers] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
@@ -56,16 +54,15 @@ export default function RegistrasiPelanggan() {
   const [sort, setSort]                 = useState("terbaru");
   const [actionStatus, setActionStatus] = useState({});
   const [actionMsg, setActionMsg]       = useState({});
-​
-  // Import modal state
+
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile,      setImportFile]      = useState(null);
   const [importing,       setImporting]       = useState(false);
   const [importResult,    setImportResult]    = useState(null);
   const [importError,     setImportError]     = useState("");
-​
+
   useEffect(() => { fetchData(); }, []);
-​
+
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
@@ -79,7 +76,7 @@ export default function RegistrasiPelanggan() {
       setLoading(false);
     }
   };
-​
+
   const handleVerify = async (customer) => {
     setActionStatus(p => ({ ...p, [customer.id]: "loading" }));
     setActionMsg(p => ({ ...p, [customer.id]: "" }));
@@ -98,7 +95,7 @@ export default function RegistrasiPelanggan() {
       setActionMsg(p => ({ ...p, [customer.id]: err.message }));
     }
   };
-​
+
   const handleReject = async (customer) => {
     setActionStatus(p => ({ ...p, [customer.id]: "loading" }));
     setActionMsg(p => ({ ...p, [customer.id]: "" }));
@@ -117,7 +114,7 @@ export default function RegistrasiPelanggan() {
       setActionMsg(p => ({ ...p, [customer.id]: err.message }));
     }
   };
-​
+
   const handleImport = async () => {
     if (!importFile) return setImportError("Pilih file terlebih dahulu.");
     setImporting(true); setImportError(""); setImportResult(null);
@@ -140,7 +137,7 @@ export default function RegistrasiPelanggan() {
       setImporting(false);
     }
   };
-​
+
   const filtered = useMemo(() => {
     const base = allCustomers.filter(c => {
       const status = getStatusKey(c);
@@ -159,17 +156,17 @@ export default function RegistrasiPelanggan() {
       return (b.id ?? 0) - (a.id ?? 0);
     });
   }, [allCustomers, filter, search, sort]);
-​
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-​
+
   const counts = useMemo(() => ({
     all:      allCustomers.length,
     pending:  allCustomers.filter(c => getStatusKey(c) === "pending").length,
     approved: allCustomers.filter(c => getStatusKey(c) === "approved").length,
     rejected: allCustomers.filter(c => getStatusKey(c) === "rejected").length,
   }), [allCustomers]);
-​
+
   return (
     <>
       <div className="space-y-5">
@@ -186,7 +183,7 @@ export default function RegistrasiPelanggan() {
             Refresh
           </button>
         </div>
-​
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm
             rounded-xl px-4 py-3 flex justify-between items-center">
@@ -195,8 +192,8 @@ export default function RegistrasiPelanggan() {
               className="text-xs font-semibold hover:underline ml-4">Coba Lagi</button>
           </div>
         )}
-​
-        {/* Filter tabs */}
+
+        {/* Filter */}
         <div className="flex flex-wrap gap-2">
           {FILTER_OPTIONS.map(opt => (
             <button key={opt.value} onClick={() => { setFilter(opt.value); setPage(1); }}
@@ -214,11 +211,9 @@ export default function RegistrasiPelanggan() {
             </button>
           ))}
         </div>
-​
-        {/* Table card */}
+
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-​
-          {/* Toolbar */}
+
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
             <div className="relative w-full sm:w-72">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -233,7 +228,7 @@ export default function RegistrasiPelanggan() {
                   outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]
                   bg-[#F6F7FB]" />
             </div>
-​
+
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Status:</span>
               <div className="relative">
@@ -254,7 +249,7 @@ export default function RegistrasiPelanggan() {
                 </svg>
               </div>
             </div>
-​
+
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Urutkan:</span>
               <div className="relative">
@@ -275,7 +270,7 @@ export default function RegistrasiPelanggan() {
                 </svg>
               </div>
             </div>
-​
+
             <div className="flex items-center gap-2 ml-auto">
               <button onClick={() => {
                 setShowImportModal(true);
@@ -296,8 +291,7 @@ export default function RegistrasiPelanggan() {
               </button>
             </div>
           </div>
-​
-          {/* Table */}
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
@@ -335,7 +329,7 @@ export default function RegistrasiPelanggan() {
                   const actSt     = actionStatus[c.id];
                   const actMsg    = actionMsg[c.id];
                   const isLoading = actSt === "loading";
-​
+
                   return (
                     <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-center text-gray-400 text-xs">
@@ -446,8 +440,7 @@ export default function RegistrasiPelanggan() {
               </tbody>
             </table>
           </div>
-​
-          {/* Pagination */}
+
           <div className="px-4 py-3 border-t border-gray-100 flex items-center
             justify-between flex-wrap gap-2">
             <span className="text-xs text-gray-400">
@@ -477,8 +470,7 @@ export default function RegistrasiPelanggan() {
           </div>
         </div>
       </div>
-​
-      {/* Modal Import — di luar div utama tapi dalam Fragment */}
+
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -500,7 +492,7 @@ export default function RegistrasiPelanggan() {
                 </svg>
               </button>
             </div>
-​
+
             <div className="px-6 py-5 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3
                 text-sm text-blue-700">
@@ -512,7 +504,7 @@ export default function RegistrasiPelanggan() {
                   <li>Maksimal 500 baris per file</li>
                 </ul>
               </div>
-​
+
               {importError && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm
                   rounded-xl px-4 py-3 flex items-start justify-between gap-2">
@@ -526,7 +518,7 @@ export default function RegistrasiPelanggan() {
                   </button>
                 </div>
               )}
-​
+
               {importResult ? (
                 <>
                   <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
@@ -599,7 +591,7 @@ export default function RegistrasiPelanggan() {
                       </>
                     )}
                   </label>
-​
+
                   <div className="flex gap-3">
                     <button onClick={() => setShowImportModal(false)}
                       className="flex-1 border border-gray-200 text-gray-600

@@ -1,17 +1,12 @@
-/**
- * superAdminServices.js — role: "superadmin"
- * Semua call pakai apiFetch (native fetch + auto Bearer token dari api.js).
- */
 import { apiFetch } from "./api";
 
-// ── Dashboard ─────────────────────────────────────────────────────
+// Dashboard 
 export const getDashboard = () => apiFetch("/dashboard");
 
-// FIX: tambah params agar bisa kirim ?page=1&per_page=20 dari PengajuanMasuk
 export const getAdminSubmissions = (params = "") =>
   apiFetch(`/admin/submissions${params}`);
 
-// ── Registrasi Customer ───────────────────────────────────────────
+// Registrasi Customer 
 export const getUnverifiedCustomers = () =>
   apiFetch("/admin/customers");
 
@@ -21,7 +16,7 @@ export const verifyUser = (id) =>
 export const rejectUser = (id) =>
   apiFetch(`/admin/customers/${id}/reject`, { method: "PATCH" });
 
-// ── Submission ────────────────────────────────────────────────────
+// Submission 
 export const approveSubmission = (id) =>
   apiFetch(`/admin/submissions/${id}/approve`, { method: "PATCH" });
 
@@ -31,9 +26,7 @@ export const rejectSubmission = (id) =>
 export const getSubmissionByID = (id) =>
   apiFetch(`/admin/submissions/${id}`);
 
-// Export pengajuan ke Excel.
-// payload: { export_all: true } untuk semua data,
-// atau { export_all: false, submission_ids: [1, 2, 3] } untuk pilih beberapa/1 data.
+// Expor pengajuan ke Excel
 export const exportSubmissions = (payload) =>
   apiFetch("/admin/submissions/export", {
     method: "POST",
@@ -41,7 +34,7 @@ export const exportSubmissions = (payload) =>
     body: JSON.stringify(payload),
   });
 
-// ── Billing ───────────────────────────────────────────────────────
+// Billing 
 export const createBilling = (submissionId, data) =>
   apiFetch(`/admin/billings/${submissionId}`, {
     method:  "POST",
@@ -65,7 +58,7 @@ export const verifyPayment = (submissionId) =>
 export const rejectPayment = (submissionId) =>
   apiFetch(`/admin/billings/${submissionId}/reject`, { method: "PATCH" });
 
-// ── LHU ──────────────────────────────────────────────────────────
+// LHU 
 export const getLHU = (submissionId) =>
   apiFetch(`/admin/submissions/${submissionId}/lhu`);
 
@@ -75,7 +68,7 @@ export const uploadLHU = (submissionId, formData) =>
     body:   formData,
   });
 
-// ── Manajemen Akun Admin ──────────────────────────────────────────
+// Manajemen Akun Admin 
 export const getAllAdminAccounts = () =>
   apiFetch("/superadmin/admin-accounts");
 
@@ -96,7 +89,7 @@ export const updateAdminAccount = (userId, data) =>
 export const deleteAdminAccount = (userId) =>
   apiFetch(`/superadmin/admin-accounts/${userId}`, { method: "DELETE" });
 
-// ── Katalog / Test Services ───────────────────────────────────────
+// Katalog / Test Services
 export const getTestServices = () =>
   apiFetch("/admin/test-services");
 
@@ -110,11 +103,11 @@ export const updateTestService = (id, data) =>
 export const deleteTestService = (id) =>
   apiFetch(`/admin/test-services/${id}`, { method: "DELETE" });
 
-// ── Penilaian ────────────────────────────────────────────────────
+// Penilaian 
 export const getAllFeedbacks = () =>
   apiFetch("/admin/feedbacks");
 
-// ── Laporan Pengaduan ─────────────────────────────────────────────
+// Laporan Pengaduan
 export const getAllComplaints = () =>
   apiFetch("/admin/complaints");
 
@@ -125,7 +118,7 @@ export const respondComplaint = (id, data) =>
     body:    JSON.stringify(data),
   });
 
-// ── Profil ────────────────────────────────────────────────────────
+// Profil 
 export const getProfile = () =>
   apiFetch("/profile");
 
@@ -143,14 +136,11 @@ export const changePassword = (data) =>
     body:    JSON.stringify(data),
   });
 
-// ── Template Sampel (pengajuan massal) ───────────────────────────
-// POST /superadmin/submissions/samples/template
-// Upload template Excel yang akan diunduh customer di Step 2
+// Template Sampel (pengajuan massal)
 export const uploadSampleTemplate = (formData) =>
   apiFetch("/superadmin/submissions/samples/template", {
     method: "POST",
     body:   formData,
-    // Jangan set Content-Type — browser isi boundary FormData otomatis
   });
 
 export const getActivityLogs = () => apiFetch("/superadmin/activity-logs");

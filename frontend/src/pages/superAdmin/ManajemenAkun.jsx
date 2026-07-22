@@ -6,21 +6,19 @@ import {
   deleteAdminAccount,
   verifyUser,
 } from "../../services/superAdminServices";
-​
-/* ─── constants ───────────────────────────────────────────────── */
+
 const UNIT_LAB_OPTIONS = [
   "Virologi", "Bakteriologi", "Kesmavet", "Bioteknologi",
   "Parasitologi", "Patologi", "Epidemiologi",
 ];
-​
+
 const ROLE_OPTIONS = [
   { value: "admin",      label: "Petugas" },
   { value: "superadmin", label: "Admin" },
 ];
-​
+
 const VIEW = { LIST: "list", TAMBAH: "tambah", DETAIL: "detail" };
-​
-/* ─── small helpers ───────────────────────────────────────────── */
+
 function Alert({ type, msg, onClose }) {
   if (!msg) return null;
   const cls = type === "error"
@@ -39,7 +37,7 @@ function Alert({ type, msg, onClose }) {
     </div>
   );
 }
-​
+
 function Field({ label, required, children }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -50,7 +48,7 @@ function Field({ label, required, children }) {
     </div>
   );
 }
-​
+
 function TextInput({ value, onChange, placeholder, disabled, type = "text" }) {
   return (
     <input type={type} value={value ?? ""} onChange={onChange}
@@ -62,7 +60,7 @@ function TextInput({ value, onChange, placeholder, disabled, type = "text" }) {
     />
   );
 }
-​
+
 function SelectInput({ value, onChange, options, placeholder }) {
   return (
     <select value={value ?? ""} onChange={onChange}
@@ -78,7 +76,7 @@ function SelectInput({ value, onChange, options, placeholder }) {
     </select>
   );
 }
-​
+
 function StatusBadge({ verified }) {
   return verified
     ? <span className="inline-flex items-center gap-1.5 text-[11px] font-bold
@@ -92,7 +90,7 @@ function StatusBadge({ verified }) {
         Belum Verifikasi
       </span>;
 }
-​
+
 function Spinner() {
   return (
     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -101,12 +99,9 @@ function Spinner() {
     </svg>
   );
 }
-​
+
 const PER_PAGE = 10;
-​
-/* ═══════════════════════════════════════════════════════════════
-   FORM TAMBAH AKUN
-═══════════════════════════════════════════════════════════════ */
+
 function FormTambah({ onBack, onSuccess }) {
   const [form, setForm] = useState({
     fullname: "", email: "", phone: "",
@@ -116,13 +111,13 @@ function FormTambah({ onBack, onSuccess }) {
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState("");
-​
+
   const set = key => e => setForm(p => ({ ...p, [key]: e.target.value }));
-​
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-​
+
     // validasi
     if (!form.fullname)         return setError("Nama lengkap wajib diisi.");
     if (!form.email)            return setError("Email wajib diisi.");
@@ -134,11 +129,9 @@ function FormTambah({ onBack, onSuccess }) {
     if (!form.password)         return setError("Kata sandi wajib diisi.");
     if (form.password.length < 8) return setError("Kata sandi minimal 8 karakter.");
     if (form.password !== form.confirmPassword) return setError("Konfirmasi kata sandi tidak cocok.");
-​
+
     setSaving(true);
     try {
-      // POST /superadmin/admin-accounts
-      // body: { fullname, email, phone, password, position, unit_lab, employee_no, role }
       const res = await createAdminAccount({
         fullname:    form.fullname,
         email:       form.email,
@@ -159,7 +152,7 @@ function FormTambah({ onBack, onSuccess }) {
       setSaving(false);
     }
   };
-​
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-[#233B6E]" />
@@ -173,10 +166,10 @@ function FormTambah({ onBack, onSuccess }) {
         </button>
         <h2 className="font-bold text-[#233B6E] text-base">Tambah Petugas</h2>
       </div>
-​
+
       <form onSubmit={handleSubmit} className="p-5 space-y-4">
         <Alert type="error" msg={error} onClose={() => setError("")} />
-​
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Email" required>
             <TextInput type="email" value={form.email} onChange={set("email")}
@@ -207,7 +200,7 @@ function FormTambah({ onBack, onSuccess }) {
               options={ROLE_OPTIONS} />
           </Field>
         </div>
-​
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Kata Sandi" required>
             <TextInput type="password" value={form.password} onChange={set("password")}
@@ -218,7 +211,7 @@ function FormTambah({ onBack, onSuccess }) {
               onChange={set("confirmPassword")} placeholder="Minimal 8 Karakter" />
           </Field>
         </div>
-​
+
         <div className="flex justify-end pt-2">
           <button type="submit" disabled={saving}
             className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -237,10 +230,7 @@ function FormTambah({ onBack, onSuccess }) {
     </div>
   );
 }
-​
-/* ═══════════════════════════════════════════════════════════════
-   DETAIL / VERIFIKASI AKUN
-═══════════════════════════════════════════════════════════════ */
+
 function DetailAkun({ account, onBack, onSuccess }) {
   const [form, setForm] = useState({
     fullname:    account.fullname    ?? "",
@@ -253,10 +243,9 @@ function DetailAkun({ account, onBack, onSuccess }) {
   });
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
-​
+
   const set = key => e => setForm(p => ({ ...p, [key]: e.target.value }));
-​
-  /* ── PATCH /admin/customers/:id/verify — verifikasi akun petugas ── */
+
   const handleVerify = async () => {
     if (!window.confirm(`Verifikasi akun ${account.email}?\nPetugas akan mendapatkan email untuk login.`)) return;
     setLoading(true); setError("");
@@ -272,8 +261,7 @@ function DetailAkun({ account, onBack, onSuccess }) {
       setLoading(false);
     }
   };
-​
-  /* ── DELETE /superadmin/admin-accounts/:id ── */
+
   const handleDelete = async () => {
     if (!window.confirm(`Hapus akun ${account.email}? Tindakan ini tidak bisa dibatalkan.`)) return;
     setLoading(true); setError("");
@@ -289,7 +277,7 @@ function DetailAkun({ account, onBack, onSuccess }) {
       setLoading(false);
     }
   };
-​
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-[#233B6E]" />
@@ -306,10 +294,10 @@ function DetailAkun({ account, onBack, onSuccess }) {
         </div>
         <StatusBadge verified={account.is_verified} />
       </div>
-​
+
       <div className="p-5 space-y-4">
         <Alert type="error" msg={error} onClose={() => setError("")} />
-​
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Email">
             <TextInput value={form.email} onChange={set("email")}
@@ -342,8 +330,7 @@ function DetailAkun({ account, onBack, onSuccess }) {
             <TextInput type="password" disabled placeholder="Minimal 8 karakter" />
           </Field>
         </div>
-​
-        {/* Actions */}
+
         <div className="flex justify-end gap-3 pt-2">
           <button onClick={handleDelete} disabled={loading}
             className="inline-flex items-center gap-2 bg-red-50 hover:bg-red-100
@@ -359,7 +346,7 @@ function DetailAkun({ account, onBack, onSuccess }) {
             )}
             Hapus
           </button>
-​
+
           {!account.is_verified && (
             <button onClick={handleVerify} disabled={loading}
               className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -375,7 +362,7 @@ function DetailAkun({ account, onBack, onSuccess }) {
             </button>
           )}
         </div>
-​
+
         {account.is_verified && (
           <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
             text-green-700 text-sm font-medium text-center">
@@ -386,10 +373,7 @@ function DetailAkun({ account, onBack, onSuccess }) {
     </div>
   );
 }
-​
-/* ═══════════════════════════════════════════════════════════════
-   HALAMAN UTAMA — DAFTAR AKUN PETUGAS
-═══════════════════════════════════════════════════════════════ */
+
 export default function ManajemenAkun() {
   const [view,       setView]       = useState(VIEW.LIST);
   const [accounts,   setAccounts]   = useState([]);
@@ -400,17 +384,15 @@ export default function ManajemenAkun() {
   const [search,     setSearch]     = useState("");
   const [filterLab,  setFilterLab]  = useState("Semua");
   const [page,       setPage]       = useState(1);
-​
+
   useEffect(() => { fetchAccounts(); }, []);
-​
-  /* ── GET /superadmin/admin-accounts ── */
+
   const fetchAccounts = async () => {
     setLoading(true); setError("");
     try {
       const res = await getAllAdminAccounts();
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      // Response: { message, accounts: [...] }
       setAccounts(data.accounts ?? []);
     } catch {
       setError("Gagal memuat daftar akun.");
@@ -418,12 +400,10 @@ export default function ManajemenAkun() {
       setLoading(false);
     }
   };
-​
-  /* ── filter & paginasi ── */
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return accounts.filter(a => {
-      // Hanya tampilkan akun dengan role "admin", bukan "superAdmin"
       if (a.role === "superAdmin" || a.role === "superadmin") return false;
       const matchSearch = !q ||
         a.email?.toLowerCase().includes(q) ||
@@ -433,13 +413,13 @@ export default function ManajemenAkun() {
       return matchSearch && matchLab;
     });
   }, [accounts, search, filterLab]);
-​
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-​
+
   const handleSearch   = e => { setSearch(e.target.value); setPage(1); };
   const handleFilterLab= e => { setFilterLab(e.target.value); setPage(1); };
-​
+
   const handleSuccess = async (msg) => {
     setFlashOk(msg);
     setView(VIEW.LIST);
@@ -447,8 +427,7 @@ export default function ManajemenAkun() {
     await fetchAccounts();
     setTimeout(() => setFlashOk(""), 4000);
   };
-​
-  /* ── render berdasarkan view ── */
+
   if (view === VIEW.TAMBAH) {
     return (
       <div className="space-y-3 max-w-3xl">
@@ -461,7 +440,7 @@ export default function ManajemenAkun() {
       </div>
     );
   }
-​
+
   if (view === VIEW.DETAIL && selected) {
     return (
       <div className="space-y-3 max-w-3xl">
@@ -475,21 +454,18 @@ export default function ManajemenAkun() {
       </div>
     );
   }
-​
-  /* ── LIST view ── */
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-[#233B6E]">Manajemen Akun</h1>
-​
+
       <Alert type="error"   msg={error}   onClose={() => setError("")} />
       <Alert type="success" msg={flashOk} onClose={() => setFlashOk("")} />
-​
+
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Toolbar */}
         <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap
           items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Search */}
             <div className="relative">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
                 strokeLinecap="round"
@@ -502,7 +478,7 @@ export default function ManajemenAkun() {
                   outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]
                   w-44" />
             </div>
-​
+
             {/* Filter unit lab */}
             <div className="flex items-center gap-1.5 text-sm text-gray-500">
               <span className="font-medium">Unit Lab:</span>
@@ -514,7 +490,7 @@ export default function ManajemenAkun() {
               </select>
             </div>
           </div>
-​
+
           {/* Tombol tambah */}
           <button onClick={() => setView(VIEW.TAMBAH)}
             className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56]
@@ -527,7 +503,7 @@ export default function ManajemenAkun() {
             Tambah Akun
           </button>
         </div>
-​
+
         {/* Tabel */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -583,8 +559,7 @@ export default function ManajemenAkun() {
             </tbody>
           </table>
         </div>
-​
-        {/* Pagination */}
+
         <div className="px-4 py-3 border-t border-gray-100 flex items-center
           justify-between flex-wrap gap-2">
           <span className="text-xs text-gray-400">
@@ -610,7 +585,7 @@ export default function ManajemenAkun() {
     </div>
   );
 }
-​
+
 function PBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}

@@ -1,4 +1,3 @@
-// Cart disimpan di localStorage per session customer
 const KEY = "sibvet_cart";
 
 export const getCart = () => {

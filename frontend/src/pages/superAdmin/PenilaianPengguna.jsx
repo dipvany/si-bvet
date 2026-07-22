@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllFeedbacks } from "../../services/superAdminServices";
-​
-/* laporan penilaian kepuasan (super admin) */
-​
+
 const answersOf = (f) => f?.answers ?? f?.Answers ?? [];
 const questionTextOf = (a) =>
   a?.Question?.question_text ?? a?.question?.question_text ?? "Pertanyaan";
-​
+
 const avgOf = (f) => {
   const arr = answersOf(f);
   if (!arr.length) return 0;
@@ -15,7 +13,7 @@ const avgOf = (f) => {
   return sum / arr.length;
 };
 const roundedRatingOf = (f) => Math.round(avgOf(f));
-​
+
 const dateOf = (f) => f?.created_at ?? f?.CreatedAt ?? f?.createdAt ?? null;
 const fmtDate = (d) => {
   if (!d) return "-";
@@ -27,7 +25,7 @@ const fmtDate = (d) => {
     year: "numeric",
   });
 };
-​
+
 function Stars({ value, size = "w-4 h-4" }) {
   return (
     <div className="flex gap-0.5">
@@ -49,13 +47,13 @@ function Stars({ value, size = "w-4 h-4" }) {
     </div>
   );
 }
-​
+
 export default function PenilaianPengguna() {
   const navigate = useNavigate();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-​
+
   useEffect(() => {
     (async () => {
       try {
@@ -71,14 +69,13 @@ export default function PenilaianPengguna() {
       }
     })();
   }, []);
-​
+
   const overallAvg = feedbacks.length
     ? feedbacks.reduce((t, f) => t + avgOf(f), 0) / feedbacks.length
     : 0;
-​
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-lg font-bold text-[#233B6E]">
@@ -106,13 +103,13 @@ export default function PenilaianPengguna() {
           Kelola Pertanyaan
         </button>
       </div>
-​
+
       {error && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
           {error}
         </div>
       )}
-​
+
       {/* Ringkasan */}
       {!loading && feedbacks.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -137,7 +134,7 @@ export default function PenilaianPengguna() {
           </div>
         </div>
       )}
-​
+
       {/* Tabel */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
@@ -197,7 +194,6 @@ export default function PenilaianPengguna() {
           </div>
         )}
       </div>
-​
     </div>
   );
 }

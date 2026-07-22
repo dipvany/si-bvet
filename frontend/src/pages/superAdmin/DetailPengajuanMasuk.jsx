@@ -2,31 +2,29 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { approveSubmission, rejectSubmission } from "../../services/superAdminServices";
 import { apiFetch } from "../../services/api";
-​
-/* ── Helpers ─────────────────────────────────────────────────── */
+
 const fmt = (iso) => {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString("id-ID",
     { day: "2-digit", month: "2-digit", year: "numeric" });
 };
-​
+
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency", currency: "IDR", maximumFractionDigits: 0,
   }).format(n ?? 0);
-​
+
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   const apiBase = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api").replace(/\/$/, "");
   const origin = apiBase.replace(/\/api\/?$/, "");
   const clean = path.startsWith("/") ? path : `/${path}`;
-  // Pertahankan prefix /api agar file diteruskan reverse proxy ke backend (/api/uploads),
-  // bukan ditangkap SPA yang membuat halaman balik ke landing page.
+
   if (clean.startsWith("/api/")) return `${origin}${clean}`;
   return `${apiBase}${clean}`;
 };
-​
+
 const STATUS_CFG = {
   pending_verification: { label: "Menunggu Verifikasi", bg: "bg-yellow-100 text-yellow-700" },
   reviewing:            { label: "Kaji Ulang",          bg: "bg-orange-100 text-orange-700" },
@@ -35,8 +33,7 @@ const STATUS_CFG = {
   done:                 { label: "Selesai",             bg: "bg-green-100 text-green-700"  },
   rejected:             { label: "Ditolak",             bg: "bg-red-100 text-red-600"      },
 };
-​
-/* ── Sub-components ───────────────────────────────────────────── */
+
 const VERIF_CFG = {
   unverified: { label: "Belum Diverifikasi", bg: "bg-yellow-100 text-yellow-700" },
   verified:   { label: "Sudah Diverifikasi", bg: "bg-green-100 text-green-700" },
@@ -44,7 +41,7 @@ const VERIF_CFG = {
 };
 const verifOf = (s) =>
   s === "pending_verification" ? "unverified" : s === "rejected" ? "rejected" : "verified";
-​
+
 function Row({ label, value }) {
   return (
     <div className="px-5 py-3.5 flex gap-4 border-b border-gray-50 last:border-0">
@@ -53,7 +50,7 @@ function Row({ label, value }) {
     </div>
   );
 }
-​
+
 function Card({ title, accent = "#233B6E", children }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -65,7 +62,7 @@ function Card({ title, accent = "#233B6E", children }) {
     </div>
   );
 }
-​
+
 function Section({ n, title, accent = "#233B6E", first = false }) {
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 bg-[#F8F9FC] ${first ? "" : "border-t border-gray-100"}`}>
@@ -78,7 +75,7 @@ function Section({ n, title, accent = "#233B6E", first = false }) {
     </div>
   );
 }
-​
+
 function DocLink({ path }) {
   const url = getDocUrl(path);
   if (!url) return null;
@@ -116,19 +113,17 @@ function DocLink({ path }) {
     </a>
   );
 }
-​
-/* ── Main component ───────────────────────────────────────────── */
+
 export default function DetailPengajuanMasuk() {
   const navigate  = useNavigate();
   const { id }    = useParams();
   const { state } = useLocation();
-​
   const [submission, setSubmission] = useState(state?.submission ?? null);
   const [fetching,   setFetching]   = useState(true);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState("");
   const [success,    setSuccess]    = useState("");
-​
+
   useEffect(() => {
     if (!id) return;
     setFetching(true);
@@ -138,7 +133,7 @@ export default function DetailPengajuanMasuk() {
       .catch(() => {})
       .finally(() => setFetching(false));
   }, [id]);
-​
+
   if (fetching && !submission) return (
     <div className="flex items-center justify-center h-64">
       <div className="flex items-center gap-2 text-gray-400 text-sm">
@@ -150,7 +145,7 @@ export default function DetailPengajuanMasuk() {
       </div>
     </div>
   );
-​
+
   if (!submission) return (
     <div className="flex flex-col items-center justify-center h-64 gap-3">
       <p className="text-gray-400 text-sm">Data pengajuan tidak ditemukan.</p>
@@ -158,16 +153,16 @@ export default function DetailPengajuanMasuk() {
         className="text-[#233B6E] text-sm font-semibold hover:underline">← Kembali</button>
     </div>
   );
-​
+
   const status    = submission.process_status;
   const isPending = status === "pending_verification";
   const sCfg      = VERIF_CFG[verifOf(status)];
-​
+
   const userInfo = submission.user_info ?? {};
   const customer = userInfo.customer   ?? {};
   const samples  = Array.isArray(submission.samples) ? submission.samples : [];
-​
-  // Estimasi harga: sampel x layanan pengujian (harga x jumlah sampel) - sama seperti preview customer
+
+  // Estimasi harga
   const estLines = (() => {
     const map = new Map();
     samples.forEach((s) => {
@@ -184,11 +179,11 @@ export default function DetailPengajuanMasuk() {
     return Array.from(map.values());
   })();
   const estTotal = estLines.reduce((a, l) => a + l.price * l.qty, 0);
-​
-  // Dokumen lampiran — bisa string atau array
+
+  // Dokumen lampiran
   const attRaw  = submission.attachment_doc;
   const attDocs = Array.isArray(attRaw) ? attRaw : (attRaw ? [attRaw] : []);
-​
+
   const handleApprove = async () => {
     if (!window.confirm("Setujui pengajuan ini? Otomatis masuk ke Proses Pembayaran.")) return;
     setLoading(true); setError(""); setSuccess("");
@@ -201,7 +196,7 @@ export default function DetailPengajuanMasuk() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
-​
+
   const handleReject = async () => {
     if (!window.confirm("Tolak pengajuan ini? Tindakan ini tidak dapat dibatalkan.")) return;
     setLoading(true); setError(""); setSuccess("");
@@ -214,11 +209,9 @@ export default function DetailPengajuanMasuk() {
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
-​
+
   return (
     <div className="space-y-5">
-​
-      {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)}
           className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
@@ -235,7 +228,7 @@ export default function DetailPengajuanMasuk() {
         </div>
         <span className="text-xs font-mono text-gray-400">{submission.no_ticket}</span>
       </div>
-​
+
       {/* Feedback */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -247,10 +240,10 @@ export default function DetailPengajuanMasuk() {
           {success}
         </div>
       )}
-​
-      {/* ── Tinjauan Pengajuan Uji Sampel — 1 card, 3 bagian ── */}
+
+      {/* Tinjauan Pengajuan Uji Sampel */}
       <Card title="Tinjauan Pengajuan Uji Sampel">
-​
+
         {/* 1. Data Pengajuan */}
         <Section n="1" title="Data Pengajuan" first />
         <Row label="No. Tiket"            value={submission.no_ticket} />
@@ -268,7 +261,7 @@ export default function DetailPengajuanMasuk() {
         <Row label="Perlu Diagnosa"       value={submission.diagnosis_required ? "Ya" : "Tidak"} />
         <Row label="Jumlah Sampel"        value={submission.samples_count} />
         {submission.notes && <Row label="Catatan" value={submission.notes} />}
-​
+
         {/* Dokumen Pendukung */}
         {attDocs.length > 0 && (
           <div className="px-5 py-4 border-t border-gray-100">
@@ -282,7 +275,7 @@ export default function DetailPengajuanMasuk() {
             </div>
           </div>
         )}
-​
+
         {/* 2. Data Sampel */}
         <Section n="2" title={`Data Sampel (${samples.length} sampel)`} accent="#233B6E" />
         {samples.length === 0 ? (
@@ -324,7 +317,6 @@ export default function DetailPengajuanMasuk() {
                 </div>
               ))}
             </div>
-            {/* Badge pengujian yang diminta */}
             {Array.isArray(s.test_requests) && s.test_requests.length > 0 && (
               <div className="mt-3">
                 <p className="text-xs text-gray-400 mb-2">Pengujian Diminta</p>
@@ -342,7 +334,7 @@ export default function DetailPengajuanMasuk() {
             )}
           </div>
         ))}
-​
+
         {/* 3. Data Pelanggan */}
         <Section n="3" title="Data Pelanggan" accent="#233B6E" />
         <Row label="Nama Lengkap"          value={userInfo.fullname} />
@@ -363,12 +355,12 @@ export default function DetailPengajuanMasuk() {
           value={customer.is_membership
             ? `Ya (${customer.membership_no || "-"})` : "Tidak"} />
       </Card>
-​
-      {/* Estimasi Harga - card terpisah dari Tinjauan */}
+
+      {/* Estimasi Harga */}
       {estLines.length > 0 && (
         <Card title="Estimasi Harga Pengujian">
           <div className="px-5 py-4">
-            {/* Mobile: daftar bertumpuk biar tak perlu geser */}
+
             <div className="sm:hidden divide-y divide-gray-100">
               {estLines.map((l, i) => (
                 <div key={i} className="py-3 flex justify-between gap-3">
@@ -384,8 +376,7 @@ export default function DetailPengajuanMasuk() {
                 <span className="text-sm font-bold text-[#233B6E] whitespace-nowrap">{rupiah(estTotal)}</span>
               </div>
             </div>
-​
-            {/* Desktop: tabel */}
+
             <table className="hidden sm:table w-full text-sm">
               <thead>
                 <tr className="text-left text-[11px] text-gray-400 uppercase tracking-wide border-b border-gray-100">
@@ -416,8 +407,7 @@ export default function DetailPengajuanMasuk() {
           </div>
         </Card>
       )}
-​
-      {/* ── Tombol Verifikasi — di bawah setelah baca semua info ── */}
+
       {isPending && (
         <div className="flex gap-3">
           <button onClick={handleApprove} disabled={loading}
@@ -434,21 +424,20 @@ export default function DetailPengajuanMasuk() {
           </button>
         </div>
       )}
-​
+
       {status === "rejected" && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3
           text-red-600 text-sm font-medium text-center">
           Pengajuan ini telah ditolak.
         </div>
       )}
-​
+
       {!isPending && status !== "rejected" && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
           text-green-700 text-sm font-medium text-center">
           Pengajuan ini sudah disetujui — lanjutkan proses di menu <strong>Proses Pembayaran</strong>.
         </div>
       )}
-​
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// Kunci localStorage — sama dengan yang dipakai backend (si-bvet-token / si-bvet-user)
 const TOKEN_KEY = "si-bvet-token";
 const USER_KEY  = "si-bvet-user";
 
@@ -21,11 +20,6 @@ export const clearAuth = () => {
 
 export const isAuthenticated = () => !!getToken();
 
-/**
- * getDashboardPath — mapping role ke path dashboard.
- * Backend mengirimkan role dalam lowercase:
- *   "superadmin" | "admin" | "customer"
- */
 export const getDashboardPath = (role) => ({
   customer:   "/customer/beranda",
   admin:      "/admin/beranda",

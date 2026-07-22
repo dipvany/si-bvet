@@ -9,7 +9,6 @@ const CARD_CONFIG = [
   { key: "completed",            label: "Selesai Pengujian",     color: "#3B82F6" },
 ];
 
-// Warna per action/tipe aktivitas
 const ACTION_COLOR = {
   login:    { bg: "bg-blue-100",   text: "text-blue-700",   dot: "bg-blue-500",   icon: "🔑" },
   logout:   { bg: "bg-gray-100",   text: "text-gray-600",   dot: "bg-gray-400",   icon: "🚪" },
@@ -24,7 +23,6 @@ const ACTION_COLOR = {
 };
 
 function getActionStyle(log) {
-  // Coba deteksi dari field action / event / type / description
   const raw = (
     log.action ?? log.event ?? log.type ?? log.description ?? log.activity ?? ""
   ).toLowerCase();
@@ -46,18 +44,15 @@ function formatTime(val) {
 
 function getInitials(name) {
   if (!name || name === "—") return "?";
-  // Ambil huruf pertama dari tiap kata (maks 2 kata)
   const initials = name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase();
   return initials || "?";
 }
 
-// Ambil label deskripsi dari berbagai kemungkinan field
 function getDesc(log) {
   return log.description ?? log.activity ?? log.action ?? log.event ?? log.message ?? "Aktivitas sistem";
 }
 
 function getUserName(log) {
-  // Coba semua kemungkinan field nama dari response API
   return (
     log.actor_name ??
     log.actor ??
@@ -114,7 +109,6 @@ function ActivityLogSection({ logs, loading, error }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
@@ -125,7 +119,6 @@ function ActivityLogSection({ logs, loading, error }) {
         </span>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-600
           text-xs rounded-xl px-4 py-3">
@@ -133,7 +126,6 @@ function ActivityLogSection({ logs, loading, error }) {
         </div>
       )}
 
-      {/* Loading skeleton */}
       {loading ? (
         <div className="divide-y divide-gray-50">
           {[...Array(5)].map((_, i) => (
@@ -166,7 +158,6 @@ function ActivityLogSection({ logs, loading, error }) {
               const time     = formatTime(
                 log.created_at ?? log.timestamp ?? log.time ?? log.date
               );
-              // actor: nama yang ditampilkan, fallback ke "Sistem" jika tidak ada
               const actor    = log.actor ?? name ?? "Sistem";
               const initials = getInitials(actor);
               const method   = log.method ?? log.http_method ?? null;
@@ -181,29 +172,23 @@ function ActivityLogSection({ logs, loading, error }) {
               return (
                 <div key={log.id ?? i}
                   className="flex items-start gap-4 px-6 py-3.5 hover:bg-[#F8F9FC] transition-colors">
-
-                  {/* Nomor */}
                   <span className="text-xs text-gray-300 font-medium w-4 flex-shrink-0 mt-1 text-right">
                     {i + 1}
                   </span>
 
-                  {/* Avatar */}
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center
                     flex-shrink-0 text-xs font-bold ${style.bg} ${style.text}`}>
                     {initials}
                   </div>
 
-                  {/* Konten */}
                   <div className="flex-1 min-w-0">
-                    {/* Nama actor */}
                     <p className="text-sm font-semibold text-gray-800 truncate">{actor}</p>
 
-                    {/* Deskripsi aktivitas */}
+                    {/* Aktivitas */}
                     <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2">
                       {desc}
                     </p>
 
-                    {/* Method + Endpoint */}
                     {(method || endpoint) && (
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                         {method && (
@@ -229,7 +214,6 @@ function ActivityLogSection({ logs, loading, error }) {
             })}
           </div>
 
-          {/* Show more */}
           {logs.length > 10 && (
             <div className="px-6 py-3 border-t border-gray-100 text-center">
               <button onClick={() => setShowAll(p => !p)}
@@ -303,7 +287,6 @@ export default function SuperAdminBeranda() {
       const res  = await getActivityLogs();
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? json.message ?? "Gagal memuat log.");
-      // Handle berbagai format: { logs: [] } atau { data: [] } atau []
       const data = json.logs ?? json.data ?? json.activity_logs ?? (Array.isArray(json) ? json : []);
       setLogs(data);
     } catch (err) {
@@ -352,7 +335,7 @@ export default function SuperAdminBeranda() {
         </div>
       )}
 
-      {/* Stat cards */}
+      {/* Stat Pengajuan */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
         {CARD_CONFIG.map(c => (
           <StatCard key={c.key} label={c.label} value={stats[c.key] ?? 0}

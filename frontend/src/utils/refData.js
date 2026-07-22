@@ -1,5 +1,4 @@
 // Data referensi dari template Excel SI-BVET
-
 export const TYPE_SERVICE  = ["Aktif", "Pasif"];
 export const PURPOSE       = ["Surveilans", "Diagnosa", "Monitoring", "Penelitian", "Lainnya"];
 export const SAMPLE_MODELS = ["Mamalia", "Unggas", "Rabies", "Model Lain"];
