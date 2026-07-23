@@ -473,7 +473,7 @@ export default function ManajemenAkun() {
 ​
   if (view === VIEW.TAMBAH) {
     return (
-      <div className="space-y-3 max-w-3xl">
+      <div className="space-y-3 max-w-5xl">
         <h1 className="text-xl font-bold text-[#233B6E]">Manajemen Akun</h1>
         <p className="text-sm text-gray-400">Daftar Akun Petugas</p>
         <FormTambah
@@ -486,7 +486,7 @@ export default function ManajemenAkun() {
 ​
   if (view === VIEW.DETAIL && selected) {
     return (
-      <div className="space-y-3 max-w-3xl">
+      <div className="space-y-3 max-w-5xl">
         <h1 className="text-xl font-bold text-[#233B6E]">Manajemen Akun</h1>
         <p className="text-sm text-gray-400">Daftar Akun Petugas</p>
         <DetailAkun

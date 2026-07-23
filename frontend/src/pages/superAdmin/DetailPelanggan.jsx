@@ -65,7 +65,7 @@ export default function DetailPelanggan() {
   ];
 ​
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="space-y-5 max-w-5xl">
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)}
           className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
