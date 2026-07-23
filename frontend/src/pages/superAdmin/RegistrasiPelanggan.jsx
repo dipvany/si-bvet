@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUnverifiedCustomers, verifyUser, rejectUser } from "../../services/superAdminServices";
+import { getUnverifiedCustomers, verifyUser, rejectUser, createCustomerAccount } from "../../services/superAdminServices";
 import { apiFetch } from "../../services/api";
 import StatusBadge from "../../components/StatusBadge";
-
+​
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -13,22 +13,22 @@ const getDocUrl = (path) => {
   if (clean.startsWith("/api/")) return `${origin}${clean}`;
   return `${apiBase}${clean}`;
 };
-
+​
 const PER_PAGE = 10;
-
+​
 const FILTER_OPTIONS = [
   { value: "all",      label: "Semua" },
   { value: "pending",  label: "Belum Verifikasi" },
   { value: "approved", label: "Sudah Verifikasi" },
   { value: "rejected", label: "Ditolak" },
 ];
-
+​
 function getStatusKey(customer) {
   if (customer._localRejected) return "rejected";
   if (customer._localVerified || customer.is_verified) return "approved";
   return "pending";
 }
-
+​
 function PaginationBtn({ children, active, disabled, onClick }) {
   return (
     <button onClick={onClick} disabled={disabled}
@@ -41,10 +41,134 @@ function PaginationBtn({ children, active, disabled, onClick }) {
     </button>
   );
 }
-
+​
+function FormTambahPelanggan({ onBack, onSuccess }) {
+  const [form, setForm] = useState({
+    fullname: "", email: "", phone: "",
+    password: "", confirmPassword: "", institution: "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+​
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!form.fullname.trim()) return setError("Nama lengkap wajib diisi.");
+    if (!/\S+@\S+\.\S+/.test(form.email)) return setError("Format email tidak valid.");
+    if (!form.phone.trim()) return setError("No. telepon wajib diisi.");
+    if (!form.institution.trim()) return setError("Instansi wajib diisi.");
+    if (form.password.length < 8) return setError("Kata sandi minimal 8 karakter.");
+    if (form.password !== form.confirmPassword)
+      return setError("Konfirmasi kata sandi tidak cocok.");
+    setSaving(true);
+    try {
+      const res = await createCustomerAccount({
+        fullname: form.fullname,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        institution: form.institution,
+      });
+      let body = {};
+      try { body = await res.json(); } catch {}
+      if (!res.ok) throw new Error(body.error ?? body.message ?? "Gagal menambahkan akun.");
+      onSuccess("Akun pelanggan berhasil ditambahkan.");
+    } catch (err) {
+      setError(err.message ?? "Gagal menambahkan akun.");
+    } finally {
+      setSaving(false);
+    }
+  };
+​
+  const inputCls =
+    "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]";
+  const F = ({ label, children }) => (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        {label}<span className="text-red-400 ml-0.5">*</span>
+      </span>
+      {children}
+    </label>
+  );
+​
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="h-1 bg-[#233B6E]" />
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <button type="button" onClick={onBack}
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+            strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+        <h2 className="font-bold text-[#233B6E] text-base">Tambah Akun Pelanggan</h2>
+      </div>
+​
+      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 flex items-start justify-between gap-2">
+            <span>{error}</span>
+            <button type="button" onClick={() => setError("")}
+              className="opacity-60 hover:opacity-100 flex-shrink-0">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" className="w-3.5 h-3.5">
+                <path d="M1 1l12 12M13 1L1 13" />
+              </svg>
+            </button>
+          </div>
+        )}
+​
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <F label="Nama Lengkap">
+            <input value={form.fullname} onChange={set("fullname")}
+              placeholder="Masukkan nama lengkap" className={inputCls} />
+          </F>
+          <F label="Email">
+            <input type="email" value={form.email} onChange={set("email")}
+              placeholder="nama@email.com" className={inputCls} />
+          </F>
+          <F label="No. Telepon">
+            <input value={form.phone} onChange={set("phone")}
+              placeholder="08XXXXXXXXXX" className={inputCls} />
+          </F>
+          <F label="Instansi">
+            <input value={form.institution} onChange={set("institution")}
+              placeholder="Nama instansi" className={inputCls} />
+          </F>
+          <F label="Kata Sandi">
+            <input type="password" value={form.password} onChange={set("password")}
+              placeholder="Minimal 8 karakter" className={inputCls} />
+          </F>
+          <F label="Konfirmasi Kata Sandi">
+            <input type="password" value={form.confirmPassword}
+              onChange={set("confirmPassword")} placeholder="Ulangi kata sandi" className={inputCls} />
+          </F>
+        </div>
+​
+        <div className="flex justify-end pt-2">
+          <button type="submit" disabled={saving}
+            className="inline-flex items-center gap-2 bg-[#233B6E] hover:bg-[#1a2d56] text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm">
+            {saving ? (
+              <>
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Menyimpan...
+              </>
+            ) : "Simpan Akun"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+​
 export default function RegistrasiPelanggan() {
   const navigate = useNavigate();
-
+​
   const [allCustomers, setAllCustomers] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
@@ -54,15 +178,18 @@ export default function RegistrasiPelanggan() {
   const [sort, setSort]                 = useState("terbaru");
   const [actionStatus, setActionStatus] = useState({});
   const [actionMsg, setActionMsg]       = useState({});
-
+​
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile,      setImportFile]      = useState(null);
   const [importing,       setImporting]       = useState(false);
   const [importResult,    setImportResult]    = useState(null);
   const [importError,     setImportError]     = useState("");
-
+​
+  const [showAdd, setShowAdd] = useState(false);
+  const [flashOk, setFlashOk] = useState("");
+​
   useEffect(() => { fetchData(); }, []);
-
+​
   const fetchData = async () => {
     setLoading(true); setError("");
     try {
@@ -76,7 +203,7 @@ export default function RegistrasiPelanggan() {
       setLoading(false);
     }
   };
-
+​
   const handleVerify = async (customer) => {
     setActionStatus(p => ({ ...p, [customer.id]: "loading" }));
     setActionMsg(p => ({ ...p, [customer.id]: "" }));
@@ -95,7 +222,7 @@ export default function RegistrasiPelanggan() {
       setActionMsg(p => ({ ...p, [customer.id]: err.message }));
     }
   };
-
+​
   const handleReject = async (customer) => {
     setActionStatus(p => ({ ...p, [customer.id]: "loading" }));
     setActionMsg(p => ({ ...p, [customer.id]: "" }));
@@ -114,7 +241,7 @@ export default function RegistrasiPelanggan() {
       setActionMsg(p => ({ ...p, [customer.id]: err.message }));
     }
   };
-
+​
   const handleImport = async () => {
     if (!importFile) return setImportError("Pilih file terlebih dahulu.");
     setImporting(true); setImportError(""); setImportResult(null);
@@ -137,7 +264,7 @@ export default function RegistrasiPelanggan() {
       setImporting(false);
     }
   };
-
+​
   const filtered = useMemo(() => {
     const base = allCustomers.filter(c => {
       const status = getStatusKey(c);
@@ -156,17 +283,35 @@ export default function RegistrasiPelanggan() {
       return (b.id ?? 0) - (a.id ?? 0);
     });
   }, [allCustomers, filter, search, sort]);
-
+​
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
+​
   const counts = useMemo(() => ({
     all:      allCustomers.length,
     pending:  allCustomers.filter(c => getStatusKey(c) === "pending").length,
     approved: allCustomers.filter(c => getStatusKey(c) === "approved").length,
     rejected: allCustomers.filter(c => getStatusKey(c) === "rejected").length,
   }), [allCustomers]);
-
+​
+  if (showAdd) {
+    return (
+      <div className="space-y-3 max-w-3xl">
+        <h1 className="text-xl font-bold text-[#233B6E]">Registrasi Pelanggan</h1>
+        <p className="text-sm text-gray-400">Tambah akun pelanggan baru secara manual</p>
+        <FormTambahPelanggan
+          onBack={() => setShowAdd(false)}
+          onSuccess={(msg) => {
+            setShowAdd(false);
+            setFlashOk(msg);
+            fetchData();
+            setTimeout(() => setFlashOk(""), 4000);
+          }}
+        />
+      </div>
+    );
+  }
+​
   return (
     <>
       <div className="space-y-5">
@@ -183,7 +328,7 @@ export default function RegistrasiPelanggan() {
             Refresh
           </button>
         </div>
-
+​
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm
             rounded-xl px-4 py-3 flex justify-between items-center">
@@ -192,7 +337,15 @@ export default function RegistrasiPelanggan() {
               className="text-xs font-semibold hover:underline ml-4">Coba Lagi</button>
           </div>
         )}
-
+​
+        {flashOk && (
+          <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 flex justify-between items-center">
+            {flashOk}
+            <button onClick={() => setFlashOk("")}
+              className="text-xs font-semibold hover:underline ml-4">Tutup</button>
+          </div>
+        )}
+​
         {/* Filter */}
         <div className="flex flex-wrap gap-2">
           {FILTER_OPTIONS.map(opt => (
@@ -211,9 +364,9 @@ export default function RegistrasiPelanggan() {
             </button>
           ))}
         </div>
-
+​
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-
+​
           <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
             <div className="relative w-full sm:w-72">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -228,7 +381,7 @@ export default function RegistrasiPelanggan() {
                   outline-none focus:ring-2 focus:ring-[#233B6E]/20 focus:border-[#233B6E]
                   bg-[#F6F7FB]" />
             </div>
-
+​
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Status:</span>
               <div className="relative">
@@ -249,7 +402,7 @@ export default function RegistrasiPelanggan() {
                 </svg>
               </div>
             </div>
-
+​
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400 font-medium whitespace-nowrap">Urutkan:</span>
               <div className="relative">
@@ -270,8 +423,17 @@ export default function RegistrasiPelanggan() {
                 </svg>
               </div>
             </div>
-
+​
             <div className="flex items-center gap-2 ml-auto">
+              <button onClick={() => setShowAdd(true)}
+                className="flex items-center gap-1.5 bg-[#233B6E] hover:bg-[#1a2d56] text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors whitespace-nowrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Tambah Akun
+              </button>
               <button onClick={() => {
                 setShowImportModal(true);
                 setImportResult(null);
@@ -291,7 +453,7 @@ export default function RegistrasiPelanggan() {
               </button>
             </div>
           </div>
-
+​
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
@@ -329,7 +491,7 @@ export default function RegistrasiPelanggan() {
                   const actSt     = actionStatus[c.id];
                   const actMsg    = actionMsg[c.id];
                   const isLoading = actSt === "loading";
-
+​
                   return (
                     <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-center text-gray-400 text-xs">
@@ -440,7 +602,7 @@ export default function RegistrasiPelanggan() {
               </tbody>
             </table>
           </div>
-
+​
           <div className="px-4 py-3 border-t border-gray-100 flex items-center
             justify-between flex-wrap gap-2">
             <span className="text-xs text-gray-400">
@@ -470,7 +632,7 @@ export default function RegistrasiPelanggan() {
           </div>
         </div>
       </div>
-
+​
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -492,7 +654,7 @@ export default function RegistrasiPelanggan() {
                 </svg>
               </button>
             </div>
-
+​
             <div className="px-6 py-5 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3
                 text-sm text-blue-700">
@@ -504,7 +666,7 @@ export default function RegistrasiPelanggan() {
                   <li>Maksimal 500 baris per file</li>
                 </ul>
               </div>
-
+​
               {importError && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm
                   rounded-xl px-4 py-3 flex items-start justify-between gap-2">
@@ -518,7 +680,7 @@ export default function RegistrasiPelanggan() {
                   </button>
                 </div>
               )}
-
+​
               {importResult ? (
                 <>
                   <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
@@ -591,7 +753,7 @@ export default function RegistrasiPelanggan() {
                       </>
                     )}
                   </label>
-
+​
                   <div className="flex gap-3">
                     <button onClick={() => setShowImportModal(false)}
                       className="flex-1 border border-gray-200 text-gray-600

@@ -21,7 +21,7 @@ import {
   getAnimalsByGroup,
   PROVINCES,
 } from "../../utils/refData";
-
+​
 const EMPTY_SAMPLE = {
   sample_code_cust: "",
   sample_model: "",
@@ -42,7 +42,7 @@ const EMPTY_SAMPLE = {
   is_vaccinated: "Tidak Diketahui",
   test_services: [],
 };
-
+​
 // Download template
 const TEMPLATE_HEADERS = [
   "Kode Sampel",
@@ -63,7 +63,7 @@ const TEMPLATE_HEADERS = [
   "Lokasi Sampel",
   "Telah Divaksin",
 ];
-
+​
 const downloadTemplate = async () => {
   try {
     const res = await apiFetch("/customer/submissions/samples/template");
@@ -87,7 +87,7 @@ const downloadTemplate = async () => {
   a.click();
   URL.revokeObjectURL(url);
 };
-
+​
 const rowToSample = (r, cartItems = []) => {
   const rawUji = String(r[13] ?? "").trim();
   const test_services = rawUji
@@ -101,7 +101,7 @@ const rowToSample = (r, cartItems = []) => {
         )
         .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
     : [];
-
+​
   return {
     sample_code_cust: String(r[0] ?? "").trim(),
     sample_model:     String(r[1] ?? "").trim(),
@@ -123,7 +123,7 @@ const rowToSample = (r, cartItems = []) => {
     sampling:         "",
   };
 };
-
+​
 const parseCSV = (file, cartItems, callback) => {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -151,7 +151,7 @@ const parseCSV = (file, cartItems, callback) => {
   };
   reader.readAsText(file, "UTF-8");
 };
-
+​
 const parseXLSX = (file, cartItems, callback) => {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -171,7 +171,7 @@ const parseXLSX = (file, cartItems, callback) => {
   };
   reader.readAsArrayBuffer(file);
 };
-
+​
 const parseFile = (file, cartItems, callback) => {
   const ext = file.name.split(".").pop().toLowerCase();
   apiFetch("/customer/test-services")
@@ -190,7 +190,7 @@ const parseFile = (file, cartItems, callback) => {
       else parseCSV(file, cartItems, callback);
     });
 };
-
+​
 const STEP_ICONS = [
   <svg
     viewBox="0 0 24 24"
@@ -232,7 +232,7 @@ const STEP_ICONS = [
     <circle cx="12" cy="7" r="4" />
   </svg>,
 ];
-
+​
 function StepBar({ step }) {
   const steps = ["Data Pengajuan", "Data Sampel", "Data Pelanggan"];
   return (
@@ -291,7 +291,7 @@ function StepBar({ step }) {
     </div>
   );
 }
-
+​
 function Field({ label, required, hint, children }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -304,13 +304,13 @@ function Field({ label, required, hint, children }) {
     </div>
   );
 }
-
+​
 function Input({ value, onChange, placeholder, type = "text", disabled }) {
   const base =
     "w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm outline-none " +
     "transition placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500 " +
     "focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]";
-
+​
   if (type === "date") {
     return (
       <div className="relative w-full">
@@ -338,7 +338,7 @@ function Input({ value, onChange, placeholder, type = "text", disabled }) {
       </div>
     );
   }
-
+​
   return (
     <input
       type={type}
@@ -350,7 +350,7 @@ function Input({ value, onChange, placeholder, type = "text", disabled }) {
     />
   );
 }
-
+​
 function Select({ value, onChange, options, placeholder, disabled }) {
   return (
     <div className="relative">
@@ -383,18 +383,18 @@ function Select({ value, onChange, options, placeholder, disabled }) {
     </div>
   );
 }
-
+​
 function SearchableSelect({ value, onChange, options, placeholder }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
-
+​
   const filtered = search
     ? options
         .filter((o) => o.name.toLowerCase().includes(search.toLowerCase()))
         .slice(0, 60)
     : options.slice(0, 80);
-
+​
   useEffect(() => {
     const fn = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -402,7 +402,7 @@ function SearchableSelect({ value, onChange, options, placeholder }) {
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
-
+​
   return (
     <div className="relative" ref={ref}>
       <button
@@ -482,19 +482,19 @@ function SearchableSelect({ value, onChange, options, placeholder }) {
     </div>
   );
 }
-
+​
 /* Pilih Pengujian */
 function MultiSelectPengujian({ selected, onChange, cartItems }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
-
+​
   const filtered = search
     ? cartItems.filter((s) =>
         s.test_name?.toLowerCase().includes(search.toLowerCase()),
       )
     : cartItems;
-
+​
   useEffect(() => {
     const fn = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -502,14 +502,14 @@ function MultiSelectPengujian({ selected, onChange, cartItems }) {
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
-
+​
   const toggle = (svc) => {
     const has = selected.some((x) => x.id === svc.id);
     onChange(
       has ? selected.filter((x) => x.id !== svc.id) : [...selected, svc],
     );
   };
-
+​
   return (
     <div className="relative" ref={ref}>
       <button
@@ -633,13 +633,13 @@ function MultiSelectPengujian({ selected, onChange, cartItems }) {
     </div>
   );
 }
-
+​
 /* Wilayah */
 const WILAYAH_APIS = [
   "https://emsifa.github.io/api-wilayah-indonesia/api",
   "https://ibnux.github.io/data-indonesia",
 ];
-
+​
 async function fetchWilayah(path, altPath) {
   try {
     const r = await fetch(`${WILAYAH_APIS[0]}/${path}`);
@@ -659,7 +659,7 @@ async function fetchWilayah(path, altPath) {
   } catch {}
   return [];
 }
-
+​
 function NavButtons({ step, onBack, onNext }) {
   return (
     <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-4">
@@ -709,7 +709,7 @@ function NavButtons({ step, onBack, onNext }) {
     </div>
   );
 }
-
+​
 export default function PengajuanUjiSampel() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState(() => getCart());
@@ -718,7 +718,7 @@ export default function PengajuanUjiSampel() {
   const [submitting, setSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [docFiles, setDocFiles] = useState([]);
-
+​
   /* Step 1 */
   const [step1, setStep1] = useState({
     type_service: "",
@@ -733,13 +733,16 @@ export default function PengajuanUjiSampel() {
     diagnosis_required: false,
     notes: "",
   });
-
+​
   /* Step 2 */
   const [samples, setSamples] = useState([{ ...EMPTY_SAMPLE }]);
+  const SAMPLES_PER_PAGE = 5;
+  const [samplePage, setSamplePage] = useState(1);
+  const [previewPage, setPreviewPage] = useState(1);
   const [parseMsg, setParseMsg] = useState("");
   const [showImport, setShowImport] = useState(false);
   const xlsxRef = useRef();
-
+​
   /* Step 3 */
   const [profile, setProfile] = useState(null);
   const [step3, setStep3] = useState({
@@ -757,13 +760,13 @@ export default function PengajuanUjiSampel() {
     lhu_receiver: "",
     lhu_contact: "",
   });
-
+​
   useEffect(() => {
     apiFetch("/profile")
       .then((r) => r.json())
       .then((data) => {
         const prof = data.profile ?? data;
-
+​
         let user, c;
         if (prof.fullname || prof.email) {
           user = prof;
@@ -772,7 +775,7 @@ export default function PengajuanUjiSampel() {
           user = prof.User ?? {};
           c    = prof;
         }
-
+​
         setProfile({ ...user });
         setStep3({
           fullname:     user.fullname     ?? "",
@@ -792,24 +795,34 @@ export default function PengajuanUjiSampel() {
       })
       .catch(() => {});
   }, []);
-
+​
   const setS1 = (k) => (e) =>
     setStep1((p) => ({
       ...p,
       [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     }));
   const setS3 = (k) => (e) => setStep3((p) => ({ ...p, [k]: e.target.value }));
-
+​
   const setSample = (i, k, v) =>
     setSamples((prev) => {
       const next = [...prev];
       next[i] = { ...next[i], [k]: v };
       return next;
     });
-  const addSample = () => setSamples((p) => [...p, { ...EMPTY_SAMPLE }]);
+  const addSample = () =>
+    setSamples((p) => {
+      const next = [...p, { ...EMPTY_SAMPLE }];
+      setSamplePage(Math.ceil(next.length / SAMPLES_PER_PAGE));
+      return next;
+    });
   const removeSample = (i) =>
-    setSamples((p) => p.filter((_, idx) => idx !== i));
-
+    setSamples((p) => {
+      const next = p.filter((_, idx) => idx !== i);
+      const maxPage = Math.max(1, Math.ceil(next.length / SAMPLES_PER_PAGE));
+      setSamplePage((pg) => Math.min(pg, maxPage));
+      return next;
+    });
+​
   const validate = () => {
     if (step === 1) {
       if (!step1.type_service) return "Jenis layanan wajib dipilih.";
@@ -823,6 +836,10 @@ export default function PengajuanUjiSampel() {
           return `Sampel ${i + 1}: Kode sampel wajib diisi.`;
         if (!s.sample_model)
           return `Sampel ${i + 1}: Model sampel wajib dipilih.`;
+        if (!s.specimen_group)
+          return `Sampel ${i + 1}: Kelompok spesimen wajib dipilih.`;
+        if (!s.specimen_type)
+          return `Sampel ${i + 1}: Jenis spesimen wajib dipilih.`;
         if (!s.test_services?.length)
           return `Sampel ${i + 1}: Pilih minimal 1 jenis pengujian.`;
       }
@@ -839,7 +856,7 @@ export default function PengajuanUjiSampel() {
     }
     return null;
   };
-
+​
   const handleNext = () => {
     const err = validate();
     if (err) {
@@ -848,15 +865,18 @@ export default function PengajuanUjiSampel() {
     }
     setError("");
     if (step < 3) setStep((s) => s + 1);
-    else setShowPreview(true);
+    else {
+      setPreviewPage(1);
+      setShowPreview(true);
+    }
   };
-
+​
   const handleBack = () => {
     setError("");
     if (showPreview) setShowPreview(false);
     else setStep((s) => s - 1);
   };
-
+​
   const handleSubmit = async () => {
     setSubmitting(true);
     setError("");
@@ -886,7 +906,7 @@ export default function PengajuanUjiSampel() {
         condition: s.condition,
         tests: s.test_services?.map((t) => ({ test_service_id: t.id })),
       }));
-
+​
       const fd = new FormData();
       fd.append("type_service", step1.type_service);
       fd.append("purpose_of_test", step1.purpose_of_test);
@@ -904,10 +924,10 @@ export default function PengajuanUjiSampel() {
         String(samples.reduce((a, s) => a + (Number(s.total_sample) || 1), 0)),
       );
       fd.append("samples", JSON.stringify(samplesPayload));
-
+​
       // Dokumen pendukung
       docFiles.forEach((f) => fd.append("attachment_doc", f));
-
+​
       const res = await apiFetch("/customer/submissions", {
         method: "POST",
         body: fd,
@@ -916,14 +936,14 @@ export default function PengajuanUjiSampel() {
         const d = await res.json();
         throw new Error(d.error ?? d.message ?? "Gagal mengirim pengajuan.");
       }
-
+​
       const usedTestIds = new Set();
       samples.forEach((s) => {
         (s.test_services ?? []).forEach((t) => usedTestIds.add(t.id));
       });
       usedTestIds.forEach((id) => removeFromCart(id));
       window.dispatchEvent(new Event("cart-updated"));
-
+​
       try {
         const myRes = await apiFetch("/customer/submissions/my");
         const myJson = await myRes.json();
@@ -943,7 +963,7 @@ export default function PengajuanUjiSampel() {
         }
       } catch {
       }
-
+​
       try {
         await updateProfile({
           fullname:             step3.fullname    || undefined,
@@ -962,7 +982,7 @@ export default function PengajuanUjiSampel() {
         });
       } catch {
       }
-
+​
       navigate("/customer/pengajuan-saya");
     } catch (e) {
       setError(e.message);
@@ -970,7 +990,7 @@ export default function PengajuanUjiSampel() {
       setSubmitting(false);
     }
   };
-
+​
   /* Pratinjau */
   if (showPreview)
     return (
@@ -1001,13 +1021,13 @@ export default function PengajuanUjiSampel() {
                 Pratinjau Pengajuan Sampel
               </h2>
             </div>
-
+​
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
-
+​
             <section>
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
                 Data Pengajuan
@@ -1055,12 +1075,18 @@ export default function PengajuanUjiSampel() {
                 )}
               </div>
             </section>
-
+​
             <section className="border-t border-gray-100 pt-4">
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
                 Data Sampel ({samples.length} sampel)
               </p>
-              {samples.map((s, i) => (
+              {samples.map((s, i) => {
+                if (
+                  i < (previewPage - 1) * SAMPLES_PER_PAGE ||
+                  i >= previewPage * SAMPLES_PER_PAGE
+                )
+                  return null;
+                return (
                 <div key={i} className="bg-[#F6F7FB] rounded-xl p-4 mb-3 text-sm">
                   <p className="font-bold text-[#233B6E] mb-3">
                     Sampel {i + 1}: {s.sample_code_cust}
@@ -1089,7 +1115,7 @@ export default function PengajuanUjiSampel() {
                       </div>
                     ))}
                   </div>
-
+​
                   {/* Jenis Pengujian */}
                   {s.test_services?.length > 0 && (
                     <div className="mt-3 pt-2 border-t border-gray-200">
@@ -1105,9 +1131,68 @@ export default function PengajuanUjiSampel() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
+​
+              {samples.length > SAMPLES_PER_PAGE &&
+                (() => {
+                  const totalPages = Math.ceil(
+                    samples.length / SAMPLES_PER_PAGE,
+                  );
+                  const start = (previewPage - 1) * SAMPLES_PER_PAGE;
+                  const from = start + 1;
+                  const to = Math.min(
+                    start + SAMPLES_PER_PAGE,
+                    samples.length,
+                  );
+                  return (
+                    <div className="flex items-center justify-between flex-wrap gap-3 mt-1">
+                      <span className="text-xs text-gray-400">
+                        Menampilkan sampel {from}–{to} dari {samples.length}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={previewPage === 1}
+                          onClick={() => setPreviewPage((pg) => Math.max(1, pg - 1))}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                            <path d="M15 18l-6-6 6-6" />
+                          </svg>
+                        </button>
+                        {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+                          (n) => (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setPreviewPage(n)}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-colors ${
+                                n === previewPage
+                                  ? "bg-[#233B6E] text-white border-[#233B6E]"
+                                  : "border-gray-200 text-gray-600 hover:bg-gray-100"
+                              }`}
+                            >
+                              {n}
+                            </button>
+                          ),
+                        )}
+                        <button
+                          type="button"
+                          disabled={previewPage === totalPages}
+                          onClick={() => setPreviewPage((pg) => Math.min(totalPages, pg + 1))}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
             </section>
-
+​
             <section className="border-t border-gray-100 pt-4">
               <p className="text-xs font-bold text-[#415F9D] uppercase tracking-wider mb-3">
                 Data Pelanggan
@@ -1215,7 +1300,7 @@ export default function PengajuanUjiSampel() {
               </tr>
             </tfoot>
           </table>
-
+​
           <div className="sm:hidden divide-y divide-gray-100">
             {estLines.map((l, i) => (
               <div key={i} className="flex justify-between gap-3 py-2.5">
@@ -1243,7 +1328,7 @@ export default function PengajuanUjiSampel() {
 </section>
           </div>
         </div>
-
+​
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-400 italic">
             Silahkan periksa kembali data sebelum pengajuan
@@ -1303,16 +1388,16 @@ export default function PengajuanUjiSampel() {
         </div>
       </div>
     );
-
+​
   /* ── Step Formulir ── */
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-[#233B6E]">Pengajuan Uji Sampel</h1>
-
+​
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
         <StepBar step={step} />
       </div>
-
+​
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="h-1 bg-[#233B6E]" />
         <div className="p-6">
@@ -1324,7 +1409,7 @@ export default function PengajuanUjiSampel() {
               {error}
             </div>
           )}
-
+​
           {/* Step 1 */}
           {step === 1 && (
             <div className="space-y-4">
@@ -1422,7 +1507,7 @@ export default function PengajuanUjiSampel() {
                     focus:ring-2 focus:ring-[#233B6E]/25 focus:border-[#233B6E]"
                 />
               </Field>
-
+​
               <Field
                 label={
                   <>
@@ -1520,7 +1605,7 @@ export default function PengajuanUjiSampel() {
               </Field>
             </div>
           )}
-
+​
           {/* Step 2 */}
           {step === 2 && (
             <div className="space-y-5">
@@ -1534,7 +1619,7 @@ export default function PengajuanUjiSampel() {
                   </span>
                 )}
               </div>
-
+​
               <div
                 className="border border-gray-200 rounded-xl px-4 py-3
                 flex items-center justify-between gap-3 flex-wrap"
@@ -1612,11 +1697,11 @@ export default function PengajuanUjiSampel() {
                           const unique = [...new Map(allFromFile.map((t) => [t.id, t])).values()];
                           unique.forEach((svc) => addToCart(svc));
                           if (unique.length > 0) setCartItems(getCart());
-
+​
                           setSamples(
                             parsed.length > 0 ? parsed : [{ ...EMPTY_SAMPLE }],
                           );
-
+​
                           const addedCount = unique.filter(
                             (svc) => !cartItems.some((c) => c.id === svc.id)
                           ).length;
@@ -1633,7 +1718,7 @@ export default function PengajuanUjiSampel() {
                   </div>
                 )}
               </div>
-
+​
               {parseMsg && (
                 <p
                   className={`text-xs font-medium px-1
@@ -1648,8 +1733,14 @@ export default function PengajuanUjiSampel() {
                   {parseMsg}
                 </p>
               )}
-
-              {samples.map((s, i) => (
+​
+              {samples.map((s, i) => {
+                if (
+                  i < (samplePage - 1) * SAMPLES_PER_PAGE ||
+                  i >= samplePage * SAMPLES_PER_PAGE
+                )
+                  return null;
+                return (
                 <div
                   key={i}
                   className="border border-gray-200 rounded-2xl p-4 space-y-4"
@@ -1679,7 +1770,7 @@ export default function PengajuanUjiSampel() {
                       </button>
                     )}
                   </div>
-
+​
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Kode Sampel Pelanggan" required>
                       <Input
@@ -1710,7 +1801,7 @@ export default function PengajuanUjiSampel() {
                         placeholder="1"
                       />
                     </Field>
-                    <Field label="Kelompok Spesimen">
+                    <Field label="Kelompok Spesimen" required>
                       <Select
                         value={s.specimen_group}
                         onChange={(e) => {
@@ -1724,6 +1815,7 @@ export default function PengajuanUjiSampel() {
                     </Field>
                     <Field
                       label="Jenis Spesimen"
+                      required
                       hint={
                         !s.specimen_group ? "Pilih kelompok spesimen dulu" : ""
                       }
@@ -1859,7 +1951,7 @@ export default function PengajuanUjiSampel() {
                       />
                     </Field>
                   </div>
-
+​
                   <Field
                     label="Jenis Pengujian Sampel"
                     required
@@ -1890,8 +1982,67 @@ export default function PengajuanUjiSampel() {
                     )}
                   </Field>
                 </div>
-              ))}
-
+                );
+              })}
+​
+              {samples.length > SAMPLES_PER_PAGE &&
+                (() => {
+                  const totalPages = Math.ceil(
+                    samples.length / SAMPLES_PER_PAGE,
+                  );
+                  const start = (samplePage - 1) * SAMPLES_PER_PAGE;
+                  const from = start + 1;
+                  const to = Math.min(
+                    start + SAMPLES_PER_PAGE,
+                    samples.length,
+                  );
+                  return (
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <span className="text-xs text-gray-400">
+                        Menampilkan sampel {from}–{to} dari {samples.length}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          disabled={samplePage === 1}
+                          onClick={() => setSamplePage((pg) => Math.max(1, pg - 1))}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                            <path d="M15 18l-6-6 6-6" />
+                          </svg>
+                        </button>
+                        {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+                          (n) => (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setSamplePage(n)}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-colors ${
+                                n === samplePage
+                                  ? "bg-[#233B6E] text-white border-[#233B6E]"
+                                  : "border-gray-200 text-gray-600 hover:bg-gray-100"
+                              }`}
+                            >
+                              {n}
+                            </button>
+                          ),
+                        )}
+                        <button
+                          type="button"
+                          disabled={samplePage === totalPages}
+                          onClick={() => setSamplePage((pg) => Math.min(totalPages, pg + 1))}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="w-3.5 h-3.5">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+​
               <button
                 onClick={addSample}
                 className="w-full border-2 border-dashed border-[#233B6E]/30
@@ -1911,7 +2062,7 @@ export default function PengajuanUjiSampel() {
                 </svg>
                 Tambah Sampel
               </button>
-
+​
               {/* Estimasi Harga */}
               {(() => {
                 const rupiah = (n) =>
@@ -2013,7 +2164,7 @@ export default function PengajuanUjiSampel() {
               })()}
             </div>
           )}
-
+​
           {/* Step 3 */}
           {step === 3 && (
             <div className="space-y-4">
@@ -2098,7 +2249,7 @@ export default function PengajuanUjiSampel() {
               </div>
             </div>
           )}
-
+​
           <NavButtons step={step} onBack={handleBack} onNext={handleNext} />
         </div>
       </div>
