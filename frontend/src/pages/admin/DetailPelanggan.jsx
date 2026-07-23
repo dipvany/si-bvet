@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { verifyUser, rejectUser } from "../../services/adminServices";
-
+​
 const getDocUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -11,19 +11,19 @@ const getDocUrl = (path) => {
   if (clean.startsWith("/api/")) return `${origin}${clean}`;
   return `${apiBase}${clean}`;
 };
-
+​
 export default function DetailPelanggan() {
   const navigate  = useNavigate();
   const { state } = useLocation();
   const { id }    = useParams();
-
+​
   // Data dikirim dengan navigate state dari halaman list
   const customer = state?.customer;
-
+​
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [success, setSuccess]   = useState("");
-
+​
   if (!customer) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -35,7 +35,7 @@ export default function DetailPelanggan() {
       </div>
     );
   }
-
+​
   const handleAction = async (action) => {
     setLoading(true);
     setError("");
@@ -48,14 +48,14 @@ export default function DetailPelanggan() {
         ? "Akun pelanggan berhasil diverifikasi."
         : "Akun pelanggan berhasil ditolak."
       );
-      setTimeout(() => navigate("/superadmin/registrasi-pelanggan"), 1500);
+      setTimeout(() => navigate("/admin/registrasi-pelanggan"), 1500);
     } catch (err) {
       setError(err.message ?? "Terjadi kesalahan. Coba lagi.");
     } finally {
       setLoading(false);
     }
   };
-
+​
   const fields = [
     { label: "Nama Lengkap",  value: customer.fullname },
     { label: "Email",         value: customer.email },
@@ -63,9 +63,13 @@ export default function DetailPelanggan() {
     { label: "Institusi",     value: customer.institution ?? "-" },
     { label: "Status",        value: customer.is_verified ? "Sudah Diverifikasi" : "Belum Diverifikasi" },
   ];
-
+  const docUrl = getDocUrl(customer.registration_doc);
+  const docExt = (customer.registration_doc ?? "").split("?")[0].split(".").pop().toLowerCase();
+  const isImageDoc = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(docExt);
+  const isPdfDoc = docExt === "pdf";
+​
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5 max-w-5xl">
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)}
@@ -77,7 +81,7 @@ export default function DetailPelanggan() {
         </button>
         <h1 className="text-xl font-bold text-[#233B6E]">Detail Pelanggan</h1>
       </div>
-
+​
       {/* Feedback */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -89,44 +93,85 @@ export default function DetailPelanggan() {
           {success}
         </div>
       )}
-
+​
       {/* Info card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-bold text-[#233B6E]">Informasi Akun</h2>
         </div>
-        <div className="divide-y divide-gray-50">
-          {fields.map(f => (
-            <div key={f.label} className="px-5 py-3.5 flex gap-4">
-              <span className="text-sm text-gray-400 w-36 flex-shrink-0">{f.label}</span>
-              <span className="text-sm font-medium text-gray-800">{f.value}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Dokumen */}
-        {customer.registration_doc && (
-          <div className="px-5 py-4 border-t border-gray-100">
-            <p className="text-sm text-gray-400 mb-2">Dokumen Registrasi</p>
-            <a
-              href={getDocUrl(customer.registration_doc)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#EEF0F8] text-[#233B6E]
-                text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#233B6E]
-                hover:text-white transition-colors"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-                strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-              </svg>
-              Buka Dokumen
-            </a>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-5">
+          {/* Kolom kiri: data akun */}
+          <div className="md:col-span-2 divide-y divide-gray-50">
+            {fields.map(f => (
+              <div key={f.label} className="py-3.5 flex gap-4 first:pt-0">
+                <span className="text-sm text-gray-400 w-36 flex-shrink-0">{f.label}</span>
+                <span className="text-sm font-medium text-gray-800">{f.value}</span>
+              </div>
+            ))}
           </div>
-        )}
+​
+          {/* Kolom kanan: dokumen registrasi */}
+          <div className="md:col-span-1">
+            <p className="text-sm text-gray-400 mb-2">Dokumen Registrasi</p>
+            {customer.registration_doc ? (
+              <div className="space-y-3">
+                <a
+                  href={docUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Klik untuk membuka dokumen"
+                  className="group relative block w-full h-40 rounded-xl border-2 border-[#233B6E]/30 bg-[#F6F7FB] overflow-hidden hover:border-[#233B6E] transition-colors"
+                >
+                  {isImageDoc ? (
+                    <img src={docUrl} alt="Dokumen registrasi" className="w-full h-full object-cover" />
+                  ) : isPdfDoc ? (
+                    <embed
+                      src={`${docUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                      type="application/pdf"
+                      className="w-full h-full pointer-events-none"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[#233B6E]">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 opacity-60">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      <span className="text-[11px] font-medium opacity-60">{docExt ? docExt.toUpperCase() : "Dokumen"}</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#233B6E]/0 group-hover:bg-[#233B6E]/40 opacity-0 group-hover:opacity-100 transition-all">
+                    <span className="text-white text-xs font-semibold flex items-center gap-1.5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      Buka
+                    </span>
+                  </div>
+                </a>
+                <a
+                  href={getDocUrl(customer.registration_doc)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#EEF0F8] text-[#233B6E] text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#233B6E] hover:text-white transition-colors"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  Buka Dokumen
+                </a>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center border-2 border-dashed border-gray-200 rounded-xl aspect-[3/4] text-gray-300 text-xs">
+                Tidak ada dokumen
+              </div>
+            )}
+          </div>
+        </div>
+​
       </div>
-
+​
       {/* Action buttons — tampil jika belum diverifikasi */}
       {!customer.is_verified && (
         <div className="flex gap-3">
@@ -150,7 +195,7 @@ export default function DetailPelanggan() {
           </button>
         </div>
       )}
-
+​
       {customer.is_verified && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3
           text-green-700 text-sm font-medium text-center">

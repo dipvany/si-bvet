@@ -296,7 +296,7 @@ export default function RegistrasiPelanggan() {
 ​
   if (showAdd) {
     return (
-      <div className="space-y-3 max-w-3xl">
+      <div className="space-y-3 max-w-5xl">
         <h1 className="text-xl font-bold text-[#233B6E]">Registrasi Pelanggan</h1>
         <p className="text-sm text-gray-400">Tambah akun pelanggan baru secara manual</p>
         <FormTambahPelanggan
