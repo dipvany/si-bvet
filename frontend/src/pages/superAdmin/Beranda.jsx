@@ -551,10 +551,10 @@ export default function SuperAdminBeranda() {
 ​
       {/* Pengajuan */}
       <SectionCard title="Pengajuan Masuk">
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-5 gap-3">
           {CARD_CONFIG.map((c) => (
             <StatCard key={c.key} label={c.label} value={stats[c.key] ?? 0}
-              total={stats.total || 1} color={c.color} loading={loading} />
+              total={stats.total || 1} color={c.color} loading={loading} size={46} dense />
           ))}
         </div>
       </SectionCard>
@@ -563,7 +563,7 @@ export default function SuperAdminBeranda() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
         <div className="flex flex-col gap-4 lg:col-span-2">
           <SectionCard title="Laporan Pengaduan" className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 h-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 h-full items-center">
               <StatCard label="Total Pengaduan" value={complaintStats.total} total={Math.max(complaintStats.total, 1)} color="#A78BFA" loading={loading} size={46} dense />
               <StatCard label="Belum Ditanggapi" value={complaintStats.belum} total={Math.max(complaintStats.total, 1)} color="#F97316" loading={loading} size={46} dense />
               <StatCard label="Sudah Ditanggapi" value={complaintStats.total - complaintStats.belum} total={Math.max(complaintStats.total, 1)} color="#22C55E" loading={loading} size={46} dense />
@@ -571,7 +571,7 @@ export default function SuperAdminBeranda() {
           </SectionCard>
 ​
           <SectionCard title="Akun Pelanggan" className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 h-full">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 h-full items-center">
               <StatCard label="Jumlah Daftar Akun" value={accounts.total} total={Math.max(accounts.total, 1)} color="#3B82F6" loading={loading} size={46} dense />
               <StatCard label="Belum Verifikasi" value={accounts.unverified} total={Math.max(accounts.total, 1)} color="#F5C400" loading={loading} size={46} dense />
               <StatCard label="Sudah Verifikasi" value={accounts.verified} total={Math.max(accounts.total, 1)} color="#22C55E" loading={loading} size={46} dense />
