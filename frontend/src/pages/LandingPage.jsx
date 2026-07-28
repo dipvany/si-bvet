@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import heroImg from "../assets/bvet.jpeg";
+import maklumatImg from "../assets/maklumat.png";
 ​
 /* ── DATA ── */
 const NAV = [
@@ -111,6 +112,27 @@ function useScrollSpy() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
   return active;
+}
+
+/* ── MAKLUMAT POPUP ── */
+function MaklumatPopup({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <style>{`@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } } .animate-fade-in { animation: fade-in .3s ease; }`}</style>
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full scale-100 animate-zoom-in"
+        style={{ animation: "zoom-in .3s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>
+        <img src={maklumatImg} alt="Maklumat Pelayanan" className="w-full h-auto rounded-t-2xl" />
+        <div className="p-4 bg-gray-100 rounded-b-2xl text-center">
+          <button
+            onClick={onClose}
+            className="bg-[#233B6E] hover:bg-[#1a2d56] text-white font-semibold px-8 py-2 rounded-lg transition-colors text-sm"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 ​
 /* ── NAVBAR ── */
@@ -524,8 +546,23 @@ function Footer() {
 ​
 /* ── ROOT ── */
 export default function LandingPage() {
+  const [showMaklumat, setShowMaklumat] = useState(false);
+
+  useEffect(() => {
+    const hasSeenMaklumat = sessionStorage.getItem("seenMaklumat");
+    if (!hasSeenMaklumat) {
+      setShowMaklumat(true);
+      sessionStorage.setItem("seenMaklumat", "true");
+    }
+  }, []);
+
+  const handleCloseMaklumat = () => {
+    setShowMaklumat(false);
+  }
+
   return (
     <div className="antialiased">
+      {showMaklumat && <MaklumatPopup onClose={handleCloseMaklumat} />}
       <Navbar />
       <main>
         <Hero />
