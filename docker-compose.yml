@@ -23,6 +23,7 @@ services:
         # - default
       dockerfile: Dockerfile
     container_name: si-bvet-backend
+    user: "${UPLOAD_UID:-1000}:${UPLOAD_GID:-1000}"
     deploy:
       resources:
         limits:

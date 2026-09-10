@@ -19,6 +19,7 @@ COPY . .
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 RUN go build -p 2 -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
+RUN mkdir -p /out/uploads
 
 # Production stage: run the static binary on a minimal image suitable for Cloud Run.
 FROM gcr.io/distroless/static-debian12:nonroot
@@ -26,6 +27,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 
 COPY --from=builder /out/server /app/server
+COPY --from=builder --chown=nonroot:nonroot /out/uploads /app/uploads
 
 # Cloud Run expects the container to listen on the provided PORT, with 8080 as the default.
 EXPOSE 8080
