@@ -6,7 +6,14 @@ import maklumatImg from "../assets/maklumat.png";
 
 /* ── DATA ── */
 const NAV = [
-  { label: "Forecasting",        href: "/forecasting" }, 
+  {
+    label: "Forecasting",
+    href: "/forecasting",
+    children: [
+      { label: "Forecasting Penyakit Hewan", href: "/forecasting" },
+      { label: "Manajemen Peternakan — Ayam Layer (Petelur)", href: "/forecasting/ayam-layer" },
+    ],
+  },
   { label: "Beranda",        href: "#beranda" },
   { label: "Layanan",        href: "#layanan" },
   { label: "Tentang Kami",   href: "#tentang" },
@@ -153,10 +160,47 @@ function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  const NavLinks = ({ mobile = false }) => NAV.map(n => {
+  const renderNavLinks = (mobile = false) => NAV.map(n => {
     const isActive = active === n.href.slice(1);
     const NavItem = n.href.startsWith("/") ? Link : "a";
     const destination = n.href.startsWith("/") ? { to: n.href } : { href: n.href };
+    if (n.children) {
+      return (
+        <div key={n.label} className={`relative ${mobile ? "" : "group"}`}>
+          <NavItem {...destination}
+            onClick={() => mobile && setOpen(false)}
+            className={mobile
+              ? `block px-4 py-3 rounded-lg text-sm font-semibold transition-all ${isActive ? "bg-[#F5C400]/15 text-[#F5C400]" : "text-white/70 hover:text-[#F5C400] hover:bg-white/10"}`
+              : `nav-link text-sm font-semibold px-4 py-2 transition-colors ${isActive ? "text-[#F5C400] active" : "text-white/75 hover:text-[#F5C400]"}`
+            }>
+            {n.label}
+            <svg
+              className="ml-2 inline-block h-4 w-4 align-[-3px] stroke-current stroke-[2.5] transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
+              viewBox="0 0 20 20"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="m5 7.5 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </NavItem>
+          <div className={mobile
+            ? "ml-3 flex flex-col border-l border-white/15 pl-2"
+            : "absolute left-0 top-full z-50 hidden w-80 flex-col rounded-lg border border-white/10 bg-[#1a2d56] p-2 shadow-xl group-hover:flex group-focus-within:flex"
+          }>
+            {n.children.map((child) => (
+              <Link key={child.href} to={child.href}
+                onClick={() => mobile && setOpen(false)}
+                className={mobile
+                  ? "rounded-lg px-4 py-2.5 text-xs leading-relaxed text-white/65 transition-colors hover:bg-white/10 hover:text-[#F5C400]"
+                  : "rounded-md px-3 py-2.5 text-sm leading-relaxed text-white/75 transition-colors hover:bg-white/10 hover:text-[#F5C400]"
+                }>
+                {child.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      );
+    }
     return (
       <NavItem key={n.label} {...destination}
         onClick={() => mobile && setOpen(false)}
@@ -184,7 +228,7 @@ function Navbar() {
           </Link>
 
           <div className="hidden lg:flex items-center gap-0.5">
-            <NavLinks />
+            {renderNavLinks()}
             <div className="w-px h-5 bg-white/20 mx-3" />
             <Link to="/login" className="text-sm font-semibold text-white/85 hover:text-white border border-white/30 hover:border-white/60 px-4 py-1.5 rounded-md transition-all">Masuk</Link>
             <Link to="/register" className="ml-2 text-sm font-bold text-[#233B6E] bg-[#F5C400] hover:bg-[#ffd020] px-5 py-1.5 rounded-md transition-colors shadow-sm">Daftar</Link>
@@ -212,7 +256,7 @@ function Navbar() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
-          <nav className="flex-1 flex flex-col px-4 py-5 gap-0.5"><NavLinks mobile /></nav>
+          <nav className="flex-1 flex flex-col px-4 py-5 gap-0.5">{renderNavLinks(true)}</nav>
           <div className="px-4 pb-8 flex flex-col gap-3">
             <Link to="/login" onClick={() => setOpen(false)} className="text-center border border-white/30 hover:bg-white/10 text-white text-sm font-semibold py-2.5 rounded-lg transition-all">Masuk</Link>
             <Link to="/register" onClick={() => setOpen(false)} className="text-center bg-[#F5C400] hover:bg-[#ffd020] text-[#233B6E] text-sm font-bold py-2.5 rounded-lg transition-colors shadow">Daftar</Link>
