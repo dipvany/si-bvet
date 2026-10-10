@@ -5,6 +5,7 @@ import Login          from "../pages/auth/Login";
 import Register       from "../pages/auth/Register";
 import LandingPage    from "../pages/LandingPage";
 import Forecasting    from "../pages/Forecasting";
+import ManajemenPeternakanLayer from "../pages/ManajemenPeternakanLayer";
 import ForgotPassword from "../pages/auth/LupaSandi";
 import ResetPassword  from "../pages/auth/ResetSandi";
 import PengaduanPublik from "../pages/PengaduanPublik";
@@ -70,6 +71,7 @@ export default function AppRoutes() {
       {/* Publik */}
       <Route path="/"                              element={<LandingPage />} />
       <Route path="/forecasting"                    element={<Forecasting />} />
+      <Route path="/forecasting/ayam-layer"         element={<ManajemenPeternakanLayer />} />
       <Route path="/login"                         element={<Login />} />
       <Route path="/register"                      element={<Register />} />
       <Route path="/forgot-password"               element={<ForgotPassword />} />

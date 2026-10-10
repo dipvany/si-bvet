@@ -19,8 +19,6 @@ services:
   backend:
     build:
       context: ./backend
-      # ssh:
-        # - default
       dockerfile: Dockerfile
     container_name: si-bvet-backend
     user: "${UPLOAD_UID:-1000}:${UPLOAD_GID:-1000}"
@@ -36,21 +34,12 @@ services:
       - ./data/uploads:/app/uploads
       - ./secrets:/app/secrets:ro
     depends_on:
-      - postgres
-        # condition: service_healthy
-    # healthcheck:
-      # Coba hubungi port 8080 di dalam kontainer backend
-      # test: ["CMD-SHELL", "curl -f http://localhost:8080/api/ping || exit 1"]
-      # interval: 10s
-      # timeout: 5s
-      # retries: 5
-      # start_period: 10s
+      postgres:
+        condition: service_healthy
     networks:
       - sibvet-network
 
-  # --- DATABASE SERVICE (POSTGRESQL for Local Development) ---
-  # Catatan: Service 'postgres' ini hanya untuk pengembangan lokal.
-  # Hapus atau nonaktifkan jika Anda menggunakan database eksternal seperti Google Cloud SQL.
+  # --- DATABASE SERVICE (POSTGRESQL FOR LOCAL DEVELOPMENT) ---
   postgres:
     image: postgres:15-alpine
     container_name: si-bvet-postgres
@@ -77,6 +66,4 @@ networks:
 
 volumes:
   postgres-data:
-    driver: local
-  backend-uploads:
     driver: local
